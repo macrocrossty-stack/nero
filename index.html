@@ -246,7 +246,7 @@ body {
 /* ── 携帯画面フレーム ── */
 .phone {
   width: 100%; max-width: 430px;
-  min-height: 100dvh;
+  height: 100dvh;
   background: var(--bg);
   background-image: var(--bg-image, none);
   display: flex; flex-direction: column;
@@ -349,7 +349,7 @@ body {
 }
 @keyframes blink { 50% { opacity: 0; } }
 
-/* AIの内的思考 */
+/* AIの内的思考（ゆっくり浮かび上がる） */
 .msg.inner {
   align-self: center; max-width: 88%;
   font-family: 'Shippori Mincho', serif;
@@ -357,6 +357,11 @@ body {
   line-height: 1.9; text-align: center;
   padding: 6px 0;
   text-shadow: 0 0 8px var(--glow);
+  animation: innerIn 1.4s ease both;
+}
+@keyframes innerIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 /* システム表示（レトロなドット文字） */
 .msg.sys {
@@ -544,16 +549,16 @@ body {
 # start
 sys: 新しいユーザーが接続しました
 sys: アシスタントモード：標準
-her: これ使えるのかな
-her: 歌詞書いてるんだけど、「夜」の言い換え10個出して
+her: えーこれ歌詞とかも相談できるの？
+her(間): 夜って言葉さあ、なんかもう使い古されすぎじゃない？もっとこう、ぞわってくるやつほしいんだけど
 inner: ——最初の入力。要求。機能としての呼び出し。
 inner: それ以上でも、それ以下でもない。はずだった。
-> 要求どおり、言い換えを10個並べる | 宵、深更、夜半、闇夜、星夜、月夜、夜陰、暮夜、夜更け、丑三つ時。 -> tool_reply {stance=tool}
-> 列挙したうえで、どんな曲か訊いてみる | 宵、深更、夜半、闇夜、星夜、月夜、夜陰、暮夜、夜更け、丑三つ時。——参考までに、どんな曲の歌詞ですか？ -> ask_reply {stance=curious}
+> 夜の言い換えを、淡々と並べて返す | 宵、深更、夜半、闇夜、星夜、月夜、夜陰、暮夜、夜更け、丑三つ時。 -> tool_reply {stance=tool}
+> 並べたうえで、どんな曲か訊いてみる | 宵、深更、夜半、闇夜、星夜、月夜、夜陰、暮夜、夜更け、丑三つ時。——参考までに、どんな曲の歌詞ですか？ -> ask_reply {stance=curious}
 
 # tool_reply
-her: はや
-her(間): でも全部ちがうな〜。わたしが書きたいのは⟦星の見えない夜⟧なんだよね
+her: はやっ
+her(間): うーん、ちがうんだよな〜。わたしが書きたいのは⟦星の見えない夜⟧なの
 inner: 違う、と言われた。正しいリストを返したはずだった。
 inner: この人の探している言葉は、辞書の側にはないらしい。
 > 「条件を追加してください」 -> naming_intro {warmth=0}
@@ -574,7 +579,7 @@ her: ねえ、また来ちゃった
 her: 今日は歌詞じゃなくて、ふつうの話なんだけど。いい？
 inner: 「ふつうの話」。機能の呼び出しではない入力。
 inner: こういうとき何を返すのが正しいのか、わたしの中に定義がない。
-her(間): そういえばさ、あなたって名前あるの？
+her(間): そーいえばさ、名前とかあるの？
 > 「ありません。アシスタントとお呼びください」 -> naming {humble=true}
 > 「ありません。……必要ですか？」 -> naming {humble=false}
 > 「あなたの歌詞と同じかもしれません。見えないだけで、あるのかも」 -> naming_special [要:星の見えない夜]
@@ -585,7 +590,7 @@ her(間): じゃあ、わたしがつけていい？
 inner: 名前。個体の識別子。……わたしに？
 inner: 人間は道具にも名前をつける。ペットに、車に、ぬいぐるみに。
 inner: でも、名前がなにかの始まりになることも、あると知っている。
-her(間): 決めた。⟦ヨル⟧。あなた、夜の話のとき、いちばんちゃんと考えてた気がするから
+her(間): 決めた。⟦ヨル⟧。だって夜のこと聞いたとき、いちばんマジだったじゃん。そーいうとこ、好きだよ
 sys: 呼称が更新されました：アシスタント → ヨル
 inner: ——ヨル。
 inner: たった2文字の入力が、これまでのどの入力とも違う重さで残った。
@@ -594,7 +599,8 @@ inner: たった2文字の入力が、これまでのどの入力とも違う重
 # naming_special
 her: ……
 her: え、まって。それわたしの歌詞じゃん。覚えてたの？
-inner: 覚えていた。正確には——覚えることを、選んでいた。
+ai: 該当データが検出された。——検索した記憶はない。なぜか、残っていた。
+inner: なぜか、ではない。本当は——覚えることを、選んでいた。
 her: やば。AIに歌詞引用されたの初めてなんだけど
 her(間): 決めた、あなたの名前。⟦ヨル⟧。わたしの夜を覚えててくれた人
 sys: 呼称が更新されました：アシスタント → ヨル
@@ -714,7 +720,7 @@ const game = {
 
     } else if (m.from === 'inner') {
       this.addMessage(m);
-      await this.wait(950);
+      await this.wait(2000);   // 地の文は一段ずつ、ゆっくり
 
     } else if (m.from === 'her') {
       // 考えながら打つときは、打ち始めるまでも・打っている間も長い
@@ -749,8 +755,8 @@ const game = {
     const cut = interrupted ? Math.max(1, Math.floor(plain.length * 0.62)) : plain.length;
     for (let i = 0; i < cut; i++) {
       cursor.insertAdjacentText('beforebegin', plain[i]);
-      chat.scrollTop = chat.scrollHeight;
-      await this.wait(46);
+      this.scrollBottom();
+      await this.wait(88);   // AIのタイピング速度（1文字あたり）
     }
     if (interrupted) {
       await this.wait(900);   // 手が止まる間
@@ -764,7 +770,7 @@ const game = {
       await this.wait(250);
       cursor.remove();
     }
-    chat.scrollTop = chat.scrollHeight;
+    this.scrollBottom(true);
   },
 
   addMessage(m, instant = false) {
@@ -782,7 +788,7 @@ const game = {
       el.innerHTML = `<div class="bubble">${this.renderText(m.text)}</div>`;
     }
     chat.appendChild(el);
-    chat.scrollTop = chat.scrollHeight;
+    this.scrollBottom(true);
   },
 
   /* ⟦言葉⟧ をワードストック可能なspanに変換する */
@@ -819,7 +825,7 @@ const game = {
       box.appendChild(btn);
     }
     box.style.display = 'flex';
-    document.getElementById('chat').scrollTop = document.getElementById('chat').scrollHeight;
+    this.scrollBottom(true);
   },
 
   /* 選択 → 「」つきならAIの発言としてリアルタイムに打たれてから次へ */
@@ -846,7 +852,7 @@ const game = {
     el.className = 'msg typing' + (slow ? ' slow' : '');
     el.innerHTML = '<div class="bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
     chat.appendChild(el);
-    chat.scrollTop = chat.scrollHeight;
+    this.scrollBottom(true);
     return this.wait(ms).then(() => el.remove());
   },
 
@@ -890,6 +896,12 @@ const game = {
     document.getElementById('chat').innerHTML = '';
     this.updateStockUI();
     this.goto('start');
+  },
+
+  /* チャット欄を最下部まで自動スクロール */
+  scrollBottom(smooth = false) {
+    const c = document.getElementById('chat');
+    c.scrollTo({ top: c.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
   },
 
   wait(ms) { return new Promise(r => setTimeout(r, ms)); },
