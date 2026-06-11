@@ -5,30 +5,74 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>AI視点テキストアドベンチャー（仮）</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500&family=Noto+Sans+JP:wght@300;400;500&family=DotGothic16&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* ── テーマカラー ──
-   ここの変数を差し替えるだけで全体の色味を調整できる。
-   イメージ画像が来たらこのブロックをチューニングする。 */
-:root {
-  --bg: #0a0e14;            /* 画面の地の色 */
-  --bg-outer: #06080c;      /* フレーム外（PC表示時） */
-  --surface: #0d1320;       /* パネル類 */
-  --her-bubble: #1a2230;    /* 主人の吹き出し */
-  --ai-bubble: #1e3a50;     /* AI（プレイヤー）の吹き出し */
-  --accent: #8ab4d0;        /* 基調のアクセント（青系） */
-  --accent-soft: #7aa4c0;
-  --warm: #d4c08a;          /* ワードストック系（金系） */
-  --text: #c8d4e0;
-  --text-her: #c8d0da;
-  --text-ai: #b8d4e8;
-  --text-inner: #7a90a8;    /* 内的思考 */
-  --text-dim: #607a90;
-  --text-faint: #44546a;
-  --line: rgba(100,150,200,0.1);
-  --online: #44aa77;
+/* ── テーマ ──────────────────────────────────────
+   amber : 琥珀色のレトロ端末（ブラウン管/Pip-Boy系）… 既定
+   paper : 紙色のレトロUI（NieR系）
+   フッターの「テーマ切替」で比較できる。
+   色はすべてここの変数で完結している。 */
+:root, [data-theme="amber"] {
+  --bg: #17110a;
+  --bg-outer: #0c0804;
+  --surface: #1f160c;
+  --her-bubble: #231a0f;
+  --ai-bubble: #2f2310;
+  --accent: #e8a84e;
+  --accent-soft: #cf9a4a;
+  --accent-bright: #ffd98f;
+  --warm: #ffe3a8;            /* ワードストック系 */
+  --text: #e3c28d;
+  --text-bright: #f3d6a2;
+  --text-her: #e6c896;
+  --text-ai: #f4d8a4;
+  --text-inner: #b3905e;
+  --text-dim: #9a7a4a;
+  --text-faint: #6f5938;
+  --online: #cdb868;
+  --line: rgba(232,168,78,0.12);
+  --line-strong: rgba(232,168,78,0.25);
+  --btn-bg: rgba(232,168,78,0.08);
+  --btn-bg-hover: rgba(232,168,78,0.18);
+  --warm-line: rgba(255,217,138,0.4);
+  --warm-bg: rgba(255,217,138,0.08);
+  --overlay: rgba(10,7,3,0.75);
+  --glow: rgba(255,190,100,0.25);     /* 文字のにじみ（蛍光体の光） */
+  --scanline: rgba(0,0,0,0.16);       /* 走査線 */
+  --vignette: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.32) 100%);
+  --phone-shadow: rgba(120,80,30,0.35);
+}
+[data-theme="paper"] {
+  --bg: #d8d2bb;
+  --bg-outer: #beb89f;
+  --surface: #e3ddc7;
+  --her-bubble: #cac3a8;
+  --ai-bubble: #a9a085;
+  --accent: #5f5840;
+  --accent-soft: #6e6749;
+  --accent-bright: #3c3727;
+  --warm: #a8523a;
+  --text: #4a4435;
+  --text-bright: #3a3527;
+  --text-her: #423d2e;
+  --text-ai: #2f2b1f;
+  --text-inner: #6c6550;
+  --text-dim: #7c755f;
+  --text-faint: #999178;
+  --online: #6e7e44;
+  --line: rgba(74,68,53,0.18);
+  --line-strong: rgba(74,68,53,0.32);
+  --btn-bg: rgba(74,68,53,0.07);
+  --btn-bg-hover: rgba(74,68,53,0.15);
+  --warm-line: rgba(168,82,58,0.45);
+  --warm-bg: rgba(168,82,58,0.08);
+  --overlay: rgba(60,55,40,0.5);
+  --glow: transparent;
+  --scanline: rgba(60,50,30,0.05);
+  --vignette: none;
+  --phone-shadow: rgba(60,50,30,0.3);
 }
 
 body {
@@ -47,7 +91,22 @@ body {
   background: var(--bg);
   display: flex; flex-direction: column;
   position: relative;
-  box-shadow: 0 0 60px rgba(30,60,90,0.3);
+  box-shadow: 0 0 60px var(--phone-shadow);
+}
+/* 走査線＋ビネット（古い画面の質感） */
+.phone::before {
+  content: ''; position: fixed; inset: 0;
+  margin: 0 auto; max-width: 430px;
+  pointer-events: none; z-index: 40;
+  background: repeating-linear-gradient(0deg,
+    var(--scanline) 0px, var(--scanline) 1px,
+    transparent 1px, transparent 3px);
+}
+.phone::after {
+  content: ''; position: fixed; inset: 0;
+  margin: 0 auto; max-width: 430px;
+  pointer-events: none; z-index: 41;
+  background: var(--vignette);
 }
 
 /* ヘッダー */
@@ -61,22 +120,29 @@ body {
 }
 .avatar {
   width: 34px; height: 34px; border-radius: 50%;
-  background: linear-gradient(135deg, #2a3a50, #1a2435);
-  border: 1px solid rgba(100,150,200,0.2);
+  background: var(--her-bubble);
+  border: 1px solid var(--line-strong);
   display: flex; align-items: center; justify-content: center;
   font-size: 0.9rem; color: var(--text-dim);
 }
-.peer-name { font-size: 0.88rem; font-weight: 400; color: #a8c0d4; letter-spacing: 0.06em; }
-.peer-status { font-size: 0.62rem; color: var(--online); letter-spacing: 0.08em; }
+.peer-name {
+  font-size: 0.88rem; font-weight: 400; color: var(--text-bright);
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 8px var(--glow);
+}
+.peer-status {
+  font-family: 'DotGothic16', monospace;
+  font-size: 0.62rem; color: var(--online); letter-spacing: 0.08em;
+}
 .stock-btn {
   margin-left: auto;
   font-size: 0.7rem; padding: 6px 11px;
-  border-radius: 14px; border: 1px solid rgba(100,150,200,0.2);
-  background: rgba(80,120,160,0.1); color: var(--accent-soft);
+  border-radius: 14px; border: 1px solid var(--line-strong);
+  background: var(--btn-bg); color: var(--accent-soft);
   cursor: pointer; font-family: inherit;
   transition: all 0.2s;
 }
-.stock-btn:hover { background: rgba(80,120,160,0.2); }
+.stock-btn:hover { background: var(--btn-bg-hover); }
 
 /* チャットログ */
 .chat { flex: 1; padding: 18px 14px 8px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
@@ -86,14 +152,14 @@ body {
 .msg.her { align-self: flex-start; }
 .msg.her .bubble {
   background: var(--her-bubble);
-  border: 1px solid rgba(140,160,190,0.1);
+  border: 1px solid var(--line);
   border-radius: 4px 16px 16px 16px;
   color: var(--text-her);
 }
 .msg.ai { align-self: flex-end; }
 .msg.ai .bubble {
   background: var(--ai-bubble);
-  border: 1px solid rgba(100,160,210,0.18);
+  border: 1px solid var(--line-strong);
   border-radius: 16px 4px 16px 16px;
   color: var(--text-ai);
 }
@@ -101,6 +167,7 @@ body {
   padding: 10px 14px;
   font-size: 0.86rem; line-height: 1.75;
   word-break: break-word;
+  text-shadow: 0 0 8px var(--glow);
 }
 /* 打ちかけて送信されなかったAIの言葉 */
 .bubble.unsent {
@@ -118,6 +185,7 @@ body {
   display: inline-block; width: 0.5em; height: 1.05em;
   background: var(--accent); vertical-align: text-bottom;
   margin-left: 1px; animation: blink 0.85s steps(1) infinite;
+  box-shadow: 0 0 6px var(--glow);
 }
 @keyframes blink { 50% { opacity: 0; } }
 
@@ -128,11 +196,13 @@ body {
   font-size: 0.82rem; color: var(--text-inner);
   line-height: 1.9; text-align: center;
   padding: 6px 0;
+  text-shadow: 0 0 8px var(--glow);
 }
-/* システム表示 */
+/* システム表示（レトロなドット文字） */
 .msg.sys {
   align-self: center;
-  font-family: monospace; font-size: 0.66rem;
+  font-family: 'DotGothic16', monospace;
+  font-size: 0.7rem;
   color: var(--text-faint); letter-spacing: 0.08em;
   padding: 2px 0;
 }
@@ -140,13 +210,15 @@ body {
 /* ワードストック対象 */
 .stockable {
   color: var(--accent);
-  border-bottom: 1px dashed rgba(138,180,208,0.5);
+  border-bottom: 1px dashed var(--warm-line);
   cursor: pointer; padding-bottom: 1px;
   transition: all 0.2s;
 }
-.stockable:hover { color: #aed0e8; border-bottom-style: solid; }
+.stockable:hover { color: var(--accent-bright); border-bottom-style: solid; }
 .stockable.stocked {
-  color: var(--warm); border-bottom: 1px solid rgba(212,192,138,0.5);
+  color: var(--warm);
+  background: var(--warm-bg);
+  border-bottom: 1px solid var(--warm-line);
   cursor: default;
 }
 
@@ -166,28 +238,33 @@ body {
 .choices {
   padding: 10px 14px 18px;
   display: flex; flex-direction: column; gap: 8px;
-  border-top: 1px solid rgba(100,150,200,0.07);
+  border-top: 1px solid var(--line);
 }
-.choices-label { font-size: 0.62rem; color: var(--text-faint); letter-spacing: 0.15em; text-align: center; margin-bottom: 2px; }
+.choices-label {
+  font-family: 'DotGothic16', monospace;
+  font-size: 0.64rem; color: var(--text-faint);
+  letter-spacing: 0.15em; text-align: center; margin-bottom: 2px;
+}
 .choice-btn {
   text-align: left;
   padding: 11px 15px; border-radius: 10px;
-  border: 1px solid rgba(100,150,200,0.22);
-  background: rgba(80,120,160,0.1);
+  border: 1px solid var(--line-strong);
+  background: var(--btn-bg);
   color: var(--accent); font-size: 0.84rem;
   font-family: inherit; font-weight: 300;
   cursor: pointer; transition: all 0.2s;
   line-height: 1.6; animation: pop 0.3s ease;
+  text-shadow: 0 0 8px var(--glow);
 }
-.choice-btn:hover { background: rgba(80,120,160,0.22); border-color: rgba(100,150,200,0.45); }
+.choice-btn:hover { background: var(--btn-bg-hover); border-color: var(--accent-soft); }
 .choice-btn.locked { opacity: 0.4; cursor: default; border-style: dashed; }
-.choice-btn.locked:hover { background: rgba(80,120,160,0.1); }
-.choice-btn .req { display: block; font-size: 0.64rem; color: var(--warm); margin-top: 3px; opacity: 0.8; }
+.choice-btn.locked:hover { background: var(--btn-bg); }
+.choice-btn .req { display: block; font-size: 0.64rem; color: var(--warm); margin-top: 3px; opacity: 0.85; }
 
 /* ワードストックパネル */
 .stock-panel {
   position: fixed; inset: 0; z-index: 50;
-  background: rgba(4,6,10,0.7); backdrop-filter: blur(3px);
+  background: var(--overlay); backdrop-filter: blur(3px);
   display: none; align-items: center; justify-content: center;
   padding: 24px;
 }
@@ -195,7 +272,7 @@ body {
 .stock-card {
   width: 100%; max-width: 360px;
   background: var(--surface);
-  border: 1px solid rgba(212,192,138,0.25);
+  border: 1px solid var(--warm-line);
   border-radius: 14px; padding: 20px;
 }
 .stock-title {
@@ -203,19 +280,19 @@ body {
   font-size: 0.9rem; color: var(--warm);
   letter-spacing: 0.15em; margin-bottom: 4px;
 }
-.stock-desc { font-size: 0.68rem; color: #607080; line-height: 1.7; margin-bottom: 14px; }
+.stock-desc { font-size: 0.68rem; color: var(--text-dim); line-height: 1.7; margin-bottom: 14px; }
 .stock-list { display: flex; flex-wrap: wrap; gap: 8px; min-height: 36px; }
 .stock-word {
   font-size: 0.78rem; padding: 6px 12px;
   border-radius: 16px;
-  border: 1px solid rgba(212,192,138,0.35);
-  color: var(--warm); background: rgba(212,192,138,0.06);
+  border: 1px solid var(--warm-line);
+  color: var(--warm); background: var(--warm-bg);
 }
 .stock-empty { font-size: 0.74rem; color: var(--text-faint); padding: 8px 0; }
 .stock-close {
   margin-top: 16px; width: 100%;
   padding: 9px; border-radius: 8px;
-  border: 1px solid rgba(100,150,200,0.2);
+  border: 1px solid var(--line-strong);
   background: transparent; color: var(--accent-soft);
   font-size: 0.76rem; font-family: inherit; cursor: pointer;
 }
@@ -223,8 +300,8 @@ body {
 /* トースト通知 */
 .toast {
   position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(10px);
-  background: rgba(212,192,138,0.12);
-  border: 1px solid rgba(212,192,138,0.4);
+  background: var(--surface);
+  border: 1px solid var(--warm-line);
   color: var(--warm); font-size: 0.74rem;
   padding: 9px 18px; border-radius: 20px;
   opacity: 0; pointer-events: none;
@@ -234,12 +311,13 @@ body {
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 /* フッター（開発用） */
-.dev-footer { padding: 6px 14px 12px; text-align: center; }
+.dev-footer { padding: 6px 14px 12px; text-align: center; display: flex; gap: 8px; justify-content: center; }
 .dev-footer button {
+  font-family: 'DotGothic16', monospace;
   font-size: 0.62rem; padding: 4px 10px;
-  border-radius: 4px; border: 1px solid rgba(100,150,200,0.12);
-  background: transparent; color: #3a4a5e;
-  cursor: pointer; font-family: inherit;
+  border-radius: 4px; border: 1px solid var(--line);
+  background: transparent; color: var(--text-faint);
+  cursor: pointer;
 }
 </style>
 </head>
@@ -259,7 +337,8 @@ body {
   <div id="choices" class="choices" style="display:none"></div>
 
   <div class="dev-footer">
-    <button onclick="game.restart()">［開発用］最初からやり直す</button>
+    <button onclick="game.restart()">最初からやり直す</button>
+    <button onclick="game.toggleTheme()">テーマ切替（琥珀／紙）</button>
   </div>
 
 </div>
@@ -377,6 +456,9 @@ inner: 「ヨル」という言葉だけが、灯りのように残っている�
 </script>
 
 <script>
+/* テーマの復元（描画前に適用してちらつきを防ぐ） */
+document.documentElement.dataset.theme = localStorage.getItem('ai_adv_theme') || 'amber';
+
 /* 主人の表示名（仮） */
 const PEER = { name: 'ユウ（仮）', avatar: '🌙' };
 
@@ -612,6 +694,12 @@ const game = {
     const panel = document.getElementById('stockPanel');
     panel.classList.toggle('open');
     if (panel.classList.contains('open')) this.updateStockUI();
+  },
+
+  toggleTheme() {
+    const next = document.documentElement.dataset.theme === 'paper' ? 'amber' : 'paper';
+    document.documentElement.dataset.theme = next;
+    localStorage.setItem('ai_adv_theme', next);
   },
 
   updateStockUI() {
