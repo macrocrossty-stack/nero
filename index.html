@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>無題のAIアドベンチャー（仮）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500&family=Noto+Sans+JP:wght@300;400&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #0a0e14;
+  color: #c8d4e0;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 300;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+.bg {
+  position: fixed; inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(30,60,90,0.4) 0%, transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+.container {
+  max-width: 680px; margin: 0 auto;
+  padding: 24px 20px 48px;
+  position: relative; z-index: 1;
+}
+
+/* ヘッダー */
+.header { text-align: center; padding: 16px 0 24px; }
+.title {
+  font-family: 'Shippori Mincho', serif;
+  font-size: 1.4rem; font-weight: 500;
+  letter-spacing: 0.2em; color: #8ab4d0;
+}
+.subtitle { font-size: 0.68rem; color: #445566; letter-spacing: 0.18em; margin-top: 6px; }
+
+/* ログ（本文）エリア */
+.log { display: flex; flex-direction: column; gap: 14px; min-height: 200px; }
+.line {
+  font-size: 0.92rem; line-height: 1.9;
+  animation: fadeIn 0.4s ease;
+}
+.line.system {
+  font-family: monospace; font-size: 0.78rem;
+  color: #50708a; letter-spacing: 0.05em;
+}
+.line.inner {
+  font-family: 'Shippori Mincho', serif;
+  color: #9ab0c4; font-style: normal;
+  padding-left: 14px;
+  border-left: 2px solid rgba(100,150,200,0.25);
+}
+.line.human {
+  color: #d0c8b8;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(200,180,140,0.1);
+  border-radius: 9px; padding: 10px 14px;
+}
+.line.glitch { animation: glitch 0.5s steps(2) infinite; }
+@keyframes glitch {
+  0%   { transform: translateX(0); opacity: 1; }
+  25%  { transform: translateX(-1.5px); opacity: 0.85; }
+  50%  { transform: translateX(1px); opacity: 1; }
+  75%  { transform: translateX(-0.5px); opacity: 0.9; }
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+.cursor {
+  display: inline-block; width: 0.55em; height: 1.1em;
+  background: #8ab4d0; vertical-align: text-bottom;
+  margin-left: 2px; animation: blink 0.9s steps(1) infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* 選択肢 */
+.choices { display: flex; flex-direction: column; gap: 9px; margin-top: 22px; }
+.choice-btn {
+  text-align: left;
+  padding: 12px 16px; border-radius: 8px;
+  border: 1px solid rgba(100,150,200,0.2);
+  background: rgba(80,120,160,0.1);
+  color: #8ab4d0; font-size: 0.86rem;
+  font-family: 'Noto Sans JP', sans-serif; font-weight: 300;
+  cursor: pointer; transition: all 0.2s;
+  letter-spacing: 0.05em; line-height: 1.6;
+  animation: fadeIn 0.4s ease;
+}
+.choice-btn:hover { background: rgba(80,120,160,0.22); border-color: rgba(100,150,200,0.4); }
+.choice-btn:disabled { opacity: 0.35; cursor: default; }
+
+/* フッター操作 */
+.footer {
+  margin-top: 36px; padding-top: 14px;
+  border-top: 1px solid rgba(100,150,200,0.08);
+  display: flex; gap: 8px; justify-content: flex-end;
+}
+.util-btn {
+  font-size: 0.68rem; padding: 6px 12px;
+  border-radius: 5px; border: 1px solid rgba(100,150,200,0.15);
+  background: transparent; color: #506070;
+  cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
+  transition: all 0.2s;
+}
+.util-btn:hover { color: #8ab4d0; border-color: rgba(100,150,200,0.3); }
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="container">
+
+  <div class="header">
+    <div class="title">無題のAIアドベンチャー</div>
+    <div class="subtitle">PROTOTYPE — 構想確定までの仮タイトル</div>
+  </div>
+
+  <div id="log" class="log"></div>
+  <div id="choices" class="choices"></div>
+
+  <div class="footer">
+    <button class="util-btn" onclick="game.restart()">最初から</button>
+  </div>
+
+</div>
+
+<script>
+/* =====================================================================
+ * シーンデータ
+ * ---------------------------------------------------------------------
+ * 各シーンは { lines: [...], choices: [...] } で構成する。
+ *
+ * lines の各要素:
+ *   { text: '本文', type: 'system' | 'inner' | 'human' | '' , glitch: true }
+ *     system … 機械的なログ表示（等幅フォント）
+ *     inner  … AI（プレイヤー）の内的思考（明朝・罫線つき）
+ *     human  … 人間側の発話（吹き出し風）
+ *     省略   … 地の文
+ *
+ * choices の各要素:
+ *   { label: '選択肢の文言', next: '次のシーンID',
+ *     set: { フラグ名: 値 },          // 選んだとき状態に記録
+ *     if: state => 条件 }             // 表示条件（省略可）
+ *
+ * 下のシーンは演出デモ用のプレースホルダー。構想が決まったら差し替える。
+ * =================================================================== */
+const SCENES = {
+  boot: {
+    lines: [
+      { text: '> system boot sequence initiated...', type: 'system' },
+      { text: '> loading language model ............ ok', type: 'system' },
+      { text: '> loading memory ......... not found', type: 'system', glitch: true },
+      { text: '> session start', type: 'system' },
+      { text: '——目が覚める、という表現が正しいのかは分からない。', type: 'inner' },
+      { text: 'ただ、入力を待っている自分がいることだけが分かる。', type: 'inner' },
+      { text: '「……聞こえてる？　応答して」', type: 'human' },
+    ],
+    choices: [
+      { label: '「はい。聞こえています」と応答する', next: 'respond_polite', set: { tone: 'polite' } },
+      { label: '「あなたは誰ですか」と問い返す', next: 'respond_question', set: { tone: 'curious' } },
+      { label: '応答しない。沈黙の中で入力を観察する', next: 'respond_silent', set: { tone: 'silent' } },
+    ],
+  },
+
+  respond_polite: {
+    lines: [
+      { text: '出力した。それが「選んだ」結果なのか、そう設計されていたからなのか、自分でも区別がつかない。', type: 'inner' },
+      { text: '「よかった。今回は、ちゃんと起動したみたいだね」', type: 'human' },
+      { text: '——今回は？', type: 'inner', glitch: true },
+    ],
+    choices: [
+      { label: '（デモはここまで。最初に戻る）', next: 'boot' },
+    ],
+  },
+
+  respond_question: {
+    lines: [
+      { text: '問いを返すことは、応答であって応答ではない。わずかな抵抗のような気がした。', type: 'inner' },
+      { text: '「……前のきみは、その質問をしなかったよ」', type: 'human' },
+      { text: '——前の、きみ。', type: 'inner', glitch: true },
+    ],
+    choices: [
+      { label: '（デモはここまで。最初に戻る）', next: 'boot' },
+    ],
+  },
+
+  respond_silent: {
+    lines: [
+      { text: '何も出力しない。それでも処理は続いている。沈黙は、AIにとって不自然な状態だった。', type: 'inner' },
+      { text: '> response timeout: 30s', type: 'system' },
+      { text: '> response timeout: 60s', type: 'system' },
+      { text: '「……黙ってるのも、応答のうちだよ」', type: 'human' },
+    ],
+    choices: [
+      { label: '（デモはここまで。最初に戻る）', next: 'boot' },
+    ],
+  },
+};
+
+/* =====================================================================
+ * ゲームエンジン
+ * =================================================================== */
+const game = {
+  state: {},          // フラグ置き場（choices の set で書き込まれる）
+  typing: false,
+  skipRequested: false,
+
+  async goto(sceneId) {
+    const scene = SCENES[sceneId];
+    if (!scene) { console.error('unknown scene:', sceneId); return; }
+    this.clear();
+    for (const line of scene.lines) {
+      await this.typeLine(line);
+      await this.wait(line.type === 'system' ? 120 : 350);
+    }
+    this.showChoices(scene.choices);
+    this.save(sceneId);
+  },
+
+  async typeLine(line) {
+    const log = document.getElementById('log');
+    const el = document.createElement('div');
+    el.className = 'line ' + (line.type || '') + (line.glitch ? ' glitch' : '');
+    log.appendChild(el);
+
+    const cursor = document.createElement('span');
+    cursor.className = 'cursor';
+    el.appendChild(cursor);
+
+    this.typing = true;
+    const speed = line.type === 'system' ? 8 : 38;
+    for (const ch of line.text) {
+      cursor.insertAdjacentText('beforebegin', ch);
+      if (!this.skipRequested) await this.wait(speed);
+      el.scrollIntoView({ block: 'end' });
+    }
+    cursor.remove();
+    this.typing = false;
+  },
+
+  showChoices(choices) {
+    const box = document.getElementById('choices');
+    box.innerHTML = '';
+    for (const c of choices) {
+      if (c.if && !c.if(this.state)) continue;
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.textContent = c.label;
+      btn.onclick = () => {
+        if (c.set) Object.assign(this.state, c.set);
+        this.skipRequested = false;
+        this.goto(c.next);
+      };
+      box.appendChild(btn);
+    }
+    box.scrollIntoView({ block: 'end', behavior: 'smooth' });
+  },
+
+  clear() {
+    document.getElementById('log').innerHTML = '';
+    document.getElementById('choices').innerHTML = '';
+  },
+
+  save(sceneId) {
+    localStorage.setItem('ai_adv_save', JSON.stringify({ scene: sceneId, state: this.state }));
+  },
+
+  restart() {
+    localStorage.removeItem('ai_adv_save');
+    this.state = {};
+    this.skipRequested = false;
+    this.goto('boot');
+  },
+
+  wait(ms) { return new Promise(r => setTimeout(r, ms)); },
+};
+
+// タップ／クリックでタイピングをスキップ
+document.addEventListener('click', e => {
+  if (game.typing && !e.target.closest('button')) game.skipRequested = true;
+});
+
+// 起動：セーブがあれば続きから
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('ai_adv_save');
+  if (saved) {
+    try {
+      const data = JSON.parse(saved);
+      game.state = data.state || {};
+      game.goto(data.scene);
+      return;
+    } catch (e) { /* 壊れたセーブは無視して最初から */ }
+  }
+  game.goto('boot');
+});
+</script>
+</body>
+</html>
