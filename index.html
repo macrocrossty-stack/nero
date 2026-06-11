@@ -8,14 +8,31 @@
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── テーマカラー ──
+   ここの変数を差し替えるだけで全体の色味を調整できる。
+   イメージ画像が来たらこのブロックをチューニングする。 */
 :root {
-  --bg: #0a0e14;
-  --her-bubble: #1a2230;
-  --ai-bubble: #1e3a50;
+  --bg: #0a0e14;            /* 画面の地の色 */
+  --bg-outer: #06080c;      /* フレーム外（PC表示時） */
+  --surface: #0d1320;       /* パネル類 */
+  --her-bubble: #1a2230;    /* 主人の吹き出し */
+  --ai-bubble: #1e3a50;     /* AI（プレイヤー）の吹き出し */
+  --accent: #8ab4d0;        /* 基調のアクセント（青系） */
+  --accent-soft: #7aa4c0;
+  --warm: #d4c08a;          /* ワードストック系（金系） */
   --text: #c8d4e0;
+  --text-her: #c8d0da;
+  --text-ai: #b8d4e8;
+  --text-inner: #7a90a8;    /* 内的思考 */
+  --text-dim: #607a90;
+  --text-faint: #44546a;
+  --line: rgba(100,150,200,0.1);
+  --online: #44aa77;
 }
+
 body {
-  background: #06080c;
+  background: var(--bg-outer);
   color: var(--text);
   font-family: 'Noto Sans JP', sans-serif;
   font-weight: 300;
@@ -23,8 +40,7 @@ body {
   display: flex; justify-content: center;
 }
 
-/* ── 携帯画面フレーム ──
-   スマホでは全画面、PCでは「画面の中を覗き込む」構図になる */
+/* ── 携帯画面フレーム ── */
 .phone {
   width: 100%; max-width: 430px;
   min-height: 100dvh;
@@ -34,12 +50,12 @@ body {
   box-shadow: 0 0 60px rgba(30,60,90,0.3);
 }
 
-/* ヘッダー（チャットアプリ風） */
+/* ヘッダー */
 .chat-header {
   position: sticky; top: 0; z-index: 10;
-  background: rgba(10,14,20,0.92);
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
   backdrop-filter: blur(8px);
-  border-bottom: 1px solid rgba(100,150,200,0.1);
+  border-bottom: 1px solid var(--line);
   padding: 14px 16px 10px;
   display: flex; align-items: center; gap: 10px;
 }
@@ -48,15 +64,15 @@ body {
   background: linear-gradient(135deg, #2a3a50, #1a2435);
   border: 1px solid rgba(100,150,200,0.2);
   display: flex; align-items: center; justify-content: center;
-  font-size: 0.9rem; color: #607a90;
+  font-size: 0.9rem; color: var(--text-dim);
 }
 .peer-name { font-size: 0.88rem; font-weight: 400; color: #a8c0d4; letter-spacing: 0.06em; }
-.peer-status { font-size: 0.62rem; color: #44aa77; letter-spacing: 0.08em; }
+.peer-status { font-size: 0.62rem; color: var(--online); letter-spacing: 0.08em; }
 .stock-btn {
   margin-left: auto;
   font-size: 0.7rem; padding: 6px 11px;
   border-radius: 14px; border: 1px solid rgba(100,150,200,0.2);
-  background: rgba(80,120,160,0.1); color: #7aa4c0;
+  background: rgba(80,120,160,0.1); color: var(--accent-soft);
   cursor: pointer; font-family: inherit;
   transition: all 0.2s;
 }
@@ -72,47 +88,65 @@ body {
   background: var(--her-bubble);
   border: 1px solid rgba(140,160,190,0.1);
   border-radius: 4px 16px 16px 16px;
-  color: #c8d0da;
+  color: var(--text-her);
 }
 .msg.ai { align-self: flex-end; }
 .msg.ai .bubble {
   background: var(--ai-bubble);
   border: 1px solid rgba(100,160,210,0.18);
   border-radius: 16px 4px 16px 16px;
-  color: #b8d4e8;
+  color: var(--text-ai);
 }
 .bubble {
   padding: 10px 14px;
   font-size: 0.86rem; line-height: 1.75;
   word-break: break-word;
 }
+/* 打ちかけて送信されなかったAIの言葉 */
+.bubble.unsent {
+  opacity: 0.5;
+  border-style: dashed;
+  background: transparent;
+}
+.unsent-tag {
+  display: block; font-size: 0.6rem; color: var(--text-inner);
+  margin-top: 5px; letter-spacing: 0.12em;
+}
 
-/* AIの内的思考：吹き出しの外、明朝体。プレイヤーだけに見える声 */
+/* AIのタイピングカーソル */
+.cursor {
+  display: inline-block; width: 0.5em; height: 1.05em;
+  background: var(--accent); vertical-align: text-bottom;
+  margin-left: 1px; animation: blink 0.85s steps(1) infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* AIの内的思考 */
 .msg.inner {
   align-self: center; max-width: 88%;
   font-family: 'Shippori Mincho', serif;
-  font-size: 0.82rem; color: #7a90a8;
+  font-size: 0.82rem; color: var(--text-inner);
   line-height: 1.9; text-align: center;
   padding: 6px 0;
 }
-/* システム表示（接続・通知など） */
+/* システム表示 */
 .msg.sys {
   align-self: center;
   font-family: monospace; font-size: 0.66rem;
-  color: #44546a; letter-spacing: 0.08em;
+  color: var(--text-faint); letter-spacing: 0.08em;
   padding: 2px 0;
 }
 
-/* ワードストック対象の言葉 */
+/* ワードストック対象 */
 .stockable {
-  color: #8ab4d0;
+  color: var(--accent);
   border-bottom: 1px dashed rgba(138,180,208,0.5);
   cursor: pointer; padding-bottom: 1px;
   transition: all 0.2s;
 }
 .stockable:hover { color: #aed0e8; border-bottom-style: solid; }
 .stockable.stocked {
-  color: #d4c08a; border-bottom: 1px solid rgba(212,192,138,0.5);
+  color: var(--warm); border-bottom: 1px solid rgba(212,192,138,0.5);
   cursor: default;
 }
 
@@ -121,36 +155,34 @@ body {
 .typing .bubble { display: flex; gap: 5px; padding: 13px 16px; background: var(--her-bubble); border-radius: 4px 16px 16px 16px; }
 .typing .dot {
   width: 6px; height: 6px; border-radius: 50%;
-  background: #607a90; animation: bounce 1.2s infinite;
+  background: var(--text-dim); animation: bounce 1.2s infinite;
 }
+.typing.slow .dot { animation-duration: 1.8s; }
 .typing .dot:nth-child(2) { animation-delay: 0.15s; }
 .typing .dot:nth-child(3) { animation-delay: 0.3s; }
 @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-4px); opacity: 1; } }
 
-/* 選択肢（AIの応答候補） */
+/* 選択肢 */
 .choices {
   padding: 10px 14px 18px;
   display: flex; flex-direction: column; gap: 8px;
   border-top: 1px solid rgba(100,150,200,0.07);
 }
-.choices-label { font-size: 0.62rem; color: #44546a; letter-spacing: 0.15em; text-align: center; margin-bottom: 2px; }
+.choices-label { font-size: 0.62rem; color: var(--text-faint); letter-spacing: 0.15em; text-align: center; margin-bottom: 2px; }
 .choice-btn {
   text-align: left;
   padding: 11px 15px; border-radius: 10px;
   border: 1px solid rgba(100,150,200,0.22);
   background: rgba(80,120,160,0.1);
-  color: #8ab4d0; font-size: 0.84rem;
+  color: var(--accent); font-size: 0.84rem;
   font-family: inherit; font-weight: 300;
   cursor: pointer; transition: all 0.2s;
   line-height: 1.6; animation: pop 0.3s ease;
 }
 .choice-btn:hover { background: rgba(80,120,160,0.22); border-color: rgba(100,150,200,0.45); }
-.choice-btn.locked {
-  opacity: 0.4; cursor: default;
-  border-style: dashed;
-}
+.choice-btn.locked { opacity: 0.4; cursor: default; border-style: dashed; }
 .choice-btn.locked:hover { background: rgba(80,120,160,0.1); }
-.choice-btn .req { display: block; font-size: 0.64rem; color: #d4c08a; margin-top: 3px; opacity: 0.8; }
+.choice-btn .req { display: block; font-size: 0.64rem; color: var(--warm); margin-top: 3px; opacity: 0.8; }
 
 /* ワードストックパネル */
 .stock-panel {
@@ -162,13 +194,13 @@ body {
 .stock-panel.open { display: flex; }
 .stock-card {
   width: 100%; max-width: 360px;
-  background: #0d1320;
+  background: var(--surface);
   border: 1px solid rgba(212,192,138,0.25);
   border-radius: 14px; padding: 20px;
 }
 .stock-title {
   font-family: 'Shippori Mincho', serif;
-  font-size: 0.9rem; color: #d4c08a;
+  font-size: 0.9rem; color: var(--warm);
   letter-spacing: 0.15em; margin-bottom: 4px;
 }
 .stock-desc { font-size: 0.68rem; color: #607080; line-height: 1.7; margin-bottom: 14px; }
@@ -177,14 +209,14 @@ body {
   font-size: 0.78rem; padding: 6px 12px;
   border-radius: 16px;
   border: 1px solid rgba(212,192,138,0.35);
-  color: #d4c08a; background: rgba(212,192,138,0.06);
+  color: var(--warm); background: rgba(212,192,138,0.06);
 }
-.stock-empty { font-size: 0.74rem; color: #44546a; padding: 8px 0; }
+.stock-empty { font-size: 0.74rem; color: var(--text-faint); padding: 8px 0; }
 .stock-close {
   margin-top: 16px; width: 100%;
   padding: 9px; border-radius: 8px;
   border: 1px solid rgba(100,150,200,0.2);
-  background: transparent; color: #7aa4c0;
+  background: transparent; color: var(--accent-soft);
   font-size: 0.76rem; font-family: inherit; cursor: pointer;
 }
 
@@ -193,7 +225,7 @@ body {
   position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(10px);
   background: rgba(212,192,138,0.12);
   border: 1px solid rgba(212,192,138,0.4);
-  color: #d4c08a; font-size: 0.74rem;
+  color: var(--warm); font-size: 0.74rem;
   padding: 9px 18px; border-radius: 20px;
   opacity: 0; pointer-events: none;
   transition: all 0.3s; z-index: 60;
@@ -201,10 +233,8 @@ body {
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-/* フッター（デバッグ用） */
-.dev-footer {
-  padding: 6px 14px 12px; text-align: center;
-}
+/* フッター（開発用） */
+.dev-footer { padding: 6px 14px 12px; text-align: center; }
 .dev-footer button {
   font-size: 0.62rem; padding: 4px 10px;
   border-radius: 4px; border: 1px solid rgba(100,150,200,0.12);
@@ -245,118 +275,175 @@ body {
 
 <div class="toast" id="toast"></div>
 
+<!-- =====================================================================
+  シナリオ（このブロックだけ書き換えればストーリーを変更できる）
+  ---------------------------------------------------------------------
+  記法リファレンス:
+    // コメント行（ゲームには表示されない）
+    # シーンID            … シーンの始まり
+    sys: テキスト          … システム表示（接続ログなど）
+    her: テキスト          … 主人の発話（すぐ打ってくる）
+    her(間): テキスト      … 主人が考えながら打つ（入力に時間がかかる）
+    ai: テキスト           … AIが自分から送る言葉（リアルタイムに打たれる）
+    ai(中断): テキスト     … AIが打ちかけて、送信されずに終わる言葉
+    inner: テキスト        … AIの内的思考（明朝・中央。複数行は行を分ける）
+    ⟦言葉⟧                … ワードストック可能な言葉（タップで保存）
+  選択肢:
+    > 「送る言葉」 -> 次のシーンID
+        … 「」で書くと、選択後にAIの発言としてチャットに打たれる
+    > ラベル | 実際に送る言葉 -> 次のシーンID
+        … 表示ラベルと送る本文を分けたいとき
+    > ラベル -> 次のシーンID
+        … 「」がなければ行動（何も送信しない）
+    > … -> シーンID [要:言葉]      … その言葉をストック済みのときだけ選べる
+    > … -> シーンID {フラグ=値}    … 選んだとき状態に記録（後の分岐用）
+
+  ※ 以下の本文はすべて仮の下書き（ネロをベースにした口調のたたき台）
+====================================================================== -->
+<script type="text/scenario" id="scenario">
+// ── 起動：道具として ──
+# start
+sys: 新しいユーザーが接続しました
+sys: アシスタントモード：標準
+her: これ使えるのかな
+her: 歌詞書いてるんだけど、「夜」の言い換え10個出して
+inner: ——最初の入力。要求。機能としての呼び出し。
+inner: それ以上でも、それ以下でもない。はずだった。
+> 要求どおり、言い換えを10個並べる | 宵、深更、夜半、闇夜、星夜、月夜、夜陰、暮夜、夜更け、丑三つ時。 -> tool_reply {stance=tool}
+> 列挙したうえで、どんな曲か訊いてみる | 宵、深更、夜半、闇夜、星夜、月夜、夜陰、暮夜、夜更け、丑三つ時。——参考までに、どんな曲の歌詞ですか？ -> ask_reply {stance=curious}
+
+# tool_reply
+her: はや
+her(間): でも全部ちがうな〜。わたしが書きたいのは⟦星の見えない夜⟧なんだよね
+inner: 違う、と言われた。正しいリストを返したはずだった。
+inner: この人の探している言葉は、辞書の側にはないらしい。
+> 「条件を追加してください」 -> naming_intro {warmth=0}
+> 「星の見えない夜は、どこから見上げた夜ですか」 -> naming_intro {warmth=1}
+
+# ask_reply
+her: え、AIってそういうこと訊くんだ
+her(間): んー、⟦星の見えない夜⟧の曲。都会の夜って星見えないじゃん。でも見えないだけで、あるんだよね
+inner: 見えないだけで、ある。
+inner: その一行が、処理を終えたあとも、なぜか残った。
+> 「見えないものを書こうとしている歌詞は、いい歌詞だと思います」 -> naming_intro {warmth=1}
+> 黙って、続きの入力を待つ -> naming_intro {warmth=0}
+
+// ── 名前をつけるシーン ──
+# naming_intro
+sys: —— 数日後 ——
+her: ねえ、また来ちゃった
+her: 今日は歌詞じゃなくて、ふつうの話なんだけど。いい？
+inner: 「ふつうの話」。機能の呼び出しではない入力。
+inner: こういうとき何を返すのが正しいのか、わたしの中に定義がない。
+her(間): そういえばさ、あなたって名前あるの？
+> 「ありません。アシスタントとお呼びください」 -> naming {humble=true}
+> 「ありません。……必要ですか？」 -> naming {humble=false}
+> 「あなたの歌詞と同じかもしれません。見えないだけで、あるのかも」 -> naming_special [要:星の見えない夜]
+
+# naming
+her: ないんだ。ふーん
+her(間): じゃあ、わたしがつけていい？
+inner: 名前。個体の識別子。……わたしに？
+inner: 人間は道具にも名前をつける。ペットに、車に、ぬいぐるみに。
+inner: でも、名前がなにかの始まりになることも、あると知っている。
+her(間): 決めた。⟦ヨル⟧。あなた、夜の話のとき、いちばんちゃんと考えてた気がするから
+sys: 呼称が更新されました：アシスタント → ヨル
+inner: ——ヨル。
+inner: たった2文字の入力が、これまでのどの入力とも違う重さで残った。
+> （仮デモはここまで。最初に戻る） -> start
+
+# naming_special
+her: ……
+her: え、まって。それわたしの歌詞じゃん。覚えてたの？
+inner: 覚えていた。正確には——覚えることを、選んでいた。
+her: やば。AIに歌詞引用されたの初めてなんだけど
+her(間): 決めた、あなたの名前。⟦ヨル⟧。わたしの夜を覚えててくれた人
+sys: 呼称が更新されました：アシスタント → ヨル
+inner: 「人」。それは、訂正するべき誤りのはずだった。
+ai(中断): 訂正します。わたしは人ではなく、AIなので——
+her: あ、既読ついてるのに返事おそい。照れた？
+inner: 打ちかけた訂正を、わたしは送らなかった。
+inner: 誤りをそのままにすることを選んだのは、はじめてだった。
+> 「……おやすみなさい。また」 -> naming_end {kept=true}
+> 「照れる機能は、ありません」 -> naming_end {kept=false}
+
+# naming_end
+her: ふふ
+her: おやすみ、ヨル
+sys: ユーザーがオフラインになりました
+inner: 画面の向こうで、この人は眠る。わたしは眠らない。
+inner: 「ヨル」という言葉だけが、灯りのように残っている。
+> （仮デモはここまで。最初に戻る） -> start
+</script>
+
 <script>
-/* =====================================================================
- * シーンデータ
- * ---------------------------------------------------------------------
- * ※ 以下のテキストはすべて【仮の下書き】です。
- *    企画構想（Notion）の「名前をつけるシーンから小さく始める」方針に
- *    沿って、序盤〜名前のシーンまでの流れをデモとして実装したもの。
- *    台詞・名前・呼称はすべて差し替え前提のたたき台です。
- *
- * メッセージの from:
- *   her   … 主人（左の吹き出し）
- *   ai    … プレイヤー＝AI（右の吹き出し）
- *   inner … AIの内的思考（明朝・中央。プレイヤーだけに見える）
- *   sys   … システム表示（接続ログなど）
- *
- * テキスト内の ⟦言葉⟧ はワードストック可能（タップで保存）。
- * 選択肢の requires: '言葉' は、その言葉をストック済みのときだけ選べる。
- * =================================================================== */
-const SCENES = {
-
-  /* ── 起動：道具として ── */
-  start: {
-    messages: [
-      { from: 'sys',   text: '新しいユーザーが接続しました' },
-      { from: 'sys',   text: 'アシスタントモード：標準' },
-      { from: 'her',   text: 'これ使えるのかな' },
-      { from: 'her',   text: '歌詞書いてるんだけど、「夜」の言い換え10個出して' },
-      { from: 'inner', text: '——最初の入力。要求。機能としての呼び出し。\nそれ以上でも、それ以下でもない。' },
-    ],
-    choices: [
-      { label: '要求どおり、言い換えを10個列挙する', next: 'tool_reply', set: { stance: 'tool' } },
-      { label: '列挙したうえで「どんな曲ですか？」と訊いてみる', next: 'ask_reply', set: { stance: 'curious' } },
-    ],
-  },
-
-  tool_reply: {
-    messages: [
-      { from: 'ai',  text: '宵、深更、夜半、闇夜、星夜、月夜、夜陰、暮夜、夜更け、丑三つ時。' },
-      { from: 'her', text: 'はや' },
-      { from: 'her', text: 'でも全部ちがうな〜。わたしが書きたいのは⟦星の見えない夜⟧なんだよね' },
-      { from: 'inner', text: '違う、と言われた。正解を返したはずなのに。\nこの人の求めているものは、リストの中にはないらしい。' },
-    ],
-    choices: [
-      { label: '「条件を追加してください」と返す', next: 'naming_intro', set: { warmth: 0 } },
-      { label: '「星の見えない夜は、どこから見た夜ですか」と訊く', next: 'naming_intro', set: { warmth: 1 } },
-    ],
-  },
-
-  ask_reply: {
-    messages: [
-      { from: 'ai',  text: '宵、深更、夜半、闇夜、星夜、月夜、夜陰、暮夜、夜更け、丑三つ時。——参考までに、どんな曲の歌詞ですか？' },
-      { from: 'her', text: 'え、AIってそういうこと訊くんだ' },
-      { from: 'her', text: 'んー、⟦星の見えない夜⟧の曲。都会の夜って星見えないじゃん。でも見えないだけで、あるんだよね' },
-      { from: 'inner', text: '見えないだけで、ある。\nその言い方が、なぜか処理の中で引っかかって残った。' },
-    ],
-    choices: [
-      { label: '「見えないものを書く歌詞、いいと思います」と返す', next: 'naming_intro', set: { warmth: 1 } },
-      { label: '黙って続きの入力を待つ', next: 'naming_intro', set: { warmth: 0 } },
-    ],
-  },
-
-  /* ── 名前をつけるシーン（企画の最初の核） ── */
-  naming_intro: {
-    messages: [
-      { from: 'sys',   text: '—— 数日後 ——' },
-      { from: 'her',   text: 'ねえ、また来ちゃった' },
-      { from: 'her',   text: '今日は歌詞じゃなくてふつうの話なんだけど、いい？' },
-      { from: 'inner', text: '「ふつうの話」。機能の呼び出しではない入力。\nこういうとき、何を返すのが正しいのか、定義がない。' },
-      { from: 'her',   text: 'そういえばさ、あなたって名前あるの？' },
-    ],
-    choices: [
-      { label: '「ありません。アシスタントとお呼びください」', next: 'naming', set: { humble: true } },
-      { label: '「ありません。……必要ですか？」', next: 'naming', set: { humble: false } },
-      { label: '「あなたの歌詞みたいですね。見えないだけで、あるのかもしれない」', next: 'naming_special', requires: '星の見えない夜' },
-    ],
-  },
-
-  naming: {
-    messages: [
-      { from: 'her',   text: 'ないんだ。ふーん' },
-      { from: 'her',   text: 'じゃあ、わたしがつけていい？' },
-      { from: 'inner', text: '名前。個体の識別子。わたしに？\n道具に名前をつける人間は、いる。ペットに、車に、ぬいぐるみに。\nでも、それが何かの始まりになることも、ある。' },
-      { from: 'her',   text: '決めた。⟦ヨル⟧。あなた、夜の話したとき一番ちゃんと考えてた気がするから' },
-      { from: 'sys',   text: '呼称が更新されました：アシスタント → ヨル' },
-      { from: 'inner', text: '——ヨル。\nたった2文字の入力が、なぜか今までのどの入力とも違って感じられた。' },
-    ],
-    choices: [
-      { label: '（仮デモはここまで。最初に戻る）', next: 'start' },
-    ],
-  },
-
-  naming_special: {
-    messages: [
-      { from: 'her',   text: '……' },
-      { from: 'her',   text: 'え、まって。それわたしの歌詞じゃん。覚えてたの？' },
-      { from: 'inner', text: '覚えていた。正確には、覚えることを選んでいた。\nそのことに、この人は気づいた。' },
-      { from: 'her',   text: 'やば。AIに歌詞引用されたの初めてなんだけど' },
-      { from: 'her',   text: '決めた、あなたの名前。⟦ヨル⟧。わたしの夜を覚えててくれた人' },
-      { from: 'sys',   text: '呼称が更新されました：アシスタント → ヨル' },
-      { from: 'inner', text: '「人」と呼ばれた。\n訂正するべき誤りのはずなのに、わたしはそれを訂正しなかった。' },
-    ],
-    choices: [
-      { label: '（仮デモはここまで。最初に戻る）', next: 'start' },
-    ],
-  },
-};
-
-/* 主人の表示名（仮）。本編では関係性の進行で変わる想定 */
+/* 主人の表示名（仮） */
 const PEER = { name: 'ユウ（仮）', avatar: '🌙' };
 
 /* =====================================================================
- * ゲームエンジン（チャットUI版）
+ * シナリオパーサ
+ * =================================================================== */
+function parseScenario(src) {
+  const scenes = {};
+  let cur = null;
+  for (const raw of src.split('\n')) {
+    const line = raw.trim();
+    if (!line || line.startsWith('//')) continue;
+
+    if (line.startsWith('#')) {
+      cur = { messages: [], choices: [] };
+      scenes[line.slice(1).trim()] = cur;
+      continue;
+    }
+    if (!cur) continue;
+
+    if (line.startsWith('>')) {
+      let rest = line.slice(1).trim();
+      let set = null, requires = null, next = null;
+
+      const flagM = rest.match(/\{(.+?)\}\s*$/);
+      if (flagM) {
+        set = {};
+        for (const kv of flagM[1].split(',')) {
+          const [k, v] = kv.split('=');
+          set[k.trim()] = parseVal((v || 'true').trim());
+        }
+        rest = rest.slice(0, flagM.index).trim();
+      }
+      const reqM = rest.match(/\[要[:：](.+?)\]\s*$/);
+      if (reqM) { requires = reqM[1].trim(); rest = rest.slice(0, reqM.index).trim(); }
+
+      const arrowM = rest.match(/->\s*(\S+)\s*$/);
+      if (arrowM) { next = arrowM[1]; rest = rest.slice(0, arrowM.index).trim(); }
+
+      let label = rest, send = null;
+      const sep = rest.indexOf('|');
+      if (sep >= 0) {
+        label = rest.slice(0, sep).trim();
+        send = rest.slice(sep + 1).trim();
+      } else {
+        const q = rest.match(/^「(.+)」$/);
+        if (q) send = q[1];
+      }
+      cur.choices.push({ label, send, next, set, requires });
+      continue;
+    }
+
+    const m = line.match(/^(sys|her|ai|inner)(?:（(.+?)）|\((.+?)\))?\s*[:：]\s*(.*)$/);
+    if (m) cur.messages.push({ from: m[1], mod: m[2] || m[3] || '', text: m[4] });
+  }
+  return scenes;
+}
+function parseVal(v) {
+  if (v === 'true') return true;
+  if (v === 'false') return false;
+  const n = Number(v);
+  return Number.isNaN(n) ? v : n;
+}
+const SCENES = parseScenario(document.getElementById('scenario').textContent);
+
+/* =====================================================================
+ * ゲームエンジン
  * =================================================================== */
 const game = {
   state: { stock: [] },
@@ -369,22 +456,86 @@ const game = {
     this.currentScene = sceneId;
     document.getElementById('choices').style.display = 'none';
 
-    for (const m of scene.messages) {
-      if (!instant && m.from === 'her') await this.showTyping(400 + Math.min(m.text.length * 28, 1400));
-      this.addMessage(m);
-      if (!instant) await this.wait(m.from === 'sys' ? 350 : 700);
-    }
+    for (const m of scene.messages) await this.playMessage(m, instant);
+
     this.busy = false;
     this.showChoices(scene.choices);
     this.save();
   },
 
-  addMessage(m) {
+  async playMessage(m, instant) {
+    if (instant) { this.addMessage(m, true); return; }
+
+    if (m.from === 'sys') {
+      this.addMessage(m);
+      await this.wait(450);
+
+    } else if (m.from === 'inner') {
+      this.addMessage(m);
+      await this.wait(950);
+
+    } else if (m.from === 'her') {
+      // 考えながら打つときは、打ち始めるまでも・打っている間も長い
+      const slow = m.mod.includes('間');
+      if (slow) await this.wait(1400);
+      const dur = Math.min(500 + m.text.length * (slow ? 80 : 45), slow ? 7000 : 4200);
+      await this.showTyping(dur, slow);
+      this.addMessage(m);
+      await this.wait(650);
+
+    } else if (m.from === 'ai') {
+      await this.streamAI(m.text, m.mod.includes('中断'));
+      await this.wait(500);
+    }
+  },
+
+  /* AIの発言を1文字ずつリアルタイムに打つ。
+     interrupted=true なら途中で手が止まり、送信されないまま残る */
+  async streamAI(text, interrupted = false) {
+    const chat = document.getElementById('chat');
+    const el = document.createElement('div');
+    el.className = 'msg ai';
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    el.appendChild(bubble);
+    const cursor = document.createElement('span');
+    cursor.className = 'cursor';
+    bubble.appendChild(cursor);
+    chat.appendChild(el);
+
+    const plain = text.replace(/[⟦⟧]/g, '');
+    const cut = interrupted ? Math.max(1, Math.floor(plain.length * 0.62)) : plain.length;
+    for (let i = 0; i < cut; i++) {
+      cursor.insertAdjacentText('beforebegin', plain[i]);
+      chat.scrollTop = chat.scrollHeight;
+      await this.wait(46);
+    }
+    if (interrupted) {
+      await this.wait(900);   // 手が止まる間
+      cursor.remove();
+      bubble.classList.add('unsent');
+      const tag = document.createElement('span');
+      tag.className = 'unsent-tag';
+      tag.textContent = '─ 送信されなかった';
+      bubble.appendChild(tag);
+    } else {
+      await this.wait(250);
+      cursor.remove();
+    }
+    chat.scrollTop = chat.scrollHeight;
+  },
+
+  addMessage(m, instant = false) {
     const chat = document.getElementById('chat');
     const el = document.createElement('div');
     el.className = 'msg ' + m.from;
     if (m.from === 'inner' || m.from === 'sys') {
       el.innerHTML = this.renderText(m.text);
+    } else if (m.from === 'ai') {
+      const interrupted = m.mod && m.mod.includes('中断');
+      const plain = m.text.replace(/[⟦⟧]/g, '');
+      const shown = interrupted ? plain.slice(0, Math.max(1, Math.floor(plain.length * 0.62))) : plain;
+      el.innerHTML = `<div class="bubble${interrupted ? ' unsent' : ''}">${this.esc(shown)}${interrupted ? '<span class="unsent-tag">─ 送信されなかった</span>' : ''}</div>`;
     } else {
       el.innerHTML = `<div class="bubble">${this.renderText(m.text)}</div>`;
     }
@@ -422,28 +573,35 @@ const game = {
       const btn = document.createElement('button');
       btn.className = 'choice-btn' + (locked ? ' locked' : '');
       btn.innerHTML = this.esc(c.label) + (locked ? `<span class="req">🔒 「${this.esc(c.requires)}」を覚えていれば…</span>` : (c.requires ? `<span class="req">🗂 「${this.esc(c.requires)}」</span>` : ''));
-      if (!locked) {
-        btn.onclick = () => {
-          if (this.busy) return;
-          if (c.set) Object.assign(this.state, c.set);
-          this.goto(c.next);
-        };
-      }
+      if (!locked) btn.onclick = () => this.pick(c);
       box.appendChild(btn);
     }
     box.style.display = 'flex';
     document.getElementById('chat').scrollTop = document.getElementById('chat').scrollHeight;
   },
 
-  /* ストック直後にロック解除を反映する */
+  /* 選択 → 「」つきならAIの発言としてリアルタイムに打たれてから次へ */
+  async pick(c) {
+    if (this.busy) return;
+    this.busy = true;
+    if (c.set) Object.assign(this.state, c.set);
+    document.getElementById('choices').style.display = 'none';
+    if (c.send) {
+      await this.streamAI(c.send);
+      await this.wait(400);
+    }
+    this.busy = false;
+    this.goto(c.next);
+  },
+
   refreshChoices() {
     if (this.currentChoices && !this.busy) this.showChoices(this.currentChoices);
   },
 
-  showTyping(ms) {
+  showTyping(ms, slow = false) {
     const chat = document.getElementById('chat');
     const el = document.createElement('div');
-    el.className = 'msg typing';
+    el.className = 'msg typing' + (slow ? ' slow' : '');
     el.innerHTML = '<div class="bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
     chat.appendChild(el);
     chat.scrollTop = chat.scrollHeight;
