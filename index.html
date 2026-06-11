@@ -13,6 +13,8 @@
    cream : 乳白色に灯るレトロ画面（温かみ＋高コントラスト）… 既定
    amber : 琥珀色のレトロ端末（ブラウン管/Pip-Boy系）
    paper : 紙色のレトロUI（NieR系）
+   dos   : DOS画面（黒地に白のテキスト画面・全部ドット文字）
+   os95  : 90年代OS風（グレーのウィンドウ＋紺のタイトルバー）
    フッターの「テーマ切替」で比較できる。
    色はすべてここの変数で完結している。 */
 :root, [data-theme="cream"] {
@@ -108,6 +110,128 @@
   --vignette: none;
   --phone-shadow: rgba(60,50,30,0.3);
   --bg-image: none;
+}
+/* DOS画面：黒地に白の文字 */
+[data-theme="dos"] {
+  --bg: #000000;
+  --bg-outer: #000000;
+  --surface: #0a0a0a;
+  --her-bubble: #000000;
+  --ai-bubble: #111111;
+  --accent: #e8e8e8;
+  --accent-soft: #c0c0c0;
+  --accent-bright: #ffffff;
+  --warm: #ffe14a;            /* DOSパレットの黄色 */
+  --text: #c8c8c8;
+  --text-bright: #ffffff;
+  --text-her: #d4d4d4;
+  --text-ai: #f0f0f0;
+  --text-inner: #8a8a8a;
+  --text-dim: #757575;
+  --text-faint: #555555;
+  --online: #55ff55;
+  --line: rgba(255,255,255,0.25);
+  --line-strong: rgba(255,255,255,0.45);
+  --btn-bg: rgba(255,255,255,0.05);
+  --btn-bg-hover: rgba(255,255,255,0.15);
+  --warm-line: rgba(255,225,74,0.55);
+  --warm-bg: rgba(255,225,74,0.08);
+  --overlay: rgba(0,0,0,0.8);
+  --glow: rgba(255,255,255,0.10);
+  --scanline: rgba(255,255,255,0.035);
+  --vignette: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.5) 100%);
+  --bg-image: none;
+  --phone-shadow: rgba(255,255,255,0.06);
+}
+/* 90年代OS風：グレーのウィンドウ＋紺のタイトルバー */
+[data-theme="os95"] {
+  --bg: #c0c0c0;
+  --bg-outer: #008080;        /* あのデスクトップの青緑 */
+  --surface: #c0c0c0;
+  --her-bubble: #ffffff;
+  --ai-bubble: #000080;       /* 選択色の紺 */
+  --accent: #000000;
+  --accent-soft: #222222;
+  --accent-bright: #000080;
+  --warm: #800000;
+  --text: #000000;
+  --text-bright: #ffffff;     /* タイトルバー文字 */
+  --text-her: #000000;
+  --text-ai: #ffffff;
+  --text-inner: #3a3a3a;
+  --text-dim: #5a5a5a;
+  --text-faint: #6e6e6e;
+  --online: #b8e8b8;
+  --line: rgba(0,0,0,0.3);
+  --line-strong: rgba(0,0,0,0.5);
+  --btn-bg: #c0c0c0;
+  --btn-bg-hover: #d4d0c8;
+  --warm-line: rgba(128,0,0,0.5);
+  --warm-bg: rgba(128,0,0,0.07);
+  --overlay: rgba(0,0,0,0.4);
+  --glow: transparent;
+  --scanline: transparent;
+  --vignette: none;
+  --bg-image: none;
+  --phone-shadow: rgba(0,0,0,0.45);
+}
+
+/* ── テーマ別の形の調整 ── */
+/* DOS: すべてドット文字・角ばった枠 */
+[data-theme="dos"] body,
+[data-theme="dos"] .choice-btn,
+[data-theme="dos"] .stock-btn,
+[data-theme="dos"] .stock-close,
+[data-theme="dos"] .msg.inner { font-family: 'DotGothic16', monospace; }
+[data-theme="dos"] .bubble,
+[data-theme="dos"] .typing .bubble,
+[data-theme="dos"] .choice-btn,
+[data-theme="dos"] .stock-btn,
+[data-theme="dos"] .stock-card,
+[data-theme="dos"] .stock-word,
+[data-theme="dos"] .stock-close,
+[data-theme="dos"] .toast { border-radius: 0; }
+
+/* 90年代OS: ドット文字・タイトルバー・立体ベベルのボタン */
+[data-theme="os95"] body,
+[data-theme="os95"] .choice-btn,
+[data-theme="os95"] .stock-btn,
+[data-theme="os95"] .stock-close { font-family: 'DotGothic16', monospace; }
+[data-theme="os95"] .bubble,
+[data-theme="os95"] .typing .bubble,
+[data-theme="os95"] .choice-btn,
+[data-theme="os95"] .stock-btn,
+[data-theme="os95"] .stock-card,
+[data-theme="os95"] .stock-word,
+[data-theme="os95"] .stock-close,
+[data-theme="os95"] .toast,
+[data-theme="os95"] .avatar { border-radius: 0; }
+[data-theme="os95"] .chat-header {
+  background: #000080;
+  backdrop-filter: none;
+  border-bottom: 2px solid #808080;
+}
+[data-theme="os95"] .peer-name { color: #ffffff; }
+[data-theme="os95"] .msg.her .bubble {
+  border: 1px solid #808080;
+  box-shadow: inset 1px 1px 2px rgba(0,0,0,0.25);
+}
+[data-theme="os95"] .msg.ai .bubble { border: 1px solid #000000; }
+[data-theme="os95"] .choice-btn,
+[data-theme="os95"] .stock-btn,
+[data-theme="os95"] .stock-close,
+[data-theme="os95"] .dev-footer button {
+  border: 1px solid #000000;
+  box-shadow: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #808080;
+  color: #000000;
+  background: #c0c0c0;
+}
+[data-theme="os95"] .choice-btn:hover,
+[data-theme="os95"] .stock-btn:hover { background: #d4d0c8; }
+[data-theme="os95"] .choice-btn:active { box-shadow: inset 1px 1px 0 #808080, inset -1px -1px 0 #ffffff; }
+[data-theme="os95"] .stock-card {
+  border: 1px solid #000000;
+  box-shadow: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #808080;
 }
 
 body {
@@ -374,7 +498,7 @@ body {
 
   <div class="dev-footer">
     <button onclick="game.restart()">最初からやり直す</button>
-    <button onclick="game.toggleTheme()">テーマ切替（乳白／琥珀／紙）</button>
+    <button onclick="game.toggleTheme()">テーマ切替（乳白／琥珀／紙／DOS／90s）</button>
   </div>
 
 </div>
@@ -733,7 +857,7 @@ const game = {
   },
 
   toggleTheme() {
-    const order = ['cream', 'amber', 'paper'];
+    const order = ['cream', 'amber', 'paper', 'dos', 'os95'];
     const cur = document.documentElement.dataset.theme || 'cream';
     const next = order[(order.indexOf(cur) + 1) % order.length];
     document.documentElement.dataset.theme = next;
