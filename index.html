@@ -226,6 +226,39 @@
 [data-theme="dos"] .stock-close,
 [data-theme="dos"] .toast { border-radius: 0; }
 
+/* DOS: 序盤はチャットアプリではなく「生の端末ログ」として表示する（実験中）
+   吹き出し・アバターをなくし、プロンプト付きの行が流れるだけの画面。
+   命名で night に切り替わると、通常のチャットUIに「なる」 */
+[data-theme="dos"] .avatar { display: none; }
+[data-theme="dos"] .peer-name {
+  font-family: 'DotGothic16', monospace;
+  font-size: 0.74rem; letter-spacing: 0.12em;
+}
+[data-theme="dos"] .msg { max-width: 100%; }
+[data-theme="dos"] .msg.her,
+[data-theme="dos"] .msg.ai { align-self: stretch; }
+[data-theme="dos"] .bubble,
+[data-theme="dos"] .typing .bubble {
+  background: transparent; border: none;
+  padding: 1px 0;
+  font-family: 'DotGothic16', monospace;
+}
+[data-theme="dos"] .msg.her .bubble::before { content: 'USER> '; color: var(--text-faint); }
+[data-theme="dos"] .msg.ai .bubble::before { content: '> '; color: var(--text-faint); }
+[data-theme="dos"] .msg.sys { align-self: flex-start; text-align: left; }
+[data-theme="dos"] .msg.sys::before { content: '*** '; color: var(--text-faint); }
+[data-theme="dos"] .msg.inner {
+  align-self: flex-start; text-align: left; max-width: 100%;
+  padding: 2px 0 2px 2.6em; opacity: 0.75;
+}
+[data-theme="dos"] .choices { border-top: 1px dashed var(--line-strong); }
+[data-theme="dos"] .choice-btn {
+  background: transparent; border: none; padding: 4px 0;
+}
+[data-theme="dos"] .choice-btn::before { content: '> '; color: var(--text-faint); }
+[data-theme="dos"] .choice-btn:hover { background: transparent; color: var(--accent-bright); }
+[data-theme="dos"] .choice-btn:hover::before { content: '>>'; color: var(--accent-bright); }
+
 /* 90年代OS: ドット文字・タイトルバー・立体ベベルのボタン */
 [data-theme="os95"] body,
 [data-theme="os95"] .choice-btn,
