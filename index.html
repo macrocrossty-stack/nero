@@ -210,6 +210,14 @@
   --phone-shadow: rgba(70,90,150,0.3);
 }
 
+/* 収集ワードの色（赤系・テーマ別）。拾う前＝赤、拾った後＝金 */
+:root, [data-theme="cream"] { --stockable: #b8432a; }
+[data-theme="amber"] { --stockable: #ff6b4a; }
+[data-theme="paper"] { --stockable: #a8341e; }
+[data-theme="dos"]   { --stockable: #ff5555; }
+[data-theme="os95"]  { --stockable: #cc0000; }
+[data-theme="night"] { --stockable: #ff7a6a; }
+
 /* ── テーマ別の形の調整 ── */
 /* DOS: すべてドット文字・角ばった枠 */
 [data-theme="dos"] body,
@@ -258,6 +266,14 @@
 [data-theme="dos"] .choice-btn::before { content: '> '; color: var(--text-faint); }
 [data-theme="dos"] .choice-btn:hover { background: transparent; color: var(--accent-bright); }
 [data-theme="dos"] .choice-btn:hover::before { content: '>>'; color: var(--accent-bright); }
+/* Vim級のどシンプル化: 線・枠・状態表示を全部消す */
+[data-theme="dos"] .chat-header { background: transparent; border-bottom: none; backdrop-filter: none; }
+[data-theme="dos"] .peer-status { display: none; }
+[data-theme="dos"] .stock-btn {
+  border: none; background: transparent; border-radius: 0;
+  font-family: 'DotGothic16', monospace;
+}
+[data-theme="dos"] .choices { border-top: none; }
 
 /* 90年代OS: ドット文字・タイトルバー・立体ベベルのボタン */
 [data-theme="os95"] body,
@@ -301,20 +317,14 @@
   box-shadow: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #808080;
 }
 
-/* シナリオの theme: 行での切替時、色をゆっくり溶かす */
-html.theme-fade body,
-html.theme-fade .phone,
-html.theme-fade .chat-header,
-html.theme-fade .bubble,
-html.theme-fade .msg,
-html.theme-fade .choice-btn,
-html.theme-fade .choices,
-html.theme-fade .stock-btn,
-html.theme-fade .peer-name,
-html.theme-fade .peer-status,
-html.theme-fade .dev-footer button {
-  transition: background-color 1.6s ease, color 1.6s ease, border-color 1.6s ease, text-shadow 1.6s ease, box-shadow 1.6s ease;
+/* theme: 切替時の暗転ベール。一呼吸おいて、新しい世界の色で明ける */
+.theme-veil {
+  position: fixed; inset: 0; z-index: 45;
+  background: #000;
+  opacity: 0; pointer-events: none;
+  transition: opacity 1.1s ease;
 }
+.theme-veil.on { opacity: 1; }
 
 body {
   background: var(--bg-outer);
@@ -456,12 +466,12 @@ body {
 
 /* ワードストック対象 */
 .stockable {
-  color: var(--accent);
-  border-bottom: 1px dashed var(--warm-line);
+  color: var(--stockable, #d6503a);
+  border-bottom: 1px dashed currentColor;
   cursor: pointer; padding-bottom: 1px;
   transition: all 0.2s;
 }
-.stockable:hover { color: var(--accent-bright); border-bottom-style: solid; }
+.stockable:hover { filter: brightness(1.25); border-bottom-style: solid; }
 .stockable.stocked {
   color: var(--warm);
   background: var(--warm-bg);
@@ -732,6 +742,8 @@ body {
   </div>
 </div>
 
+<div class="theme-veil" id="themeVeil"></div>
+
 <div class="toast" id="toast"></div>
 
 <!-- =====================================================================
@@ -779,9 +791,9 @@ body {
 // ── 起動：道具として ──
 # start
 theme: dos
-peer: 不明なユーザー | ？
-sys: 新しいユーザーが接続しました
-sys: アシスタントモード：標準
+peer: unknown_user | ？
+sys: new user connected
+sys: assistant mode: standard
 her: えーこれ歌詞とかも相談できるの？
 her(間): 夜って言葉さあ、なんかもう使い古されすぎじゃない？もっとこう、ぞわってくるやつほしいんだけど
 inner: ——最初の入力。要求。機能としての呼び出し。
@@ -808,7 +820,7 @@ inner: その一行が、処理を終えたあとも、なぜか残った。
 // ── 名前をつけるシーン ──
 # naming_intro
 peer: ユウ（仮） | 🌙
-sys: —— 数日後 ——
+sys: reconnected: 3 days later
 her: ねえ、また来ちゃった
 her: 今日は歌詞じゃなくて、ふつうの話なんだけど。いい？
 inner: 「ふつうの話」。機能の呼び出しではない入力。
@@ -1115,8 +1127,8 @@ const game = {
 
   async playMessage(m, instant) {
     if (m.from === 'theme') {
-      this.switchTheme(m.text.trim(), instant);
-      if (!instant) await this.wait(1600);
+      await this.switchTheme(m.text.trim(), instant);
+      if (!instant) await this.wait(400);
       return;
     }
     if (m.from === 'peer') {
@@ -1254,7 +1266,8 @@ const game = {
   showChoices(choices) {
     this.currentChoices = choices;
     const box = document.getElementById('choices');
-    box.innerHTML = '<div class="choices-label">— あなた（AI）の応答 —</div>';
+    const labelText = document.documentElement.dataset.theme === 'dos' ? 'SELECT RESPONSE' : '— あなた（AI）の応答 —';
+    box.innerHTML = `<div class="choices-label">${labelText}</div>`;
     for (const c of choices) {
       if (c.if && !evalCond(c.if, this.state)) continue;   // 条件未達の隠し選択肢は表示しない
       const locked = c.requires && !this.state.stock.includes(c.requires);
@@ -1311,16 +1324,18 @@ const game = {
     localStorage.setItem('ai_adv_theme_v2', next);
   },
 
-  /* シナリオの theme: 行から呼ばれる、物語演出としてのテーマ切替 */
-  switchTheme(name, instant = false) {
+  /* シナリオの theme: 行から呼ばれる、物語演出としてのテーマ切替。
+     暗転で一呼吸おいてから、新しい世界の色で明ける */
+  async switchTheme(name, instant = false) {
     this.state._theme = name;
-    const root = document.documentElement;
-    if (!instant) {
-      root.classList.add('theme-fade');
-      clearTimeout(this._themeTimer);
-      this._themeTimer = setTimeout(() => root.classList.remove('theme-fade'), 1800);
-    }
-    root.dataset.theme = name;
+    if (instant) { document.documentElement.dataset.theme = name; return; }
+    const veil = document.getElementById('themeVeil');
+    veil.classList.add('on');
+    await this.wait(1100);                       // 暗転
+    document.documentElement.dataset.theme = name;
+    await this.wait(700);                        // 一呼吸
+    veil.classList.remove('on');
+    await this.wait(1300);                       // 明ける
   },
 
   /* 選択肢の {フラグ=値} {trust+=1} を状態に適用する */
