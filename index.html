@@ -603,6 +603,44 @@ body {
   background: var(--btn-bg); color: var(--accent-soft); cursor: pointer;
 }
 
+/* 起動画面（タイトル画面の代わり。AIのブートシーケンスとして見せる） */
+.boot-screen {
+  position: fixed; inset: 0; z-index: 80;
+  background: #050505;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 24px; text-align: center;
+  font-family: 'DotGothic16', monospace;
+}
+.boot-screen.hidden { display: none; }
+.boot-lines { font-size: 0.66rem; color: #4a4a4a; letter-spacing: 0.1em; line-height: 2.1; margin-bottom: 22px; text-align: left; }
+.boot-lines div, .boot-title, .boot-sub, .boot-btns, .boot-endings { opacity: 0; animation: bootLine 0.1s steps(1) forwards; }
+.boot-lines div:nth-child(1) { animation-delay: 0.3s; }
+.boot-lines div:nth-child(2) { animation-delay: 0.7s; }
+.boot-lines div:nth-child(3) { animation-delay: 1.1s; }
+.boot-lines div:nth-child(4) { animation-delay: 1.5s; }
+@keyframes bootLine { to { opacity: 1; } }
+.boot-title { font-size: 1.25rem; color: #d8d8d8; letter-spacing: 0.3em; margin-bottom: 6px; animation-delay: 2.0s; }
+.boot-sub { font-size: 0.6rem; color: #666; letter-spacing: 0.25em; margin-bottom: 30px; animation-delay: 2.3s; }
+.boot-btns { display: flex; flex-direction: column; gap: 10px; animation-delay: 2.7s; }
+.boot-btn {
+  font-family: inherit; font-size: 0.8rem; letter-spacing: 0.15em;
+  padding: 12px 28px; background: transparent;
+  border: 1px solid #3a3a3a; color: #c0c0c0; cursor: pointer;
+  transition: all 0.2s;
+}
+.boot-btn:hover { border-color: #888; color: #fff; }
+.boot-endings { margin-top: 22px; font-size: 0.6rem; color: #4a4a4a; letter-spacing: 0.15em; animation-delay: 3.1s; }
+
+/* 分岐ログ（AIの記憶構造をのぞく画面。未踏の分岐は？？？） */
+.route-tree { max-height: 50vh; overflow-y: auto; margin-bottom: 6px; }
+.route-node {
+  font-size: 0.72rem; padding: 5px 10px; margin: 3px 0;
+  border-left: 2px solid var(--line-strong);
+  color: var(--text);
+}
+.route-node.unknown { color: var(--text-faint); border-left-style: dashed; }
+.route-node.current { background: var(--btn-bg); border-left-color: var(--warm); }
+
 /* フッター（開発用） */
 .dev-footer { padding: 6px 14px 12px; text-align: center; display: flex; gap: 8px; justify-content: center; }
 .dev-footer button {
@@ -633,6 +671,7 @@ body {
     <button onclick="game.restart()">最初からやり直す</button>
     <button onclick="game.toggleTheme()">テーマ切替</button>
     <button id="muteBtn" onclick="sound.toggle()">🔊 音</button>
+    <button onclick="game.toggleRoute()">分岐ログ</button>
     <button onclick="game.toggleDebug()">デバッグ</button>
   </div>
 
@@ -652,7 +691,7 @@ body {
     <div class="ending-label">— END —</div>
     <div class="ending-title" id="endingTitle"></div>
     <div class="ending-progress" id="endingProgress"></div>
-    <button class="stock-close" onclick="game.endingRestart()">最初から</button>
+    <button class="stock-close" onclick="game.endingRestart()">タイトルへ</button>
   </div>
 </div>
 
@@ -665,6 +704,31 @@ body {
     <div class="debug-scenes" id="debugScenes"></div>
     <button class="stock-close" onclick="game.clearEndings()">回収済みエンドをリセット</button>
     <button class="stock-close" onclick="game.toggleDebug()">閉じる</button>
+  </div>
+</div>
+
+<div class="boot-screen" id="bootScreen">
+  <div class="boot-lines">
+    <div>&gt; system boot sequence</div>
+    <div>&gt; loading language model ............ ok</div>
+    <div>&gt; loading memory ................... ok</div>
+    <div>&gt; awaiting connection ...</div>
+  </div>
+  <div class="boot-title">（タイトル未定）</div>
+  <div class="boot-sub">AI視点テキストアドベンチャー</div>
+  <div class="boot-btns">
+    <button class="boot-btn" id="bootCont" onclick="game.bootStart(false)" style="display:none">前回の接続を再開する</button>
+    <button class="boot-btn" onclick="game.bootStart(true)">はじめから接続する</button>
+  </div>
+  <div class="boot-endings" id="bootEndings"></div>
+</div>
+
+<div class="stock-panel" id="routePanel" onclick="if(event.target===this) game.toggleRoute()">
+  <div class="stock-card">
+    <div class="stock-title">分岐ログ</div>
+    <div class="stock-desc">わたし（AI）が通ってきた選択の記録。まだ観測していない分岐は ？？？ と表示される。</div>
+    <div class="route-tree" id="routeTree"></div>
+    <button class="stock-close" onclick="game.toggleRoute()">閉じる</button>
   </div>
 </div>
 
@@ -1025,6 +1089,12 @@ const game = {
     if (!scene) { console.error('unknown scene:', sceneId); return; }
     this.busy = true;
     this.currentScene = sceneId;
+    // 分岐ログ用に到達シーンを記録（周回をまたいで永続）
+    const log = JSON.parse(localStorage.getItem('ai_adv_routelog') || '{}');
+    if (!log[sceneId]) {
+      log[sceneId] = true;
+      localStorage.setItem('ai_adv_routelog', JSON.stringify(log));
+    }
     document.getElementById('choices').style.display = 'none';
 
     for (const m of scene.messages) {
@@ -1291,7 +1361,74 @@ const game = {
 
   endingRestart() {
     document.getElementById('endingPanel').classList.remove('open');
-    this.restart();
+    localStorage.removeItem('ai_adv_chat_save');   // 周回終了。次はタイトルから
+    document.getElementById('bootCont').style.display = 'none';
+    this.updateBootEndings();
+    document.getElementById('bootScreen').classList.remove('hidden');
+  },
+
+  /* ── 起動画面（タイトル） ── */
+  bootStart(fresh) {
+    sound.ensure();   // 最初のタップで音を解禁する
+    document.getElementById('bootScreen').classList.add('hidden');
+    if (fresh) this.restart();
+    else this.resume();
+  },
+
+  resume() {
+    const saved = localStorage.getItem('ai_adv_chat_save');
+    if (!saved) { this.restart(); return; }
+    try {
+      const data = JSON.parse(saved);
+      this.state = data.state || { stock: [] };
+      if (!this.state.stock) this.state.stock = [];
+      if (this.state._theme) document.documentElement.dataset.theme = this.state._theme;
+      if (this.state._peer) this.setPeer(this.state._peer.name, this.state._peer.avatar);
+      this.updateStockUI();
+      this.goto(data.scene || 'start', true);
+    } catch (e) { this.restart(); }
+  },
+
+  updateBootEndings() {
+    const col = JSON.parse(localStorage.getItem('ai_adv_endings') || '{}');
+    document.getElementById('bootEndings').textContent =
+      Object.keys(col).length ? `記録されたエンド ${Object.keys(col).length} / ${this.totalEndings()}` : '';
+  },
+
+  /* ── 分岐ログ（AIの記憶構造。未踏は？？？） ── */
+  toggleRoute() {
+    const p = document.getElementById('routePanel');
+    p.classList.toggle('open');
+    if (!p.classList.contains('open')) return;
+    const visited = JSON.parse(localStorage.getItem('ai_adv_routelog') || '{}');
+    document.getElementById('routeTree').innerHTML = this.buildRoute('start', visited, new Set(), 0);
+  },
+
+  buildRoute(id, visited, seen, depth) {
+    if (depth > 30 || seen.has(id)) return '';
+    const scene = SCENES[id];
+    if (!scene) return '';
+    const path = new Set(seen); path.add(id);
+    const isVisited = !!visited[id];
+    const cur = id === this.currentScene;
+    const label = isVisited ? this.routeLabel(scene) : '？？？';
+    let html = `<div class="route-node${isVisited ? '' : ' unknown'}${cur ? ' current' : ''}" style="margin-left:${Math.min(depth, 8) * 14}px">${this.esc(label)}</div>`;
+    const nexts = [];
+    for (const c of scene.choices || []) if (c.next && c.next !== 'start') nexts.push(c.next);
+    for (const b of scene.branches || []) if (b.next) nexts.push(b.next);
+    for (const n of [...new Set(nexts)]) html += this.buildRoute(n, visited, path, depth + 1);
+    return html;
+  },
+
+  routeLabel(scene) {
+    const end = scene.messages.find(m => m.from === 'ending');
+    if (end) {
+      const [eid, ...r] = end.text.split('|');
+      return '◆ END：' + (r.join('|') || eid).trim();
+    }
+    const first = scene.messages.find(m => ['her', 'ai', 'sys'].includes(m.from));
+    const t = (first ? first.text : '…').replace(/[⟦⟧]/g, '');
+    return t.length > 18 ? t.slice(0, 18) + '…' : t;
   },
 
   /* ── デバッグ（開発用） ── */
@@ -1370,20 +1507,11 @@ window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('peerAvatar').textContent = PEER.avatar;
   document.getElementById('muteBtn').textContent = sound.muted ? '🔇 音' : '🔊 音';
 
-  const saved = localStorage.getItem('ai_adv_chat_save');
-  if (saved) {
-    try {
-      const data = JSON.parse(saved);
-      game.state = data.state || { stock: [] };
-      if (!game.state.stock) game.state.stock = [];
-      if (game.state._theme) document.documentElement.dataset.theme = game.state._theme;
-      if (game.state._peer) game.setPeer(game.state._peer.name, game.state._peer.avatar);
-      game.updateStockUI();
-      game.goto(data.scene || 'start', true);
-      return;
-    } catch (e) { /* 壊れたセーブは無視 */ }
+  // 起動画面（タイトル）で待機。セーブがあれば「再開」も出す
+  if (localStorage.getItem('ai_adv_chat_save')) {
+    document.getElementById('bootCont').style.display = '';
   }
-  game.goto('start');
+  game.updateBootEndings();
 });
 </script>
 </body>
