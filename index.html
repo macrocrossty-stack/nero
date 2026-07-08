@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>AI視点テキストアドベンチャー（仮）</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500&family=Noto+Sans+JP:wght@300;400;500&family=DotGothic16&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500&family=Noto+Sans+JP:wght@300;400;500&family=DotGothic16&family=M+PLUS+1+Code:wght@400;500&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -210,6 +210,9 @@
   --phone-shadow: rgba(70,90,150,0.3);
 }
 
+/* 端末系フォント。'DotGothic16'（丸いピクセル）に戻す実験はここを差し替え */
+:root { --font-term: 'M PLUS 1 Code', 'DotGothic16', monospace; }
+
 /* 収集ワードの色（赤系・テーマ別）。拾う前＝赤、拾った後＝金 */
 :root, [data-theme="cream"] { --stockable: #b8432a; }
 [data-theme="amber"] { --stockable: #ff6b4a; }
@@ -224,7 +227,7 @@
 [data-theme="dos"] .choice-btn,
 [data-theme="dos"] .stock-btn,
 [data-theme="dos"] .stock-close,
-[data-theme="dos"] .msg.inner { font-family: 'DotGothic16', monospace; }
+[data-theme="dos"] .msg.inner { font-family: var(--font-term); }
 [data-theme="dos"] .bubble,
 [data-theme="dos"] .typing .bubble,
 [data-theme="dos"] .choice-btn,
@@ -239,7 +242,7 @@
    命名で night に切り替わると、通常のチャットUIに「なる」 */
 [data-theme="dos"] .avatar { display: none; }
 [data-theme="dos"] .peer-name {
-  font-family: 'DotGothic16', monospace;
+  font-family: var(--font-term);
   font-size: 0.74rem; letter-spacing: 0.12em;
 }
 [data-theme="dos"] .msg { max-width: 100%; }
@@ -249,7 +252,7 @@
 [data-theme="dos"] .typing .bubble {
   background: transparent; border: none;
   padding: 1px 0;
-  font-family: 'DotGothic16', monospace;
+  font-family: var(--font-term);
 }
 [data-theme="dos"] .msg.her .bubble::before { content: 'USER> '; color: var(--text-faint); }
 [data-theme="dos"] .msg.ai .bubble::before { content: '> '; color: var(--text-faint); }
@@ -271,15 +274,31 @@
 [data-theme="dos"] .peer-status { display: none; }
 [data-theme="dos"] .stock-btn {
   border: none; background: transparent; border-radius: 0;
-  font-family: 'DotGothic16', monospace;
+  font-family: var(--font-term);
 }
 [data-theme="dos"] .choices { border-top: none; }
+/* 吹き出し的な枠の除去: トーストとストック一覧もフラットな端末表示に */
+[data-theme="dos"] .toast {
+  border-radius: 0; border: none;
+  background: #000; color: var(--warm);
+}
+[data-theme="dos"] .stock-card {
+  border-radius: 0; border: 1px solid #3a3a3a;
+  background: #000;
+}
+[data-theme="dos"] .stock-word {
+  border-radius: 0; border: none; background: transparent;
+  padding: 2px 4px;
+}
+[data-theme="dos"] .stock-word::before { content: '[ '; color: var(--text-faint); }
+[data-theme="dos"] .stock-word::after  { content: ' ]'; color: var(--text-faint); }
+[data-theme="dos"] .stock-close { border-radius: 0; border-color: #3a3a3a; }
 
 /* 90年代OS: ドット文字・タイトルバー・立体ベベルのボタン */
 [data-theme="os95"] body,
 [data-theme="os95"] .choice-btn,
 [data-theme="os95"] .stock-btn,
-[data-theme="os95"] .stock-close { font-family: 'DotGothic16', monospace; }
+[data-theme="os95"] .stock-close { font-family: 'DotGothic16', monospace; }   /* 90s風はビットマップ字のまま */
 [data-theme="os95"] .bubble,
 [data-theme="os95"] .typing .bubble,
 [data-theme="os95"] .choice-btn,
@@ -383,7 +402,7 @@ body {
   text-shadow: 0 0 8px var(--glow);
 }
 .peer-status {
-  font-family: 'DotGothic16', monospace;
+  font-family: var(--font-term);
   font-size: 0.62rem; color: var(--online); letter-spacing: 0.08em;
 }
 .stock-btn {
@@ -458,7 +477,7 @@ body {
 /* システム表示（レトロなドット文字） */
 .msg.sys {
   align-self: center;
-  font-family: 'DotGothic16', monospace;
+  font-family: var(--font-term);
   font-size: 0.7rem;
   color: var(--text-faint); letter-spacing: 0.08em;
   padding: 2px 0;
@@ -498,7 +517,7 @@ body {
   border-top: 1px solid var(--line);
 }
 .choices-label {
-  font-family: 'DotGothic16', monospace;
+  font-family: var(--font-term);
   font-size: 0.64rem; color: var(--text-faint);
   letter-spacing: 0.15em; text-align: center; margin-bottom: 2px;
 }
@@ -591,7 +610,7 @@ body {
 .ending-panel.open { display: flex; animation: endFade 2.4s ease; }
 @keyframes endFade { from { opacity: 0; } to { opacity: 1; } }
 .ending-card { max-width: 340px; width: 100%; }
-.ending-label { font-family: 'DotGothic16', monospace; font-size: 0.7rem; letter-spacing: 0.5em; color: #8a8a8a; margin-bottom: 16px; }
+.ending-label { font-family: var(--font-term); font-size: 0.7rem; letter-spacing: 0.5em; color: #8a8a8a; margin-bottom: 16px; }
 .ending-title {
   font-family: 'Shippori Mincho', serif;
   font-size: 1.3rem; letter-spacing: 0.15em; color: #e8e0d0;
@@ -619,7 +638,7 @@ body {
   background: #050505;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   padding: 24px; text-align: center;
-  font-family: 'DotGothic16', monospace;
+  font-family: var(--font-term);
 }
 .boot-screen.hidden { display: none; }
 .boot-lines { font-size: 0.66rem; color: #4a4a4a; letter-spacing: 0.1em; line-height: 2.1; margin-bottom: 22px; text-align: left; }
@@ -654,7 +673,7 @@ body {
 /* フッター（開発用） */
 .dev-footer { padding: 6px 14px 12px; text-align: center; display: flex; gap: 8px; justify-content: center; }
 .dev-footer button {
-  font-family: 'DotGothic16', monospace;
+  font-family: var(--font-term);
   font-size: 0.62rem; padding: 4px 10px;
   border-radius: 4px; border: 1px solid var(--line);
   background: transparent; color: var(--text-faint);
@@ -671,7 +690,7 @@ body {
       <div class="peer-name" id="peerName">不明なユーザー</div>
       <div class="peer-status">● オンライン</div>
     </div>
-    <button class="stock-btn" onclick="game.toggleStock()">🗂 ワードストック <span id="stockCount">0</span></button>
+    <button class="stock-btn" onclick="game.toggleStock()">ワードストック <span id="stockCount">0</span></button>
   </div>
 
   <div id="chat" class="chat"></div>
@@ -1485,7 +1504,7 @@ const game = {
 
   showToast(text) {
     const t = document.getElementById('toast');
-    t.textContent = '🗂 ' + text;
+    t.textContent = text;
     t.classList.add('show');
     clearTimeout(this._toastTimer);
     this._toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
