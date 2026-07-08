@@ -210,8 +210,9 @@
   --phone-shadow: rgba(70,90,150,0.3);
 }
 
-/* 端末系フォント。'DotGothic16'（丸いピクセル）に戻す実験はここを差し替え */
-:root { --font-term: 'M PLUS 1 Code', 'DotGothic16', monospace; }
+/* 端末系フォント。ピクセル字の解像度感を保ち、かっこよさは
+   「小さめのサイズ＋広い字間」で出す（M PLUS 1 Codeは解像度感が消えるため不採用） */
+:root { --font-term: 'DotGothic16', monospace; }
 
 /* 収集ワードの色（赤系・テーマ別）。拾う前＝赤、拾った後＝金 */
 :root, [data-theme="cream"] { --stockable: #b8432a; }
@@ -248,11 +249,15 @@
 [data-theme="dos"] .msg { max-width: 100%; }
 [data-theme="dos"] .msg.her,
 [data-theme="dos"] .msg.ai { align-self: stretch; }
-[data-theme="dos"] .bubble,
+[data-theme="dos"] .msg.her .bubble,
+[data-theme="dos"] .msg.ai .bubble,
 [data-theme="dos"] .typing .bubble {
-  background: transparent; border: none;
+  background: transparent; border: none; border-radius: 0;
   padding: 1px 0;
   font-family: var(--font-term);
+  font-size: 0.78rem;
+  letter-spacing: 0.09em;
+  line-height: 2;
 }
 [data-theme="dos"] .msg.her .bubble::before { content: 'USER> '; color: var(--text-faint); }
 [data-theme="dos"] .msg.ai .bubble::before { content: '> '; color: var(--text-faint); }
@@ -261,10 +266,12 @@
 [data-theme="dos"] .msg.inner {
   align-self: flex-start; text-align: left; max-width: 100%;
   padding: 2px 0 2px 2.6em; opacity: 0.75;
+  font-size: 0.76rem; letter-spacing: 0.09em;
 }
 [data-theme="dos"] .choices { border-top: 1px dashed var(--line-strong); }
 [data-theme="dos"] .choice-btn {
   background: transparent; border: none; padding: 4px 0;
+  font-size: 0.78rem; letter-spacing: 0.09em;
 }
 [data-theme="dos"] .choice-btn::before { content: '> '; color: var(--text-faint); }
 [data-theme="dos"] .choice-btn:hover { background: transparent; color: var(--accent-bright); }
