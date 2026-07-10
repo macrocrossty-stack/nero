@@ -278,6 +278,78 @@ def bg_sky_corrupt():
     save(img, "bg_sky_corrupt.jpg", "corrupted sky")
 
 
+def bg_servant_room():
+    img = vgrad((70, 66, 62), (34, 31, 29))
+    d = ImageDraw.Draw(img)
+    # 小さな窓と窓辺の椅子
+    d.rounded_rectangle([880, 120, 1120, 420], 14, fill=(140, 138, 122))
+    d.rectangle([985, 120, 1015, 420], fill=(90, 86, 76))
+    d.rectangle([880, 260, 1120, 280], fill=(90, 86, 76))
+    d.rectangle([900, 430, 1010, 600], fill=(58, 48, 40))  # 椅子
+    d.rectangle([900, 430, 920, 600], fill=(48, 40, 34))
+    # 質素な寝台と机
+    d.rectangle([120, 420, 520, 620], fill=(96, 92, 86))
+    d.rectangle([120, 380, 520, 430], fill=(120, 116, 108))
+    d.rectangle([120, 300, 160, 620], fill=(64, 54, 46))
+    d.rectangle([600, 400, 820, 620], fill=(66, 56, 46))  # 机
+    d.rectangle([620, 420, 800, 440], fill=(52, 44, 38))
+    img = img.filter(ImageFilter.GaussianBlur(1))
+    d = ImageDraw.Draw(img)
+    d.rectangle([0, 620, W, H], fill=(40, 34, 30))
+    save(img, "bg_servant_room.jpg", "servant room")
+
+
+def bg_corridor():
+    img = vgrad((52, 46, 40), (20, 17, 15))
+    d = ImageDraw.Draw(img)
+    # 奥へ続く廊下と肖像画の列（顔は褪せて描かない）
+    d.polygon([(0, H), (W, H), (W * 0.68, H * 0.62), (W * 0.32, H * 0.62)], fill=(58, 48, 40))
+    for i in range(4):
+        x = 90 + i * 260
+        w = 170 - i * 18
+        y = 110 + i * 34
+        h = 260 - i * 32
+        d.rectangle([x, y, x + w, y + h], fill=(96, 78, 40))
+        d.rectangle([x + 12, y + 12, x + w - 12, y + h - 12], fill=(44, 38, 32))
+        # 人物のシルエット（顔の位置だけ靄のように明るい）
+        cx = x + w // 2
+        d.polygon([(cx - w // 4, y + h - 14), (cx + w // 4, y + h - 14), (cx + w // 6, y + h // 2), (cx - w // 6, y + h // 2)], fill=(30, 26, 24))
+        d.ellipse([cx - 22, y + 34, cx + 22, y + 88], fill=(120, 112, 100))
+    beam = Image.new("RGB", (W, H), (0, 0, 0))
+    bd = ImageDraw.Draw(beam)
+    bd.polygon([(W, 60), (W, 320), (W * 0.5, H)], fill=(60, 54, 40))
+    beam = beam.filter(ImageFilter.GaussianBlur(80))
+    img = Image.blend(img, Image.composite(beam, img, Image.new("L", (W, H), 120)), 0.35)
+    save(img, "bg_corridor.jpg", "portrait corridor")
+
+
+def bg_attic():
+    img = vgrad((44, 38, 32), (18, 15, 13))
+    d = ImageDraw.Draw(img)
+    # 屋根の梁
+    d.polygon([(0, 260), (W // 2, 30), (W, 260), (W, 200), (W // 2, 0), (0, 200)], fill=(30, 24, 20))
+    for x0 in (200, 520, 840, 1140):
+        d.line([(x0, H * 0.1), (x0 - 140, H)], fill=(36, 29, 24), width=26)
+    # まるい窓と月光
+    d.ellipse([560, 90, 720, 250], fill=(150, 158, 150))
+    d.ellipse([580, 110, 700, 230], fill=(196, 204, 196))
+    beam = Image.new("RGB", (W, H), (0, 0, 0))
+    bd = ImageDraw.Draw(beam)
+    bd.polygon([(580, 120), (700, 120), (860, 700), (420, 700)], fill=(70, 76, 70))
+    beam = beam.filter(ImageFilter.GaussianBlur(70))
+    img = Image.blend(img, Image.composite(beam, img, Image.new("L", (W, H), 130)), 0.45)
+    d = ImageDraw.Draw(img)
+    # 衣裳箱とがらくた
+    d.rectangle([460, 480, 820, 650], fill=(74, 56, 38))
+    d.rectangle([460, 460, 820, 500], fill=(90, 70, 48))
+    d.rectangle([470, 545, 810, 560], fill=(52, 40, 28))
+    d.ellipse([150, 470, 300, 640], outline=(60, 50, 42), width=8)   # 鳥かご
+    d.line([(225, 470), (225, 430)], fill=(60, 50, 42), width=6)
+    d.polygon([(960, 640), (1060, 640), (1040, 500), (980, 500)], fill=(56, 46, 40))  # 椅子
+    d.rectangle([0, 640, W, H], fill=(30, 24, 20))
+    save(img, "bg_attic.jpg", "attic")
+
+
 if __name__ == "__main__":
     bg_black()
     bg_storybook()
@@ -289,4 +361,7 @@ if __name__ == "__main__":
     bg_bedroom()
     bg_garden()
     bg_sky_corrupt()
+    bg_servant_room()
+    bg_corridor()
+    bg_attic()
     print("done.")

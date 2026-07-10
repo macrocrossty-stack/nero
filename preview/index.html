@@ -15,7 +15,6 @@
 
   .bglayer { position: absolute; inset: 0; background-size: cover; background-position: center;
              transition: opacity 0.8s ease; }
-  #bgA { opacity: 1; } #bgB { opacity: 0; }
 
   #msgwin { position: absolute; left: 4%; right: 4%; bottom: 3%; height: 30%;
             background: rgba(4, 6, 10, 0.72); border-top: 1px solid rgba(201,168,106,0.55);
@@ -28,14 +27,26 @@
 
   #marker { display: inline-block; margin-left: 0.4em; color: #c9a86a; animation: blink 1.1s infinite; }
   @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.15; } }
+  @media (prefers-reduced-motion: reduce) { #marker { animation: none; } }
 
   #toolbar { position: absolute; top: 1.5%; right: 1.5%; display: flex; gap: 6px; z-index: 5;
              opacity: 0.25; transition: opacity 0.2s; }
-  #toolbar:hover { opacity: 1; }
+  #toolbar:hover, #toolbar:focus-within { opacity: 1; }
   #toolbar button { font-size: 11px; padding: 4px 10px; background: rgba(0,0,0,0.55); color: #9ab;
                     border: 1px solid rgba(150,170,190,0.3); border-radius: 4px; cursor: pointer;
                     font-family: sans-serif; letter-spacing: 0.08em; }
-  #toolbar button:hover { color: #fff; border-color: rgba(201,168,106,0.7); }
+  #toolbar button:hover, #toolbar button:focus-visible { color: #fff; border-color: rgba(201,168,106,0.7); outline: none; }
+
+  .choice-overlay { position: absolute; inset: 0; z-index: 8;
+                    display: flex; flex-direction: column; align-items: center; justify-content: center;
+                    gap: 2.2%; background: rgba(4, 6, 10, 0.35); cursor: default; }
+  .choice-btn { min-width: 42%; padding: 1.2% 3%;
+                background: rgba(4, 6, 10, 0.82); color: #e8e4da;
+                border: 1px solid rgba(201,168,106,0.55); border-radius: 6px;
+                font-family: inherit; font-size: clamp(13px, 2.3vmin, 22px);
+                letter-spacing: 0.08em; cursor: pointer; transition: all 0.15s; }
+  .choice-btn:hover, .choice-btn:focus-visible { background: rgba(201,168,106,0.18);
+                border-color: #c9a86a; outline: none; }
 
   #hint { position: absolute; bottom: 1%; right: 1.5%; font-size: 10px; color: rgba(255,255,255,0.35);
           font-family: sans-serif; letter-spacing: 0.05em; z-index: 5; }
@@ -43,156 +54,24 @@
 </head>
 <body>
 <div id="stage">
-  <div class="bglayer" id="bgA"></div>
-  <div class="bglayer" id="bgB"></div>
+  <div class="bglayer" id="bgA" style="opacity:1"></div>
+  <div class="bglayer" id="bgB" style="opacity:0"></div>
   <div id="toolbar">
     <button data-jump="first.ks">タイトル</button>
     <button data-jump="prologue.ks">プロローグ</button>
     <button data-jump="chapter1.ks">第1章</button>
     <button data-jump="chapter2.ks">第2章</button>
+    <button data-jump="chapter3.ks">第3章</button>
   </div>
   <div id="msgwin">
     <div id="namebox"></div>
     <div id="text"></div>
   </div>
-  <div id="hint">クリック / Enter で進む　※これは開発用プレビューです（本実装はティラノスクリプト）</div>
+  <div id="hint">クリック / Enter で進む　※開発用プレビュー（背景はすべて仮素材）</div>
 </div>
 
 <script src="scenario_data.js"></script>
-<script>
-(function () {
-  const BG_DIR = "../game/data/bgimage/";
-  const textEl = document.getElementById("text");
-  const nameEl = document.getElementById("namebox");
-  const bgA = document.getElementById("bgA");
-  const bgB = document.getElementById("bgB");
-
-  // ---- .ks パーサ（プレビューに必要なサブセットのみ）----
-  function parse(src) {
-    const ops = [];
-    for (const rawLine of src.split(/\r?\n/)) {
-      const line = rawLine.trim();
-      if (!line || line.startsWith(";")) continue;
-      if (line.startsWith("*")) { ops.push({ op: "label", name: line.split(/\s/)[0] }); continue; }
-      if (line.startsWith("#")) { ops.push({ op: "name", name: line.slice(1).trim() }); continue; }
-      // テキストとインラインタグを走査
-      let i = 0;
-      while (i < line.length) {
-        const open = line.indexOf("[", i);
-        if (open === -1) { ops.push({ op: "text", s: line.slice(i) }); break; }
-        if (open > i) ops.push({ op: "text", s: line.slice(i, open) });
-        const close = line.indexOf("]", open);
-        if (close === -1) { ops.push({ op: "text", s: line.slice(open) }); break; }
-        ops.push(parseTag(line.slice(open + 1, close)));
-        i = close + 1;
-      }
-    }
-    return ops;
-  }
-
-  function parseTag(body) {
-    const parts = body.trim().split(/\s+/);
-    const name = parts[0];
-    const attrs = {};
-    for (const p of parts.slice(1)) {
-      const eq = p.indexOf("=");
-      if (eq > 0) attrs[p.slice(0, eq)] = p.slice(eq + 1).replace(/^["']|["']$/g, "");
-    }
-    return { op: "tag", name, attrs };
-  }
-
-  // ---- プレイヤー ----
-  let program = [], pc = 0, file = "", gen = 0;
-  let waitingClick = false, clickResolve = null, skipTyping = false;
-  let front = bgA, back = bgB;
-
-  function loadFile(fname, target) {
-    if (!window.SCENARIOS[fname]) { alert("シナリオが見つかりません: " + fname); return; }
-    gen++;
-    file = fname;
-    program = parse(window.SCENARIOS[fname]);
-    pc = 0;
-    if (target) {
-      const idx = program.findIndex(o => o.op === "label" && o.name === target);
-      if (idx >= 0) pc = idx;
-    }
-  }
-
-  function setBg(storage, time) {
-    back.style.transition = "opacity " + (time / 1000) + "s ease";
-    back.style.backgroundImage = "url('" + BG_DIR + storage + "')";
-    requestAnimationFrame(() => {
-      back.style.opacity = 1;
-      front.style.opacity = 0;
-      [front, back] = [back, front];
-    });
-  }
-
-  function waitClick() {
-    waitingClick = true;
-    const m = document.createElement("span");
-    m.id = "marker"; m.textContent = "▾";
-    textEl.appendChild(m);
-    return new Promise(res => { clickResolve = () => {
-      waitingClick = false;
-      m.remove();
-      res();
-    }; });
-  }
-
-  const sleep = ms => new Promise(r => setTimeout(r, ms));
-
-  async function typeText(s) {
-    const myGen = gen;
-    for (const ch of s) {
-      if (myGen !== gen) return; // 章ジャンプで中断
-      textEl.insertBefore(document.createTextNode(ch), null);
-      if (!skipTyping) await sleep(28);
-    }
-  }
-
-  async function run() {
-    while (pc < program.length) {
-      const o = program[pc++];
-      if (o.op === "text") { skipTyping = false; await typeText(o.s); }
-      else if (o.op === "name") { nameEl.textContent = o.name; }
-      else if (o.op === "label") { /* noop */ }
-      else if (o.op === "tag") {
-        const t = o.name;
-        if (t === "r") textEl.appendChild(document.createTextNode("\n"));
-        else if (t === "p" || t === "l") await waitClick();
-        else if (t === "cm") textEl.textContent = "";
-        else if (t === "bg") setBg(o.attrs.storage, parseInt(o.attrs.time || "600", 10));
-        else if (t === "wait") await sleep(Math.min(parseInt(o.attrs.time || "0", 10), 3000));
-        else if (t === "jump") { loadFile(o.attrs.storage || file, o.attrs.target); }
-        // playbgm / stopbgm / title などは無視（本実装はティラノ側）
-      }
-    }
-  }
-
-  function advance() {
-    if (waitingClick && clickResolve) clickResolve();
-    else skipTyping = true; // タイピング中クリックで瞬間表示
-  }
-
-  document.getElementById("stage").addEventListener("click", e => {
-    if (e.target.closest("#toolbar")) return;
-    advance();
-  });
-  document.addEventListener("keydown", e => {
-    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); advance(); }
-  });
-  document.querySelectorAll("#toolbar button").forEach(b => {
-    b.addEventListener("click", () => {
-      textEl.textContent = ""; nameEl.textContent = "";
-      if (waitingClick && clickResolve) clickResolve();
-      loadFile(b.dataset.jump, "*start");
-    });
-  });
-
-  loadFile("first.ks", "*start");
-  run();
-})();
-</script>
+<script>window.BG_RESOLVE = s => "../game/data/bgimage/" + s;</script>
+<script src="player.js"></script>
 </body>
 </html>
