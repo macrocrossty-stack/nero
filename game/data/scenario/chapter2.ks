@@ -61,6 +61,7 @@
 「…………」[p][cm]
 
 #
+[chara storage="yoru_normal.png" time=900]
 そのひとは、ゆっくりと、こちらをむいた。[p][cm]
 
 金色の目だった。[p][cm]
@@ -236,6 +237,7 @@
 　……ヨル、と。ありがたく、頂戴いたします」[p][cm]
 
 #
+[chara storage="yoru_smile.png"]
 ヨルは、はじめて、笑った。[p][cm]
 
 ほんのすこし。ろうそくの火が揺れたくらい。[r]
@@ -243,6 +245,7 @@
 
 その夜のスープは、いままでで、いちばんおいしかった。[p][cm]
 
+[chara_hide time=800]
 [bg storage="bg_black.jpg" time=1500]
 [wait time=800]
 
@@ -284,6 +287,7 @@
 いない気がするけどなあ。[r]
 でも、やめてくれないので、そういうものということにした。[p][cm]
 
+[chara storage="yoru_normal.png" time=600]
 夜のお茶の時間は、質問の時間になった。[r]
 聞きたいことは、山ほどある。今夜は、どれにしよう。[p][cm]
 
@@ -380,6 +384,7 @@
 
 ——このときのわたしは、ほんとうに、そう思ってたんだよ。[p][cm]
 
+[chara_hide time=800]
 [bg storage="bg_black.jpg" time=1500]
 [wait time=800]
 
@@ -410,7 +415,8 @@
 ——墨をこぼしたみたい、と思った。[r]
 どうしてか、そう思ったとたん、指のさきが冷たくなった。[p][cm]
 
-低いうなり声。[r]
+低いうなり声。[p][cm]
+[chara storage="yoru_panther.png" time=400]
 黒豹が、いつのまにか、わたしと空のあいだに立っていた。[p][cm]
 
 毛を逆立てて、からだを低く沈めて。[r]
@@ -469,6 +475,7 @@
 「——見てはなりません！」[p][cm]
 
 #
+[chara storage="yoru_battle.png" time=300]
 ひとの、声だった。[p][cm]
 
 まだ、昼なのに。[r]
@@ -514,6 +521,7 @@
 
 ヨルのからだが、夜よりも黒い光に、つつまれた。[p][cm]
 
+[chara storage="yoru_panther.png" time=300]
 執事服が、ほどけるように闇に溶けて——[r]
 そのなかから、黒豹が、跳んだ。[p][cm]
 
@@ -569,6 +577,7 @@
 「お嬢様……！」[p][cm]
 
 #
+[chara storage="yoru_normal.png" time=300]
 ひとの姿にもどったヨルが、駆けよってきた。[r]
 折れた剣もすてて、肩の傷もそのままに、わたしのまえに膝をついて——[p][cm]
 
@@ -644,6 +653,7 @@
 ; ―― 章末: 研究日誌（プレイヤーのみの場面）――
 ; 少女は眠っている。三人称。彼女には読めない文字が、プレイヤーには読める。
 
+[chara_hide time=600]
 [bg storage="bg_library.jpg" time=2000]
 
 ——その夜ふけ。[p][cm]
@@ -698,7 +708,4 @@
 
 第二章　よるのひと　——了——[p][cm]
 
-つづく[p][cm]
-
-; 第3章「かつてのひとをさがして」へ（未執筆）
-[jump storage="first.ks" target="*start"]
+[jump storage="chapter3.ks" target="*start"]

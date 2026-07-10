@@ -16,26 +16,36 @@
   .bglayer { position: absolute; inset: 0; background-size: cover; background-position: center;
              transition: opacity 0.8s ease; }
 
-  #msgwin { position: absolute; left: 4%; right: 4%; bottom: 3%; height: 30%;
-            background: rgba(4, 6, 10, 0.72); border-top: 1px solid rgba(201,168,106,0.55);
-            border-radius: 6px; padding: 2.2% 3% 1.5%; color: #e8e4da; }
-  #namebox { position: absolute; top: -1.7em; left: 0.4em; font-size: clamp(11px, 1.9vmin, 18px);
+  #chara { position: absolute; right: 5%; bottom: 0; height: 86%; z-index: 2;
+           display: flex; align-items: flex-end; pointer-events: none; }
+  #charaimg { height: 100%; opacity: 0; filter: drop-shadow(0 6px 24px rgba(0,0,0,0.55)); }
+
+  #msgwin { position: absolute; left: 4%; right: 4%; bottom: 3%; height: 32%; z-index: 3;
+            background: rgba(4, 6, 10, 0.74); border-top: 1px solid rgba(201,168,106,0.55);
+            border-radius: 6px; padding: 2% 3% 1.4%; color: #e8e4da; }
+  #namebox { position: absolute; top: -1.8em; left: 0.4em; font-size: clamp(11px, 1.9vmin, 18px);
              color: #c9a86a; letter-spacing: 0.15em; text-shadow: 0 1px 4px #000; }
-  #text { font-size: clamp(13px, 2.5vmin, 24px); line-height: 1.9; letter-spacing: 0.06em;
+  #text { font-size: clamp(12px, 2.15vmin, 21px); line-height: 1.85; letter-spacing: 0.05em;
           text-shadow: 0 1px 3px rgba(0,0,0,0.8); white-space: pre-wrap;
-          height: 100%; overflow: hidden; }
+          height: 100%; overflow-y: auto; scrollbar-width: thin; }
 
   #marker { display: inline-block; margin-left: 0.4em; color: #c9a86a; animation: blink 1.1s infinite; }
   @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.15; } }
   @media (prefers-reduced-motion: reduce) { #marker { animation: none; } }
 
-  #toolbar { position: absolute; top: 1.5%; right: 1.5%; display: flex; gap: 6px; z-index: 5;
+  #toolbar { position: absolute; top: 1.5%; right: 1.5%; display: flex; gap: 6px; z-index: 9;
              opacity: 0.25; transition: opacity 0.2s; }
   #toolbar:hover, #toolbar:focus-within { opacity: 1; }
   #toolbar button { font-size: 11px; padding: 4px 10px; background: rgba(0,0,0,0.55); color: #9ab;
                     border: 1px solid rgba(150,170,190,0.3); border-radius: 4px; cursor: pointer;
                     font-family: sans-serif; letter-spacing: 0.08em; }
   #toolbar button:hover, #toolbar button:focus-visible { color: #fff; border-color: rgba(201,168,106,0.7); outline: none; }
+
+  #logbtn { position: absolute; bottom: 37%; right: 4%; z-index: 9;
+            font-size: 11px; padding: 4px 12px; background: rgba(0,0,0,0.45); color: #9ab;
+            border: 1px solid rgba(150,170,190,0.25); border-radius: 4px; cursor: pointer;
+            font-family: sans-serif; letter-spacing: 0.15em; opacity: 0.4; transition: opacity 0.2s; }
+  #logbtn:hover, #logbtn:focus-visible { opacity: 1; color: #fff; border-color: rgba(201,168,106,0.7); outline: none; }
 
   .choice-overlay { position: absolute; inset: 0; z-index: 8;
                     display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -48,6 +58,32 @@
   .choice-btn:hover, .choice-btn:focus-visible { background: rgba(201,168,106,0.18);
                 border-color: #c9a86a; outline: none; }
 
+  .title-overlay { position: absolute; inset: 0; z-index: 10; cursor: default;
+                   display: flex; align-items: center; justify-content: center;
+                   background: radial-gradient(ellipse 90% 70% at 50% 30%, rgba(4,6,10,0.1) 0%, rgba(4,6,10,0.72) 100%); }
+  .title-box { display: flex; flex-direction: column; align-items: center; gap: 2.4vmin; }
+  .title-logo { font-size: clamp(24px, 6vmin, 58px); color: #e8e4da; letter-spacing: 0.22em;
+                text-shadow: 0 2px 18px rgba(0,0,0,0.9), 0 0 42px rgba(201,168,106,0.25); }
+  .title-sub { font-size: clamp(10px, 1.7vmin, 15px); color: #8296aa; letter-spacing: 0.3em;
+               margin-bottom: 3vmin; font-family: sans-serif; }
+  .title-btn { min-width: 28vmin; padding: 1.1vmin 4vmin;
+               background: rgba(4, 6, 10, 0.66); color: #e8e4da;
+               border: 1px solid rgba(201,168,106,0.5); border-radius: 6px;
+               font-family: inherit; font-size: clamp(13px, 2.4vmin, 22px);
+               letter-spacing: 0.3em; cursor: pointer; transition: all 0.15s; }
+  .title-btn:hover, .title-btn:focus-visible { background: rgba(201,168,106,0.16);
+               border-color: #c9a86a; outline: none; }
+
+  .log-overlay { position: absolute; inset: 0; z-index: 11; background: rgba(4, 6, 10, 0.78);
+                 display: flex; align-items: center; justify-content: center; cursor: default; }
+  .log-panel { width: 76%; height: 84%; overflow-y: auto; padding: 3% 4%;
+               background: rgba(10, 14, 20, 0.9); border: 1px solid rgba(201,168,106,0.35);
+               border-radius: 8px; scrollbar-width: thin; }
+  .log-entry { padding: 1.2% 0; border-bottom: 1px solid rgba(130,150,170,0.12);
+               color: #cfd6dd; font-size: clamp(12px, 2vmin, 19px); line-height: 1.8;
+               white-space: pre-wrap; }
+  .log-name { color: #c9a86a; font-size: 0.85em; letter-spacing: 0.12em; margin-bottom: 0.2em; }
+
   #hint { position: absolute; bottom: 1%; right: 1.5%; font-size: 10px; color: rgba(255,255,255,0.35);
           font-family: sans-serif; letter-spacing: 0.05em; z-index: 5; }
 </style>
@@ -56,22 +92,27 @@
 <div id="stage">
   <div class="bglayer" id="bgA" style="opacity:1"></div>
   <div class="bglayer" id="bgB" style="opacity:0"></div>
+  <div id="chara"><img id="charaimg" alt=""></div>
   <div id="toolbar">
-    <button data-jump="first.ks">タイトル</button>
+    <button data-action="title">タイトル</button>
     <button data-jump="prologue.ks">プロローグ</button>
     <button data-jump="chapter1.ks">第1章</button>
     <button data-jump="chapter2.ks">第2章</button>
     <button data-jump="chapter3.ks">第3章</button>
   </div>
+  <button id="logbtn">LOG</button>
   <div id="msgwin">
     <div id="namebox"></div>
     <div id="text"></div>
   </div>
-  <div id="hint">クリック / Enter で進む　※開発用プレビュー（背景はすべて仮素材）</div>
+  <div id="hint">クリック / Enter で進む　L: ログ　※開発用プレビュー（背景・立ち絵はすべて仮素材）</div>
 </div>
 
 <script src="scenario_data.js"></script>
-<script>window.BG_RESOLVE = s => "../game/data/bgimage/" + s;</script>
+<script>
+window.BG_RESOLVE = s => "../game/data/bgimage/" + s;
+window.CHARA_RESOLVE = s => "../game/data/fgimage/" + s;
+</script>
 <script src="player.js"></script>
 </body>
 </html>

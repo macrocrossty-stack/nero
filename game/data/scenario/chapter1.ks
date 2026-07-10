@@ -254,6 +254,7 @@
 ; ―― 看病の日々 ――
 
 [bg storage="bg_garden.jpg" time=1500]
+[chara storage="yoru_panther.png" time=800]
 
 黒豹の看病は、わたしの日課のいちばん上にきた。[p][cm]
 
@@ -384,6 +385,7 @@
 
 ; ―― 章末: 月光の広間 ――
 
+[chara_hide time=600]
 [bg storage="bg_bedroom.jpg" time=1200]
 
 その夜、また、目がさめた。[p][cm]

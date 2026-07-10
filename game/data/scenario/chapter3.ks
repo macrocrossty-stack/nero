@@ -20,6 +20,7 @@
 [bg storage="bg_library.jpg" time=1800]
 ; [playbgm storage="bgm_mansion.ogg"]
 
+[chara storage="yoru_normal.png" time=800]
 解呪クエスト、一日目。[p][cm]
 
 作戦会議の場所は、書庫。[r]
@@ -85,7 +86,7 @@
 [cm]
 [bg storage="bg_servant_room.jpg" time=1800]
 
-まず来たのは、二階のつきあたり。[r]
+二階のつきあたり。[r]
 つかっていないのに、なぜか埃っぽくない、あの部屋。[p][cm]
 
 「ここ、昔から、そうじがいらないの。ふしぎでしょ」[p][cm]
@@ -152,7 +153,7 @@
 [cm]
 [bg storage="bg_corridor.jpg" time=1800]
 
-つぎは、東の廊下。[r]
+東の廊下。[r]
 古い肖像画が、ずらりとならぶ、ちょっとこわい廊下。[p][cm]
 
 昔のご主人さまたち、なんだと思う。[r]
@@ -213,7 +214,7 @@
 [cm]
 [bg storage="bg_attic.jpg" time=1800]
 
-最後は、屋根裏。[r]
+屋根裏。[r]
 はしごをのぼって、ほこりと、まるい窓の光の部屋。[p][cm]
 
 「わ……宝島だ、ここ」[p][cm]
@@ -366,6 +367,7 @@
 
 そして——おまじない週間の、四日目の朝。[p][cm]
 
+[chara_hide time=400]
 [bg storage="bg_forest_dawn.jpg" time=2500]
 
 それは、おきた。[p][cm]
@@ -373,6 +375,7 @@
 朝の光が、森のふちから、こぼれはじめたころ。[r]
 水くみから戻ったわたしは、庭さきで、かたまった。[p][cm]
 
+[chara storage="yoru_normal.png" time=600]
 ——ヨルが、ひとの姿のまま、立っていた。[p][cm]
 
 朝日のなかに。[p][cm]
@@ -386,6 +389,7 @@
 ヨル自身が、いちばん、おどろいた顔をしていた。[r]
 自分の両手を、ひらいて、見つめて——[r]
 その手が、朝の光のなかで、ゆっくり、豹の影にほどけていく。[p][cm]
+[chara storage="yoru_panther.png" time=1500]
 
 でも。たしかに。[r]
 いつもより、ずっと、ながく。[p][cm]
@@ -411,6 +415,7 @@
 
 ; ―― くちづけの頁 ――
 
+[chara_hide time=400]
 [bg storage="bg_library.jpg" time=1500]
 
 その夜、わたしは、書庫でひとり、作戦会議をしていた。[p][cm]
@@ -443,6 +448,8 @@
 
 #ヨル
 「お嬢様。……夜が冷えます。あたたかいものを、お持ちしました」[p][cm]
+#
+[chara storage="yoru_normal.png" time=500]
 
 #
 「ひゃいっ！？」[p][cm]
@@ -459,6 +466,7 @@
 わたしは、絵本を、本棚のいちばん奥に、ぎゅうぎゅうに押しこんだ。[p][cm]
 
 最後のおまじないは——ほ、保留。保留です。[p][cm]
+[chara_hide time=600]
 
 ; （ヨルが扉を閉めたあと、廊下で一拍止まる——豹の尻尾なら床を打っていた間。
 ;   2周目挿入ポイント）
@@ -603,6 +611,7 @@
 「——お嬢様」[p][cm]
 
 #
+[chara storage="yoru_normal.png" time=700]
 はしごの上に、ヨルが立っていた。[p][cm]
 
 灯りも持たずに。音もなく。[r]
@@ -639,6 +648,7 @@
 
 ; ―― 旅立ち ――
 
+[chara_hide time=600]
 [bg storage="bg_mansion_ext.jpg" time=2500]
 ; [playbgm storage="bgm_journey.ogg"]
 
@@ -664,6 +674,7 @@
 
 「いってきます。すぐ、もどるからね」[p][cm]
 
+[chara storage="yoru_panther.png" time=600]
 となりで、黒豹が、みじかく鳴いた。[r]
 はじめて聞く、返事みたいな声だった。[p][cm]
 
@@ -679,6 +690,7 @@
 
 ; ―― 章末: 日誌（プレイヤーのみの場面）――
 
+[chara_hide time=600]
 [bg storage="bg_library.jpg" time=1500]
 
 ——その前の晩。[p][cm]
