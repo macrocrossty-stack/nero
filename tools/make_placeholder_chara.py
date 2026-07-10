@@ -98,6 +98,53 @@ def panther():
     return img
 
 
+
+WHITE = (230, 226, 216, 255)
+
+
+def girl(expr):
+    """少女（白いワンピース）。第5章の"豹変"が初出し。"""
+    W, H = 560, 1000
+    img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    cx = W // 2
+    # 髪（淡い色・長め）
+    HAIR = (208, 198, 178, 255)
+    d.ellipse([cx - 88, 40, cx + 88, 260], fill=HAIR)
+    d.polygon([(cx - 88, 150), (cx - 96, 560), (cx - 40, 560), (cx - 60, 200)], fill=HAIR)
+    d.polygon([(cx + 88, 150), (cx + 96, 560), (cx + 40, 560), (cx + 60, 200)], fill=HAIR)
+    # 顔
+    d.ellipse([cx - 66, 80, cx + 66, 240], fill=(238, 226, 212, 255))
+    # 前髪
+    d.chord([cx - 70, 60, cx + 70, 190], 180, 360, fill=HAIR)
+    # 首
+    d.rectangle([cx - 20, 230, cx + 20, 270], fill=(238, 226, 212, 255))
+    # ワンピース
+    d.polygon([(cx - 70, 290), (cx + 70, 290), (cx + 130, 760), (cx + 150, 960), (cx - 150, 960), (cx - 130, 760)], fill=WHITE)
+    d.polygon([(cx - 70, 290), (cx - 20, 270), (cx + 20, 270), (cx + 70, 290), (cx + 40, 340), (cx - 40, 340)], fill=(216, 210, 198, 255))
+    # 腕
+    d.polygon([(cx - 70, 300), (cx - 44, 300), (cx - 56, 620), (cx - 84, 616)], fill=(238, 226, 212, 255))
+    d.polygon([(cx + 70, 300), (cx + 44, 300), (cx + 56, 620), (cx + 84, 616)], fill=(238, 226, 212, 255))
+    img = img.filter(ImageFilter.GaussianBlur(1.0))
+    d = ImageDraw.Draw(img)
+    ey = 168
+    if expr == "normal":
+        d.ellipse([cx - 40, ey - 8, cx - 16, ey + 16], fill=(96, 88, 78, 255))
+        d.ellipse([cx + 16, ey - 8, cx + 40, ey + 16], fill=(96, 88, 78, 255))
+    elif expr == "tuning":
+        # 調律状態: 見開かれた、金色の光の目。感情がない
+        d.ellipse([cx - 44, ey - 12, cx - 12, ey + 20], fill=GOLD)
+        d.ellipse([cx + 12, ey - 12, cx + 44, ey + 20], fill=GOLD)
+        d.ellipse([cx - 34, ey - 2, cx - 22, ey + 10], fill=(240, 240, 230, 255))
+        d.ellipse([cx + 22, ey - 2, cx + 34, ey + 10], fill=(240, 240, 230, 255))
+        # 全体をほんのり発光
+        glow = img.filter(ImageFilter.GaussianBlur(14))
+        img = Image.alpha_composite(glow, img)
+        d = ImageDraw.Draw(img)
+    d.text((10, H - 22), f"placeholder: girl {expr}", fill=(140, 140, 140, 160))
+    return img
+
+
 if __name__ == "__main__":
     OUT.mkdir(parents=True, exist_ok=True)
     for e in ("normal", "smile", "battle", "lowered", "worry"):
@@ -105,3 +152,6 @@ if __name__ == "__main__":
         print("wrote", OUT / f"yoru_{e}.png")
     panther().save(OUT / "yoru_panther.png")
     print("wrote", OUT / "yoru_panther.png")
+    for e in ("normal", "tuning"):
+        girl(e).save(OUT / f"girl_{e}.png")
+        print("wrote", OUT / f"girl_{e}.png")

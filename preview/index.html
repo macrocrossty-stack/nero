@@ -61,6 +61,24 @@
   .choice-btn:hover, .choice-btn:focus-visible { background: rgba(201,168,106,0.18);
                 border-color: #c9a86a; outline: none; }
 
+  /* 乗っ取り選択肢: 金ではなく、冷たい硝子の色 */
+  .choice-overlay.hijack { cursor: not-allowed; }
+  .choice-overlay.hijack .choice-btn { cursor: not-allowed; transition: all 0.5s; }
+  .choice-overlay.hijack .choice-btn:hover { background: rgba(4, 6, 10, 0.82); border-color: rgba(201,168,106,0.55); }
+  .choice-btn.refused { animation: refuse 0.18s 2; }
+  @keyframes refuse { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+  .choice-btn.hijack-focus { border-color: #7fd4d0; color: #cfeeea;
+                background: rgba(90, 180, 175, 0.14); text-shadow: 0 0 12px rgba(127,212,208,0.5); }
+  .choice-btn.hijack-dim { opacity: 0.25; }
+
+  /* システム文体モード（調律機関の介入） */
+  .sysmode { border-top-color: rgba(127, 212, 208, 0.6) !important; }
+  .sysmode #text { font-family: ui-monospace, "Courier New", monospace;
+                   color: #c8e6e2; letter-spacing: 0.14em; }
+  .sysmode #namebox { font-family: ui-monospace, "Courier New", monospace;
+                      color: #7fd4d0; letter-spacing: 0.2em; }
+  .sysmode #marker { color: #7fd4d0; }
+
   .title-overlay { position: absolute; inset: 0; z-index: 10; cursor: default;
                    display: flex; align-items: center; justify-content: center;
                    background: radial-gradient(ellipse 90% 70% at 50% 30%, rgba(4,6,10,0.1) 0%, rgba(4,6,10,0.72) 100%); }
@@ -103,6 +121,7 @@
     <button data-jump="chapter2.ks">第2章</button>
     <button data-jump="chapter3.ks">第3章</button>
     <button data-jump="chapter4.ks">第4章</button>
+    <button data-jump="chapter5.ks">第5章</button>
   </div>
   <button id="logbtn">LOG</button>
   <div id="msgwin">

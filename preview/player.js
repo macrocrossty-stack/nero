@@ -52,7 +52,7 @@
   let vars = {};
   let seeds = [];
   let backlog = [];
-  let curBg = "", curChara = "";
+  let curBg = "", curChara = "", curSys = false;
   window.__vars = vars; window.__seeds = seeds;
 
   function loadFile(fname, target) {
@@ -94,11 +94,16 @@
     }
   }
 
+  function setSysMode(on) {
+    curSys = !!on;
+    document.getElementById("msgwin").classList.toggle("sysmode", curSys);
+  }
+
   // ---- セーブ ----
   function autoSave() {
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify({
-        file, pc, vars, seeds, bg: curBg, chara: curChara,
+        file, pc, vars, seeds, bg: curBg, chara: curChara, sys: curSys,
         name: nameEl.textContent, backlog: backlog.slice(-100),
       }));
     } catch (e) { /* private mode 等は黙って諦める */ }
@@ -179,10 +184,24 @@
   // ---- 選択肢 ----
   function showChoices(o) {
     choosing = true;
+    const hijack = o.attrs.hijack === "1";
     return new Promise(res => {
       choiceCancel = res;
       const overlay = document.createElement("div");
-      overlay.className = "choice-overlay";
+      overlay.className = "choice-overlay" + (hijack ? " hijack" : "");
+      const buttons = [];
+      const pickOpt = i => {
+        const label = o.attrs["opt" + i];
+        if (o.attrs.store) vars[o.attrs.store] = label;
+        if (o.attrs.seed) seeds.push(label);
+        const target = o.attrs["opt" + i + "t"];
+        if (target) gotoLabel(target);
+        overlay.remove();
+        choosing = false;
+        choiceCancel = null;
+        autoSave();
+        res();
+      };
       for (let i = 1; i <= 8; i++) {
         const label = o.attrs["opt" + i];
         if (!label) continue;
@@ -195,19 +214,24 @@
         btn.textContent = label.replace(/＿/g, " ");
         btn.addEventListener("click", ev => {
           ev.stopPropagation();
-          if (o.attrs.store) vars[o.attrs.store] = label;
-          if (o.attrs.seed) seeds.push(label);
-          const target = o.attrs["opt" + i + "t"];
-          if (target) gotoLabel(target);
-          overlay.remove();
-          choosing = false;
-          choiceCancel = null;
-          autoSave();
-          res();
+          if (hijack) { btn.classList.add("refused"); return; } // 入力は、受け付けない
+          pickOpt(i);
         });
         overlay.appendChild(btn);
+        buttons.push([i, btn]);
       }
       stage.appendChild(overlay);
+      if (hijack) {
+        const pick = parseInt(o.attrs.pick || "1", 10);
+        // 一拍おいて、選択権がこちらに無いことを見せてから、勝手に選ばれる
+        setTimeout(() => {
+          for (const [i, btn] of buttons) {
+            if (i === pick) btn.classList.add("hijack-focus");
+            else btn.classList.add("hijack-dim");
+          }
+          setTimeout(() => pickOpt(pick), 1100);
+        }, 1400);
+      }
     });
   }
 
@@ -257,6 +281,7 @@
         else if (t === "else") pc = skipToEndif(pc);
         else if (t === "endif") { /* noop */ }
         else if (t === "choice") { await showChoices(o); }
+        else if (t === "sysmode") setSysMode(o.attrs.val === "1");
         else if (t === "title_screen") { showTitle(); return; }
       }
     }
@@ -296,6 +321,7 @@
       window.__vars = vars; window.__seeds = seeds;
       nameEl.textContent = ""; textEl.textContent = "";
       setChara(null, 0);
+      setSysMode(false);
       ov.remove();
       loadFile(START_FILE, "*start");
       run();
@@ -310,6 +336,7 @@
         textEl.textContent = "";
         if (save.bg) setBg(save.bg, 300);
         setChara(save.chara || null, 0);
+        setSysMode(save.sys);
         ov.remove();
         run();
       });

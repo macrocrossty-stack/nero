@@ -795,7 +795,4 @@
 
 第四章　ちいさな旅　——了——[p][cm]
 
-つづく[p][cm]
-
-; 第5章「ほしのへや」へ（未執筆）
-[jump storage="first.ks" target="*start"]
+[jump storage="chapter5.ks" target="*start"]

@@ -439,6 +439,110 @@ def bg_lake_night():
     save(img, "bg_lake_night.jpg", "lake night")
 
 
+
+def bg_cliff_door():
+    img = vgrad((60, 66, 74), (28, 30, 34))
+    d = ImageDraw.Draw(img)
+    # 崖の岩肌
+    rnd = random.Random(29)
+    d.rectangle([0, 0, W, H], fill=(52, 54, 58))
+    for _ in range(140):
+        x, y = rnd.randrange(W), rnd.randrange(H)
+        w, h = rnd.randint(40, 180), rnd.randint(16, 60)
+        c = rnd.choice([(46, 48, 52), (58, 60, 64), (40, 42, 46)])
+        d.polygon([(x, y), (x + w, y + rnd.randint(-10, 10)), (x + w - 20, y + h), (x - 10, y + h - 6)], fill=c)
+    # 苔と蔦
+    for _ in range(60):
+        x, y = rnd.randrange(W), rnd.randrange(H)
+        d.ellipse([x, y, x + rnd.randint(10, 40), y + rnd.randint(6, 18)], fill=(44, 60, 44))
+    # アーチの扉
+    d.rounded_rectangle([500, 200, 780, 700], 140, fill=(24, 22, 26))
+    d.rounded_rectangle([516, 216, 764, 700], 124, fill=(34, 30, 36))
+    # 扉の紋様: 中心の星と七つの輪（星の部屋の予告）
+    cx, cy = 640, 400
+    d.ellipse([cx - 7, cy - 7, cx + 7, cy + 7], fill=(150, 132, 96))
+    import math as _m
+    for k in range(7):
+        a = _m.pi * 2 * k / 7 - _m.pi / 2
+        px, py = cx + int(_m.cos(a) * 60), cy + int(_m.sin(a) * 60)
+        d.ellipse([px - 4, py - 4, px + 4, py + 4], fill=(120, 106, 80))
+    d.ellipse([cx - 60, cy - 60, cx + 60, cy + 60], outline=(90, 80, 62), width=3)
+    save(img, "bg_cliff_door.jpg", "cliff door")
+
+
+def bg_cathedral():
+    img = vgrad((30, 28, 36), (12, 11, 15))
+    d = ImageDraw.Draw(img)
+    # パイプオルガン風の柱（調律塔の心臓）
+    for i in range(11):
+        x = 140 + i * 92
+        h = 380 + (i % 2) * 60 + abs(5 - i) * -18
+        d.rounded_rectangle([x, 520 - h, x + 54, 520], 26, fill=(58, 52, 66))
+        d.rounded_rectangle([x + 8, 520 - h + 14, x + 24, 520], 10, fill=(78, 70, 86))
+    # 薔薇窓（星図モチーフ）
+    cx, cy, r = 640, 170, 110
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(40, 44, 60))
+    d.ellipse([cx - r + 10, cy - r + 10, cx + r - 10, cy + r - 10], fill=(66, 74, 96))
+    import math as _m
+    for k in range(7):
+        a = _m.pi * 2 * k / 7 - _m.pi / 2
+        px, py = cx + int(_m.cos(a) * 62), cy + int(_m.sin(a) * 62)
+        d.ellipse([px - 14, py - 14, px + 14, py + 14], fill=(120, 126, 150))
+    d.ellipse([cx - 18, cy - 18, cx + 18, cy + 18], fill=(190, 178, 140))
+    # 光の帯
+    beam = Image.new("RGB", (W, H), (0, 0, 0))
+    bd = ImageDraw.Draw(beam)
+    bd.polygon([(cx - 60, cy), (cx + 60, cy), (cx + 220, H), (cx - 220, H)], fill=(56, 58, 72))
+    beam = beam.filter(ImageFilter.GaussianBlur(60))
+    img = Image.blend(img, Image.composite(beam, img, Image.new("L", (W, H), 130)), 0.45)
+    d = ImageDraw.Draw(img)
+    # 床と祭壇
+    d.rectangle([0, 520, W, H], fill=(26, 23, 28))
+    for i in range(10):
+        d.line([(i * 150 - 100, H), (i * 150 + 100, 520)], fill=(20, 17, 21), width=2)
+    d.rounded_rectangle([540, 470, 740, 560], 8, fill=(48, 42, 50))
+    save(img, "bg_cathedral.jpg", "cathedral")
+
+
+def bg_star_room():
+    # 星の部屋: 彼女が生まれたプラネタリウム。中心の星と七つの輪＝湖の星図と同じ
+    img = Image.new("RGB", (W, H), (6, 8, 18))
+    d = ImageDraw.Draw(img)
+    rnd = random.Random(37)
+    # ドームの星々
+    for _ in range(400):
+        x, y = rnd.randrange(W), rnd.randrange(H)
+        v = rnd.randint(70, 220)
+        d.point((x, y), fill=(v, v, min(255, v + 25)))
+    # 渦巻き
+    import math as _m
+    cx, cy = 640, 300
+    for t in range(0, 720, 4):
+        a = _m.radians(t)
+        rr = 30 + t * 0.55
+        x, y = cx + _m.cos(a + 2) * rr, cy + _m.sin(a + 2) * rr * 0.6
+        v = max(90, 230 - t // 5)
+        d.ellipse([x - 2, y - 2, x + 2, y + 2], fill=(v, v, min(255, v + 20)))
+    # 中心の星
+    d.ellipse([cx - 16, cy - 16, cx + 16, cy + 16], fill=(240, 232, 200))
+    glow = Image.new("RGB", (W, H), (0, 0, 0))
+    gd = ImageDraw.Draw(glow)
+    gd.ellipse([cx - 90, cy - 90, cx + 90, cy + 90], fill=(120, 110, 70))
+    glow = glow.filter(ImageFilter.GaussianBlur(50))
+    img = Image.blend(img, Image.composite(glow, img, Image.new("L", (W, H), 150)), 0.5)
+    d = ImageDraw.Draw(img)
+    # 七つの輪の星
+    for k in range(7):
+        a = _m.pi * 2 * k / 7 - _m.pi / 2
+        px, py = cx + int(_m.cos(a) * 190), cy + int(_m.sin(a) * 120)
+        d.ellipse([px - 7, py - 7, px + 7, py + 7], fill=(220, 214, 190))
+    # 床: 同じ紋様が刻まれた円環
+    d.ellipse([340, 520, 940, 700], outline=(80, 86, 110), width=4)
+    d.ellipse([420, 545, 860, 675], outline=(60, 66, 90), width=2)
+    d.ellipse([620, 595, 660, 625], fill=(140, 132, 104))
+    save(img, "bg_star_room.jpg", "star room")
+
+
 if __name__ == "__main__":
     bg_black()
     bg_storybook()
@@ -456,4 +560,7 @@ if __name__ == "__main__":
     bg_road()
     bg_village()
     bg_lake_night()
+    bg_cliff_door()
+    bg_cathedral()
+    bg_star_room()
     print("done.")
