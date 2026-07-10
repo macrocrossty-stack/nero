@@ -350,6 +350,95 @@ def bg_attic():
     save(img, "bg_attic.jpg", "attic")
 
 
+
+def bg_road():
+    img = vgrad((170, 176, 168), (120, 132, 110))
+    d = ImageDraw.Draw(img)
+    # 遠景の丘
+    d.ellipse([-300, 300, 700, 700], fill=(104, 120, 92))
+    d.ellipse([500, 320, 1600, 760], fill=(96, 112, 86))
+    # 草原
+    d.rectangle([0, 430, W, H], fill=(110, 128, 94))
+    # 街道（奥へ細くなる）
+    d.polygon([(W * 0.44, 430), (W * 0.5, 430), (W * 0.82, H), (W * 0.28, H)], fill=(150, 134, 104))
+    d.polygon([(W * 0.465, 430), (W * 0.478, 430), (W * 0.56, H), (W * 0.5, H)], fill=(132, 118, 92))
+    trees(d, (78, 96, 70), seed=81, density=7)
+    img = img.filter(ImageFilter.GaussianBlur(1))
+    save(img, "bg_road.jpg", "road")
+
+
+def bg_village():
+    img = vgrad((188, 172, 140), (140, 120, 92))
+    d = ImageDraw.Draw(img)
+    # 家並み
+    rnd = random.Random(17)
+    for i, x in enumerate((30, 300, 590, 880, 1120)):
+        w = rnd.randint(180, 250)
+        h = rnd.randint(180, 260)
+        base = 500
+        col = rnd.choice([(150, 128, 100), (162, 140, 112), (140, 118, 92)])
+        d.rectangle([x, base - h, x + w, base], fill=col)
+        d.polygon([(x - 16, base - h), (x + w + 16, base - h), (x + w // 2, base - h - rnd.randint(70, 110))], fill=(96, 72, 56))
+        # 窓
+        for wx in range(x + 24, x + w - 30, 60):
+            d.rectangle([wx, base - h + 50, wx + 30, base - h + 95], fill=(226, 196, 130))
+    # 広場
+    d.rectangle([0, 500, W, H], fill=(168, 148, 116))
+    for i in range(24):
+        y = 520 + i * 9
+        d.line([(0, y), (W, y)], fill=(158, 138, 108), width=3)
+    # 井戸
+    d.ellipse([560, 560, 740, 660], fill=(120, 110, 96))
+    d.rectangle([580, 470, 600, 590], fill=(96, 78, 60))
+    d.rectangle([700, 470, 720, 590], fill=(96, 78, 60))
+    d.polygon([(560, 480), (740, 480), (650, 420)], fill=(104, 80, 60))
+    save(img, "bg_village.jpg", "village")
+
+
+def bg_lake_night():
+    # 上半分: 星空 / 下半分: 湖面（星の鏡映）— 第4章の見せ場
+    img = vgrad((8, 14, 34), (16, 26, 52))
+    d = ImageDraw.Draw(img)
+    horizon = int(H * 0.56)
+    rnd = random.Random(23)
+    # 空の星
+    for _ in range(220):
+        x, y = rnd.randrange(W), rnd.randrange(horizon)
+        v = rnd.randint(140, 255)
+        d.point((x, y), fill=(v, v, min(255, v + 12)))
+        if rnd.random() < 0.06:
+            d.ellipse([x - 1, y - 1, x + 1, y + 1], fill=(v, v, 255))
+    img = moon(img, 240, 110, 40)
+    d = ImageDraw.Draw(img)
+    # 湖面
+    d.rectangle([0, horizon, W, H], fill=(10, 18, 40))
+    for yy in range(horizon, H, 3):
+        t = (yy - horizon) / (H - horizon)
+        d.line([(0, yy), (W, yy)], fill=lerp((12, 22, 48), (5, 9, 22), t))
+    # 鏡映の星（縦ににじむ）
+    for _ in range(160):
+        x = rnd.randrange(W)
+        y = rnd.randrange(horizon + 8, H - 10)
+        v = rnd.randint(90, 200)
+        d.line([(x, y), (x, y + rnd.randint(2, 6))], fill=(v, v, min(255, v + 20)))
+    # 月の鏡映
+    for i in range(14):
+        yy = horizon + 24 + i * 22
+        wgt = max(4, 46 - i * 3)
+        d.line([(240 - wgt, yy), (240 + wgt, yy)], fill=(120, 124, 116), width=2)
+    # 対岸と手前の岸
+    d.ellipse([-200, horizon - 36, 420, horizon + 30], fill=(6, 10, 20))
+    d.ellipse([900, horizon - 26, 1500, horizon + 26], fill=(6, 10, 20))
+    d.polygon([(0, H), (W * 0.3, H), (W * 0.12, H - 60), (0, H - 90)], fill=(8, 10, 18))
+    # 焚き火のあかり（画面左下）
+    fire = Image.new("RGB", (W, H), (0, 0, 0))
+    fd = ImageDraw.Draw(fire)
+    fd.ellipse([60, H - 160, 260, H - 40], fill=(140, 80, 30))
+    fire = fire.filter(ImageFilter.GaussianBlur(60))
+    img = Image.blend(img, Image.composite(fire, img, Image.new("L", (W, H), 130)), 0.5)
+    save(img, "bg_lake_night.jpg", "lake night")
+
+
 if __name__ == "__main__":
     bg_black()
     bg_storybook()
@@ -364,4 +453,7 @@ if __name__ == "__main__":
     bg_servant_room()
     bg_corridor()
     bg_attic()
+    bg_road()
+    bg_village()
+    bg_lake_night()
     print("done.")

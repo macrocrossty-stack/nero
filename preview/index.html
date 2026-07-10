@@ -11,7 +11,8 @@
          font-family: "Yu Mincho", "Hiragino Mincho ProN", "Noto Serif JP", serif; }
 
   #stage { position: relative; aspect-ratio: 16 / 9; width: 100vw; max-width: calc(100vh * 16 / 9);
-           max-height: 100vh; background: #000; overflow: hidden; cursor: pointer; user-select: none; }
+           max-height: 100vh; background: #000; overflow: hidden; cursor: pointer; user-select: none;
+           container-type: size; }
 
   .bglayer { position: absolute; inset: 0; background-size: cover; background-position: center;
              transition: opacity 0.8s ease; }
@@ -20,12 +21,14 @@
            display: flex; align-items: flex-end; pointer-events: none; }
   #charaimg { height: 100%; opacity: 0; filter: drop-shadow(0 6px 24px rgba(0,0,0,0.55)); }
 
-  #msgwin { position: absolute; left: 4%; right: 4%; bottom: 3%; height: 32%; z-index: 3;
+  #msgwin { position: absolute; left: 4%; right: 4%; bottom: 3%; height: 34%; z-index: 3;
             background: rgba(4, 6, 10, 0.74); border-top: 1px solid rgba(201,168,106,0.55);
             border-radius: 6px; padding: 2% 3% 1.4%; color: #e8e4da; }
-  #namebox { position: absolute; top: -1.8em; left: 0.4em; font-size: clamp(11px, 1.9vmin, 18px);
+  #namebox { position: absolute; top: -1.8em; left: 0.4em;
+             font-size: clamp(11px, 1.9vmin, 17px); font-size: clamp(9px, 3cqh, 17px);
              color: #c9a86a; letter-spacing: 0.15em; text-shadow: 0 1px 4px #000; }
-  #text { font-size: clamp(12px, 2.15vmin, 21px); line-height: 1.85; letter-spacing: 0.05em;
+  #text { font-size: clamp(12px, 2.15vmin, 19px); font-size: clamp(10px, 3.4cqh, 19px);
+          line-height: 1.8; letter-spacing: 0.05em;
           text-shadow: 0 1px 3px rgba(0,0,0,0.8); white-space: pre-wrap;
           height: 100%; overflow-y: auto; scrollbar-width: thin; }
 
@@ -53,7 +56,7 @@
   .choice-btn { min-width: 42%; padding: 1.2% 3%;
                 background: rgba(4, 6, 10, 0.82); color: #e8e4da;
                 border: 1px solid rgba(201,168,106,0.55); border-radius: 6px;
-                font-family: inherit; font-size: clamp(13px, 2.3vmin, 22px);
+                font-family: inherit; font-size: clamp(13px, 2.3vmin, 20px); font-size: clamp(11px, 3.6cqh, 20px);
                 letter-spacing: 0.08em; cursor: pointer; transition: all 0.15s; }
   .choice-btn:hover, .choice-btn:focus-visible { background: rgba(201,168,106,0.18);
                 border-color: #c9a86a; outline: none; }
@@ -62,14 +65,14 @@
                    display: flex; align-items: center; justify-content: center;
                    background: radial-gradient(ellipse 90% 70% at 50% 30%, rgba(4,6,10,0.1) 0%, rgba(4,6,10,0.72) 100%); }
   .title-box { display: flex; flex-direction: column; align-items: center; gap: 2.4vmin; }
-  .title-logo { font-size: clamp(24px, 6vmin, 58px); color: #e8e4da; letter-spacing: 0.22em;
+  .title-logo { font-size: clamp(24px, 6vmin, 58px); font-size: clamp(20px, 9.5cqh, 58px); color: #e8e4da; letter-spacing: 0.22em;
                 text-shadow: 0 2px 18px rgba(0,0,0,0.9), 0 0 42px rgba(201,168,106,0.25); }
   .title-sub { font-size: clamp(10px, 1.7vmin, 15px); color: #8296aa; letter-spacing: 0.3em;
                margin-bottom: 3vmin; font-family: sans-serif; }
-  .title-btn { min-width: 28vmin; padding: 1.1vmin 4vmin;
+  .title-btn { min-width: 34cqw; padding: 1.8cqh 6cqw;
                background: rgba(4, 6, 10, 0.66); color: #e8e4da;
                border: 1px solid rgba(201,168,106,0.5); border-radius: 6px;
-               font-family: inherit; font-size: clamp(13px, 2.4vmin, 22px);
+               font-family: inherit; font-size: clamp(13px, 2.4vmin, 21px); font-size: clamp(11px, 3.8cqh, 21px);
                letter-spacing: 0.3em; cursor: pointer; transition: all 0.15s; }
   .title-btn:hover, .title-btn:focus-visible { background: rgba(201,168,106,0.16);
                border-color: #c9a86a; outline: none; }
@@ -80,7 +83,7 @@
                background: rgba(10, 14, 20, 0.9); border: 1px solid rgba(201,168,106,0.35);
                border-radius: 8px; scrollbar-width: thin; }
   .log-entry { padding: 1.2% 0; border-bottom: 1px solid rgba(130,150,170,0.12);
-               color: #cfd6dd; font-size: clamp(12px, 2vmin, 19px); line-height: 1.8;
+               color: #cfd6dd; font-size: clamp(12px, 2vmin, 18px); font-size: clamp(10px, 3.2cqh, 18px); line-height: 1.8;
                white-space: pre-wrap; }
   .log-name { color: #c9a86a; font-size: 0.85em; letter-spacing: 0.12em; margin-bottom: 0.2em; }
 
@@ -99,6 +102,7 @@
     <button data-jump="chapter1.ks">第1章</button>
     <button data-jump="chapter2.ks">第2章</button>
     <button data-jump="chapter3.ks">第3章</button>
+    <button data-jump="chapter4.ks">第4章</button>
   </div>
   <button id="logbtn">LOG</button>
   <div id="msgwin">

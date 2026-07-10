@@ -48,6 +48,7 @@
   // ---- 状態 ----
   let program = [], pc = 0, file = "", gen = 0;
   let waitingClick = false, clickResolve = null, skipTyping = false, choosing = false;
+  let choiceCancel = null, loopActive = false;
   let vars = {};
   let seeds = [];
   let backlog = [];
@@ -179,6 +180,7 @@
   function showChoices(o) {
     choosing = true;
     return new Promise(res => {
+      choiceCancel = res;
       const overlay = document.createElement("div");
       overlay.className = "choice-overlay";
       for (let i = 1; i <= 8; i++) {
@@ -195,10 +197,13 @@
           ev.stopPropagation();
           if (o.attrs.store) vars[o.attrs.store] = label;
           if (o.attrs.seed) seeds.push(label);
+          const target = o.attrs["opt" + i + "t"];
+          if (target) gotoLabel(target);
           overlay.remove();
           choosing = false;
+          choiceCancel = null;
           autoSave();
-          res(o.attrs["opt" + i + "t"] || null);
+          res();
         });
         overlay.appendChild(btn);
       }
@@ -223,19 +228,23 @@
     for (const ch of s) {
       if (myGen !== gen) return;
       textEl.appendChild(document.createTextNode(ch));
+      textEl.scrollTop = textEl.scrollHeight;
       if (!skipTyping) await sleep(28);
     }
   }
 
   // ---- 実行ループ ----
   async function run() {
+    if (loopActive) return;
+    loopActive = true;
+    try {
     while (pc < program.length) {
       const o = program[pc++];
       if (o.op === "text") { skipTyping = false; await typeText(o.s); }
       else if (o.op === "name") { nameEl.textContent = o.name; }
       else if (o.op === "tag") {
         const t = o.name;
-        if (t === "r") textEl.appendChild(document.createTextNode("\n"));
+        if (t === "r") { textEl.appendChild(document.createTextNode("\n")); textEl.scrollTop = textEl.scrollHeight; }
         else if (t === "p" || t === "l") await waitClick();
         else if (t === "cm") textEl.textContent = "";
         else if (t === "bg") setBg(o.attrs.storage, parseInt(o.attrs.time || "600", 10));
@@ -247,13 +256,11 @@
         else if (t === "if") { if (!evalIf(o.attrs)) pc = skipToBranch(pc); }
         else if (t === "else") pc = skipToEndif(pc);
         else if (t === "endif") { /* noop */ }
-        else if (t === "choice") {
-          const target = await showChoices(o);
-          if (target) gotoLabel(target);
-        }
-        else if (t === "title_screen") { started = false; showTitle(); return; }
+        else if (t === "choice") { await showChoices(o); }
+        else if (t === "title_screen") { showTitle(); return; }
       }
     }
+    } finally { loopActive = false; }
   }
 
   function advance() {
@@ -326,18 +333,15 @@
     b.addEventListener("click", () => {
       if (b.dataset.action === "title") { location.reload(); return; }
       document.querySelectorAll(".choice-overlay,.title-overlay,.log-overlay").forEach(el => el.remove());
-      choosing = false;
       textEl.textContent = ""; nameEl.textContent = "";
       setChara(null, 0);
       loadFile(b.dataset.jump, "*start");
-      if (waitingClick && clickResolve) clickResolve();
-      else if (!started) { started = true; run(); }
+      if (choosing) { choosing = false; const c = choiceCancel; choiceCancel = null; if (c) c(); }
+      else if (waitingClick && clickResolve) clickResolve();
+      else if (!loopActive) run();
     });
   });
 
   // ---- 起動 ----
-  let started = false;
-  const origRun = run;
-  run = function () { started = true; return origRun(); };
   showTitle();
 })();

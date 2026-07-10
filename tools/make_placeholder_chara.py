@@ -49,6 +49,14 @@ def butler(expr):
     elif expr == "smile":
         d.arc([cx - 54, ey - 6, cx - 14, ey + 22], 200, 340, fill=GOLD, width=8)
         d.arc([cx + 14, ey - 6, cx + 54, ey + 22], 200, 340, fill=GOLD, width=8)
+    elif expr == "lowered":
+        # 伏せ目: 細い線を少し下に
+        d.rounded_rectangle([cx - 50, ey + 10, cx - 18, ey + 17], 4, fill=GOLD)
+        d.rounded_rectangle([cx + 18, ey + 10, cx + 50, ey + 17], 4, fill=GOLD)
+    elif expr == "worry":
+        # 困り: ハの字に傾いた目
+        d.polygon([(cx - 52, ey - 2), (cx - 18, ey + 10), (cx - 18, ey + 20), (cx - 52, ey + 8)], fill=GOLD)
+        d.polygon([(cx + 52, ey - 2), (cx + 18, ey + 10), (cx + 18, ey + 20), (cx + 52, ey + 8)], fill=GOLD)
     elif expr == "battle":
         d.polygon([(cx - 54, ey + 10), (cx - 16, ey - 2), (cx - 16, ey + 8), (cx - 52, ey + 18)], fill=GOLD)
         d.polygon([(cx + 54, ey + 10), (cx + 16, ey - 2), (cx + 16, ey + 8), (cx + 52, ey + 18)], fill=GOLD)
@@ -92,7 +100,7 @@ def panther():
 
 if __name__ == "__main__":
     OUT.mkdir(parents=True, exist_ok=True)
-    for e in ("normal", "smile", "battle"):
+    for e in ("normal", "smile", "battle", "lowered", "worry"):
         butler(e).save(OUT / f"yoru_{e}.png")
         print("wrote", OUT / f"yoru_{e}.png")
     panther().save(OUT / "yoru_panther.png")
