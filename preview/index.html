@@ -45,9 +45,11 @@
   #toolbar button:hover, #toolbar button:focus-visible { color: #fff; border-color: rgba(201,168,106,0.7); outline: none; }
 
   #quickbar { position: absolute; bottom: 37.5%; right: 4%; z-index: 9;
-              display: flex; gap: 6px; opacity: 0.45; transition: opacity 0.2s; }
+              display: flex; gap: clamp(3px, 0.5cqw, 6px); opacity: 0.45; transition: opacity 0.2s; }
   #quickbar:hover, #quickbar:focus-within { opacity: 1; }
-  .qbtn { font-size: 11px; padding: 4px 12px; background: rgba(0,0,0,0.45); color: #9ab;
+  .qbtn { font-size: clamp(8px, 2.2cqh, 11px);
+          padding: clamp(2px, 0.6cqh, 4px) clamp(5px, 1.2cqw, 12px);
+          background: rgba(0,0,0,0.45); color: #9ab;
           border: 1px solid rgba(150,170,190,0.25); border-radius: 4px; cursor: pointer;
           font-family: sans-serif; letter-spacing: 0.15em; }
   .qbtn:hover, .qbtn:focus-visible { color: #fff; border-color: rgba(201,168,106,0.7); outline: none; }
@@ -108,7 +110,8 @@
                white-space: pre-wrap; }
   .log-name { color: #c9a86a; font-size: 0.85em; letter-spacing: 0.12em; margin-bottom: 0.2em; }
 
-  #hint { position: absolute; bottom: 1%; right: 1.5%; font-size: 10px; color: rgba(255,255,255,0.35);
+  #hint { position: absolute; bottom: 1%; right: 1.5%; font-size: clamp(6px, 1.5cqh, 10px);
+          color: rgba(255,255,255,0.35); max-width: 96%; text-align: right;
           font-family: sans-serif; letter-spacing: 0.05em; z-index: 5; }
 
   /* ヨルの手帳（章ロードマップ） */
