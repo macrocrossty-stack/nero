@@ -110,6 +110,28 @@
 
   #hint { position: absolute; bottom: 1%; right: 1.5%; font-size: 10px; color: rgba(255,255,255,0.35);
           font-family: sans-serif; letter-spacing: 0.05em; z-index: 5; }
+
+  /* ヨルの手帳（章ロードマップ） */
+  .journal-overlay { position: absolute; inset: 0; z-index: 12; background: rgba(4, 6, 10, 0.8);
+                     display: flex; align-items: center; justify-content: center; cursor: default; }
+  .journal-book { width: 72%; max-height: 88%; overflow-y: auto; scrollbar-width: thin;
+                  background: linear-gradient(160deg, #efe6cf 0%, #e4d7ba 60%, #d9c9a6 100%);
+                  border: 10px solid #2b2019; border-radius: 8px;
+                  box-shadow: 0 10px 60px rgba(0,0,0,0.7), inset 0 0 40px rgba(120,95,60,0.25);
+                  padding: 3.5cqh 4cqw; color: #3a3026; }
+  .journal-head { text-align: center; font-size: clamp(13px, 3.6cqh, 22px); letter-spacing: 0.3em;
+                  color: #4a3a28; margin-bottom: 0.4cqh; }
+  .journal-lap { text-align: center; font-size: clamp(10px, 2.4cqh, 15px); letter-spacing: 0.25em;
+                 color: #8a7658; margin-bottom: 2.4cqh; }
+  .journal-entry { display: block; width: 100%; text-align: left; cursor: pointer;
+                   background: transparent; border: none; border-bottom: 1px solid rgba(90,70,45,0.3);
+                   padding: 1.6cqh 1cqw; font-family: inherit; transition: background 0.15s; }
+  .journal-entry:hover:not(.locked), .journal-entry:focus-visible:not(.locked) {
+                   background: rgba(120, 95, 60, 0.14); outline: none; }
+  .journal-entry.locked { cursor: default; opacity: 0.45; }
+  .journal-title { font-size: clamp(13px, 3.2cqh, 20px); color: #3a3026; letter-spacing: 0.12em; }
+  .journal-note { font-size: clamp(10px, 2.4cqh, 15px); color: #7a6850; margin-top: 0.4cqh;
+                  letter-spacing: 0.06em; }
 </style>
 </head>
 <body>
@@ -117,33 +139,24 @@
   <div class="bglayer" id="bgA" style="opacity:1"></div>
   <div class="bglayer" id="bgB" style="opacity:0"></div>
   <div id="chara"><img id="charaimg" alt=""></div>
-  <div id="toolbar">
-    <button data-action="title">タイトル</button>
-    <button data-jump="prologue.ks">プロローグ</button>
-    <button data-jump="chapter1.ks">第1章</button>
-    <button data-jump="chapter2.ks">第2章</button>
-    <button data-jump="chapter3.ks">第3章</button>
-    <button data-jump="chapter4.ks">第4章</button>
-    <button data-jump="chapter5.ks">第5章</button>
-    <button data-jump="final.ks">終章</button>
-    <button data-jump="memory_origin.ks">回想</button>
-  </div>
   <div id="quickbar">
     <button id="autobtn" class="qbtn">AUTO</button>
     <button id="skipbtn" class="qbtn">SKIP</button>
     <button id="logbtn" class="qbtn">LOG</button>
+    <button id="bookbtn" class="qbtn">手帳</button>
   </div>
   <div id="msgwin">
     <div id="namebox"></div>
     <div id="text"></div>
   </div>
-  <div id="hint">クリック / Enter で進む　A: オート　S: スキップ　L: ログ　※開発用プレビュー（素材はすべて仮）</div>
+  <div id="hint">クリック / Enter で進む　A: オート　S: スキップ(既読のみ)　L: ログ　M: 手帳　※素材はすべて仮</div>
 </div>
 
 <script src="scenario_data.js"></script>
 <script>
 window.BG_RESOLVE = s => "../game/data/bgimage/" + s;
 window.CHARA_RESOLVE = s => "../game/data/fgimage/" + s;
+window.DEBUG_UNLOCK = true; // 開発用: 手帳の全章を解放（公開ビルドでは false）
 </script>
 <script src="player.js"></script>
 </body>

@@ -54,10 +54,22 @@
   let backlog = [];
   let curBg = "", curChara = "", curSys = false, saveLocked = false;
   let autoMode = false, skipMode = false;
+  let readSet = new Set();
+  try { readSet = new Set(JSON.parse(localStorage.getItem("nero_read_v1") || "[]")); } catch (e) {}
+  function saveReadSet() {
+    try {
+      if (readSet.size > 20000) readSet = new Set(Array.from(readSet).slice(-15000));
+      localStorage.setItem("nero_read_v1", JSON.stringify(Array.from(readSet)));
+    } catch (e) {}
+  }
   window.__vars = vars; window.__seeds = seeds;
 
   function loadFile(fname, target) {
     if (!window.SCENARIOS[fname]) return;
+    try {
+      const reach = new Set(JSON.parse(localStorage.getItem("nero_reach_v1") || "[]"));
+      if (!reach.has(fname)) { reach.add(fname); localStorage.setItem("nero_reach_v1", JSON.stringify(Array.from(reach))); }
+    } catch (e) {}
     gen++;
     file = fname;
     program = parse(window.SCENARIOS[fname]);
@@ -154,6 +166,72 @@
     panel.scrollTop = panel.scrollHeight;
   }
 
+
+  // ---- ヨルの手帳（章ロードマップ）----
+  const JOURNAL = [
+    { file: "prologue.ks",      title: "えほん",             note: "朗読。……届くように。" },
+    { file: "chapter1.ks",      title: "ひとりのお屋敷",     note: "器、目覚める。七度目。黒豹を、拾っていただいた。" },
+    { file: "chapter2.ks",      title: "よるのひと",         note: "名を、いただいた。——ヨル、と。" },
+    { file: "chapter3.ks",      title: "かつてのひとをさがして", note: "解呪の物語、開始。……後編を、発見される。誤算。" },
+    { file: "chapter4.ks",      title: "ちいさな旅",         note: "村。湖。星の絵。……代金、初出。" },
+    { file: "chapter5.ks",      title: "ほしのへや",         note: "すべてを、話した。" },
+    { file: "final.ks",         title: "ねむりひめ",         note: "第七周期、———。" },
+    { file: "memory_origin.ks", title: "はじまりの記憶",     note: "いちばん、ふるい話。", lap2only: true },
+  ];
+
+  function showJournal() {
+    if (document.querySelector(".journal-overlay")) return;
+    let reach = new Set();
+    try { reach = new Set(JSON.parse(localStorage.getItem("nero_reach_v1") || "[]")); } catch (e) {}
+    const debugAll = !!window.DEBUG_UNLOCK;
+    const lap2 = !!vars.lap2;
+
+    const ov = document.createElement("div");
+    ov.className = "journal-overlay";
+    const book = document.createElement("div");
+    book.className = "journal-book";
+
+    const head = document.createElement("div");
+    head.className = "journal-head";
+    head.textContent = "—— 第七周期の記録 ——";
+    const lapmark = document.createElement("div");
+    lapmark.className = "journal-lap";
+    lapmark.textContent = lap2 ? "（二周目）" : "（一周目）";
+    book.appendChild(head);
+    book.appendChild(lapmark);
+
+    for (const ent of JOURNAL) {
+      if (ent.lap2only && !lap2 && !debugAll) continue;
+      const unlocked = debugAll || reach.has(ent.file);
+      const row = document.createElement("button");
+      row.className = "journal-entry" + (unlocked ? "" : " locked");
+      const t = document.createElement("div");
+      t.className = "journal-title";
+      t.textContent = unlocked ? ent.title : "…………";
+      const n = document.createElement("div");
+      n.className = "journal-note";
+      n.textContent = unlocked ? ent.note : "（まだ、記されていない）";
+      row.appendChild(t); row.appendChild(n);
+      if (unlocked) {
+        row.addEventListener("click", ev => {
+          ev.stopPropagation();
+          ov.remove();
+          document.querySelectorAll(".choice-overlay,.title-overlay,.log-overlay").forEach(el => el.remove());
+          textEl.textContent = ""; nameEl.textContent = "";
+          setChara(null, 0); setSysMode(false);
+          loadFile(ent.file, "*start");
+          if (choosing) { choosing = false; const c = choiceCancel; choiceCancel = null; if (c) c(); }
+          else if (waitingClick && clickResolve) clickResolve();
+          else if (!loopActive) run();
+        });
+      }
+      book.appendChild(row);
+    }
+    ov.appendChild(book);
+    ov.addEventListener("click", ev => { if (ev.target === ov) ov.remove(); });
+    stage.appendChild(ov);
+  }
+
   // ---- 条件分岐 ----
   function evalIf(attrs) {
     const v = vars[attrs.var];
@@ -241,6 +319,12 @@
     waitingClick = true;
     pushLog();
     autoSave();
+    const key = file + "#" + pc;
+    const wasRead = readSet.has(key);
+    readSet.add(key);
+    saveReadSet();
+    // SKIPは既読のみ: 未読に当たったら解除して止まる
+    if (skipMode && !wasRead) setSkip(false);
     const m = document.createElement("span");
     m.id = "marker"; m.textContent = "▾";
     textEl.appendChild(m);
@@ -255,7 +339,7 @@
     const delay = skipMode ? 70 : 1800;
     setTimeout(() => {
       if ((autoMode || skipMode) && waitingClick && clickResolve &&
-          !choosing && !document.querySelector(".log-overlay,.title-overlay")) clickResolve();
+          !choosing && !document.querySelector(".log-overlay,.title-overlay,.journal-overlay")) clickResolve();
     }, delay);
   }
 
@@ -350,7 +434,7 @@
   }
 
   function advance() {
-    if (choosing || document.querySelector(".log-overlay") || document.querySelector(".title-overlay")) return;
+    if (choosing || document.querySelector(".log-overlay,.title-overlay,.journal-overlay")) return;
     if (autoMode) setAuto(false);
     if (skipMode) setSkip(false);
     if (waitingClick && clickResolve) clickResolve();
@@ -393,6 +477,11 @@
       loadFile(START_FILE, "*start");
       run();
     });
+    {
+      let reach = [];
+      try { reach = JSON.parse(localStorage.getItem("nero_reach_v1") || "[]"); } catch (e) {}
+      if (reach.length || window.DEBUG_UNLOCK) mkBtn("ヨルの手帳", () => showJournal());
+    }
     if (save && window.SCENARIOS[save.file]) {
       mkBtn("つづきから", () => {
         vars = save.vars || {}; seeds = save.seeds || []; backlog = save.backlog || [];
@@ -421,10 +510,12 @@
   document.addEventListener("keydown", e => {
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); advance(); }
     if (e.key === "l" || e.key === "L") showLog();
+    if (e.key === "m" || e.key === "M") showJournal();
     if (e.key === "a" || e.key === "A") setAuto(!autoMode);
     if (e.key === "s" || e.key === "S") setSkip(!skipMode);
   });
   document.getElementById("logbtn").addEventListener("click", ev => { ev.stopPropagation(); showLog(); });
+  document.getElementById("bookbtn").addEventListener("click", ev => { ev.stopPropagation(); showJournal(); });
   document.getElementById("autobtn").addEventListener("click", ev => { ev.stopPropagation(); setAuto(!autoMode); });
   document.getElementById("skipbtn").addEventListener("click", ev => { ev.stopPropagation(); setSkip(!skipMode); });
   document.querySelectorAll("#toolbar button").forEach(b => {
