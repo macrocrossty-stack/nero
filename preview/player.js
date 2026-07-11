@@ -52,7 +52,7 @@
   let vars = {};
   let seeds = [];
   let backlog = [];
-  let curBg = "", curChara = "", curSys = false;
+  let curBg = "", curChara = "", curSys = false, saveLocked = false;
   window.__vars = vars; window.__seeds = seeds;
 
   function loadFile(fname, target) {
@@ -101,6 +101,7 @@
 
   // ---- セーブ ----
   function autoSave() {
+    if (saveLocked) return; // 調律後: 記録は、もう、残らない
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify({
         file, pc, vars, seeds, bg: curBg, chara: curChara, sys: curSys,
@@ -282,6 +283,33 @@
         else if (t === "endif") { /* noop */ }
         else if (t === "choice") { await showChoices(o); }
         else if (t === "sysmode") setSysMode(o.attrs.val === "1");
+        else if (t === "seeds_burn") {
+          // 🌱プレイヤーの選択を、ひとつずつ燃やす
+          const list = seeds.length ? seeds.slice() : ["はじめて焼いたパン", "よみきかせた絵本", "たきびの歌"];
+          for (const sd of list) {
+            textEl.textContent = "";
+            skipTyping = false;
+            await typeText("——" + sd + "。");
+            await sleep(700);
+            textEl.style.transition = "opacity 1.2s ease";
+            textEl.style.opacity = 0;
+            await sleep(1300);
+            textEl.style.transition = "";
+            textEl.style.opacity = 1;
+            textEl.textContent = "";
+          }
+        }
+        else if (t === "log_burn") {
+          backlog.length = 0;
+          seeds.length = 0;
+        }
+        else if (t === "save_wipe") {
+          saveLocked = true;
+          try {
+            localStorage.removeItem(SAVE_KEY);
+            localStorage.setItem("nero_seed", "1"); // 種は、ひとつだけ残る
+          } catch (e) {}
+        }
         else if (t === "title_screen") { showTitle(); return; }
       }
     }
@@ -316,7 +344,10 @@
       b.addEventListener("click", ev => { ev.stopPropagation(); fn(); });
       box.appendChild(b);
     };
-    mkBtn("はじめから", () => {
+    let startLabel = "はじめから";
+    try { if (localStorage.getItem("nero_seed")) startLabel = "もういちど"; } catch (e) {}
+    mkBtn(startLabel, () => {
+      saveLocked = false;
       vars = {}; seeds = []; backlog = [];
       window.__vars = vars; window.__seeds = seeds;
       nameEl.textContent = ""; textEl.textContent = "";
