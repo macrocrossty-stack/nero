@@ -179,6 +179,7 @@
     { file: "chapter5.ks",      title: "ほしのへや",         note: "すべてを、話した。" },
     { file: "final.ks",         title: "ねむりひめ",         note: "第七周期、———。" },
     { file: "memory_origin.ks", title: "はじまりの記憶",     note: "いちばん、ふるい話。", lap2only: true },
+    { file: "epilogue.ks",      title: "8かいめのあさ",      note: "——ここから先は、俺の帳面ではない。", lap3only: true },
   ];
 
   function showJournal() {
@@ -187,6 +188,8 @@
     try { reach = new Set(JSON.parse(localStorage.getItem("nero_reach_v1") || "[]")); } catch (e) {}
     const debugAll = !!window.DEBUG_UNLOCK;
     const lap2 = !!vars.lap2;
+    let lap3open = false;
+    try { lap3open = !!localStorage.getItem("nero_lap2_clear"); } catch (e) {}
 
     const ov = document.createElement("div");
     ov.className = "journal-overlay";
@@ -204,7 +207,8 @@
 
     for (const ent of JOURNAL) {
       if (ent.lap2only && !lap2 && !debugAll) continue;
-      const unlocked = debugAll || reach.has(ent.file);
+      if (ent.lap3only && !lap3open && !debugAll) continue;
+      const unlocked = debugAll || reach.has(ent.file) || (ent.lap3only && lap3open);
       const row = document.createElement("button");
       row.className = "journal-entry" + (unlocked ? "" : " locked");
       const t = document.createElement("div");
@@ -488,6 +492,21 @@
       loadFile(START_FILE, "*start");
       run();
     });
+    try {
+      if ((localStorage.getItem("nero_lap2_clear") || window.DEBUG_UNLOCK) && window.SCENARIOS["epilogue.ks"]) {
+        mkBtn("8かいめのあさ", () => {
+          saveLocked = false;
+          vars = { lap3: "1" }; seeds = []; backlog = [];
+          window.__vars = vars; window.__seeds = seeds;
+          nameEl.textContent = ""; textEl.textContent = "";
+          setChara(null, 0);
+          setSysMode(false);
+          ov.remove();
+          loadFile("epilogue.ks", "*start");
+          run();
+        });
+      }
+    } catch (e) {}
     {
       let reach = [];
       try { reach = JSON.parse(localStorage.getItem("nero_reach_v1") || "[]"); } catch (e) {}

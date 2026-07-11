@@ -47,6 +47,10 @@
   #quickbar { position: absolute; bottom: 37.5%; right: 4%; z-index: 9;
               display: flex; gap: clamp(3px, 0.5cqw, 6px); opacity: 0.45; transition: opacity 0.2s; }
   #quickbar:hover, #quickbar:focus-within { opacity: 1; }
+  /* 選択肢・手帳・ログの表示中はクイックバーを隠す（モバイルでの重なり対策） */
+  #stage:has(.choice-overlay) #quickbar,
+  #stage:has(.journal-overlay) #quickbar,
+  #stage:has(.log-overlay) #quickbar { opacity: 0; pointer-events: none; }
   .qbtn { font-size: clamp(8px, 2.2cqh, 11px);
           padding: clamp(2px, 0.6cqh, 4px) clamp(5px, 1.2cqw, 12px);
           background: rgba(0,0,0,0.45); color: #9ab;
