@@ -11,6 +11,11 @@
 [bg storage="bg_storybook.jpg" time=1500]
 ; [playbgm storage="bgm_fable.ogg"]
 
+[if var=lap2]
+#ヨル
+（——七度目の、朗読を。[r]
+　どうか今回も、あなたに、届きますように）[p][cm]
+[endif]
 #
 むかしむかし、ある遠い国に、[r]
 ひとりぼっちのお姫さまがいました。[p][cm]

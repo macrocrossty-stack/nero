@@ -53,6 +53,7 @@
   let seeds = [];
   let backlog = [];
   let curBg = "", curChara = "", curSys = false, saveLocked = false;
+  let autoMode = false, skipMode = false;
   window.__vars = vars; window.__seeds = seeds;
 
   function loadFile(fname, target) {
@@ -243,7 +244,38 @@
     const m = document.createElement("span");
     m.id = "marker"; m.textContent = "▾";
     textEl.appendChild(m);
-    return new Promise(res => { clickResolve = () => { waitingClick = false; m.remove(); res(); }; });
+    return new Promise(res => {
+      clickResolve = () => { waitingClick = false; m.remove(); res(); };
+      scheduleAuto();
+    });
+  }
+
+  function scheduleAuto() {
+    if (!(autoMode || skipMode)) return;
+    const delay = skipMode ? 70 : 1800;
+    setTimeout(() => {
+      if ((autoMode || skipMode) && waitingClick && clickResolve &&
+          !choosing && !document.querySelector(".log-overlay,.title-overlay")) clickResolve();
+    }, delay);
+  }
+
+  function setAuto(on) {
+    autoMode = on;
+    if (on) skipMode = false;
+    refreshQuickbar();
+    if (on) scheduleAuto();
+  }
+  function setSkip(on) {
+    skipMode = on;
+    if (on) { autoMode = false; skipTyping = true; }
+    refreshQuickbar();
+    if (on) scheduleAuto();
+  }
+  function refreshQuickbar() {
+    const a = document.getElementById("autobtn");
+    const k = document.getElementById("skipbtn");
+    if (a) a.classList.toggle("active", autoMode);
+    if (k) k.classList.toggle("active", skipMode);
   }
 
   const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -254,7 +286,7 @@
       if (myGen !== gen) return;
       textEl.appendChild(document.createTextNode(ch));
       textEl.scrollTop = textEl.scrollHeight;
-      if (!skipTyping) await sleep(28);
+      if (!skipTyping && !skipMode) await sleep(28);
     }
   }
 
@@ -275,7 +307,7 @@
         else if (t === "bg") setBg(o.attrs.storage, parseInt(o.attrs.time || "600", 10));
         else if (t === "chara") setChara(o.attrs.storage, o.attrs.time ? parseInt(o.attrs.time, 10) : undefined);
         else if (t === "chara_hide") setChara(null, o.attrs.time ? parseInt(o.attrs.time, 10) : undefined);
-        else if (t === "wait") await sleep(Math.min(parseInt(o.attrs.time || "0", 10), 3000));
+        else if (t === "wait") await sleep(skipMode ? 40 : Math.min(parseInt(o.attrs.time || "0", 10), 3000));
         else if (t === "jump") loadFile(o.attrs.storage || file, o.attrs.target);
         else if (t === "set") vars[o.attrs.var] = o.attrs.val === undefined ? 1 : o.attrs.val;
         else if (t === "if") { if (!evalIf(o.attrs)) pc = skipToBranch(pc); }
@@ -303,6 +335,7 @@
           backlog.length = 0;
           seeds.length = 0;
         }
+        else if (t === "flag_set") { try { localStorage.setItem("nero_" + o.attrs.name, "1"); } catch (e) {} }
         else if (t === "save_wipe") {
           saveLocked = true;
           try {
@@ -318,6 +351,8 @@
 
   function advance() {
     if (choosing || document.querySelector(".log-overlay") || document.querySelector(".title-overlay")) return;
+    if (autoMode) setAuto(false);
+    if (skipMode) setSkip(false);
     if (waitingClick && clickResolve) clickResolve();
     else skipTyping = true;
   }
@@ -349,6 +384,7 @@
     mkBtn(startLabel, () => {
       saveLocked = false;
       vars = {}; seeds = []; backlog = [];
+      try { if (localStorage.getItem("nero_seed")) vars.lap2 = "1"; } catch (e) {}
       window.__vars = vars; window.__seeds = seeds;
       nameEl.textContent = ""; textEl.textContent = "";
       setChara(null, 0);
@@ -385,8 +421,12 @@
   document.addEventListener("keydown", e => {
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); advance(); }
     if (e.key === "l" || e.key === "L") showLog();
+    if (e.key === "a" || e.key === "A") setAuto(!autoMode);
+    if (e.key === "s" || e.key === "S") setSkip(!skipMode);
   });
   document.getElementById("logbtn").addEventListener("click", ev => { ev.stopPropagation(); showLog(); });
+  document.getElementById("autobtn").addEventListener("click", ev => { ev.stopPropagation(); setAuto(!autoMode); });
+  document.getElementById("skipbtn").addEventListener("click", ev => { ev.stopPropagation(); setSkip(!skipMode); });
   document.querySelectorAll("#toolbar button").forEach(b => {
     b.addEventListener("click", () => {
       if (b.dataset.action === "title") { location.reload(); return; }

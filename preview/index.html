@@ -44,11 +44,14 @@
                     font-family: sans-serif; letter-spacing: 0.08em; }
   #toolbar button:hover, #toolbar button:focus-visible { color: #fff; border-color: rgba(201,168,106,0.7); outline: none; }
 
-  #logbtn { position: absolute; bottom: 37%; right: 4%; z-index: 9;
-            font-size: 11px; padding: 4px 12px; background: rgba(0,0,0,0.45); color: #9ab;
-            border: 1px solid rgba(150,170,190,0.25); border-radius: 4px; cursor: pointer;
-            font-family: sans-serif; letter-spacing: 0.15em; opacity: 0.4; transition: opacity 0.2s; }
-  #logbtn:hover, #logbtn:focus-visible { opacity: 1; color: #fff; border-color: rgba(201,168,106,0.7); outline: none; }
+  #quickbar { position: absolute; bottom: 37.5%; right: 4%; z-index: 9;
+              display: flex; gap: 6px; opacity: 0.45; transition: opacity 0.2s; }
+  #quickbar:hover, #quickbar:focus-within { opacity: 1; }
+  .qbtn { font-size: 11px; padding: 4px 12px; background: rgba(0,0,0,0.45); color: #9ab;
+          border: 1px solid rgba(150,170,190,0.25); border-radius: 4px; cursor: pointer;
+          font-family: sans-serif; letter-spacing: 0.15em; }
+  .qbtn:hover, .qbtn:focus-visible { color: #fff; border-color: rgba(201,168,106,0.7); outline: none; }
+  .qbtn.active { color: #0a0e14; background: rgba(201,168,106,0.9); border-color: #c9a86a; }
 
   .choice-overlay { position: absolute; inset: 0; z-index: 8;
                     display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -125,12 +128,16 @@
     <button data-jump="final.ks">終章</button>
     <button data-jump="memory_origin.ks">回想</button>
   </div>
-  <button id="logbtn">LOG</button>
+  <div id="quickbar">
+    <button id="autobtn" class="qbtn">AUTO</button>
+    <button id="skipbtn" class="qbtn">SKIP</button>
+    <button id="logbtn" class="qbtn">LOG</button>
+  </div>
   <div id="msgwin">
     <div id="namebox"></div>
     <div id="text"></div>
   </div>
-  <div id="hint">クリック / Enter で進む　L: ログ　※開発用プレビュー（背景・立ち絵はすべて仮素材）</div>
+  <div id="hint">クリック / Enter で進む　A: オート　S: スキップ　L: ログ　※開発用プレビュー（素材はすべて仮）</div>
 </div>
 
 <script src="scenario_data.js"></script>
