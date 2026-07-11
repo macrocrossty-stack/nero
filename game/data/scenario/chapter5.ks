@@ -9,6 +9,10 @@
 
 *start
 
+[if var=lap2]
+[jump storage="chapter5_y.ks" target="*start"]
+[endif]
+
 [cm]
 [bg storage="bg_black.jpg" time=100]
 [wait time=600]
@@ -520,11 +524,6 @@
 
 ヨルは、目を閉じて、ひとつ、息をして。[r]
 ——絵本を読むときの、あの声になった。[p][cm]
-
-[if var=lap2]
-; ―― 2周目: 御伽話のかわりに、回想「はじまりの記憶」へ ――
-[jump storage="memory_origin.ks" target="*start"]
-[endif]
 
 ; ―― ここから御伽話パート（全画面テキスト・絵本挿絵スチルを差し込む）――
 

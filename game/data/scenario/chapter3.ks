@@ -8,6 +8,10 @@
 
 *start
 
+[if var=lap2]
+[jump storage="chapter3_y.ks" target="*start"]
+[endif]
+
 [cm]
 [bg storage="bg_black.jpg" time=100]
 [wait time=600]
@@ -732,7 +736,4 @@
 
 第三章　かつてのひとをさがして　——了——[p][cm]
 
-つづく[p][cm]
-
-; 第4章「ちいさな旅」へ（未執筆）
-[jump storage="first.ks" target="*start"]
+[jump storage="chapter4.ks" target="*start"]

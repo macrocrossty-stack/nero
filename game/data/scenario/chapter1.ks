@@ -8,6 +8,10 @@
 
 *start
 
+[if var=lap2]
+[jump storage="chapter1_y.ks" target="*start"]
+[endif]
+
 [cm]
 [bg storage="bg_black.jpg" time=100]
 [wait time=600]
@@ -312,14 +316,6 @@
 まあ、おいしいものが、おいしい。[r]
 それはとても、いいこと。深くは考えないことにした。[p][cm]
 
-[if var=lap2]
-#ヨル
-（竈の火加減は、夜のうちに、すこしだけ。[r]
-　……七回とも、あなたはスープの理由を、火の機嫌にした。[r]
-　七回とも、俺はそれを、訂正できなかった）[p][cm]
-#
-[endif]
-
 *reading
 
 [bg storage="bg_library.jpg" time=1800]
@@ -458,14 +454,6 @@
 
 胸の、どきどきは。[r]
 怖いのと、よく似た、べつのなにかだった。[p][cm]
-
-[if var=lap2]
-#ヨル
-（——見られた。月を、恨んだ。[r]
-　……いや。ほんとうは、ほんのすこしだけ、[r]
-　雲の切れ間に、感謝をした）[p][cm]
-#
-[endif]
 
 [bg storage="bg_black.jpg" time=2000]
 [wait time=1000]

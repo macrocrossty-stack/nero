@@ -93,15 +93,17 @@
     });
   }
 
+  let charaTimer = null;
   function setChara(storage, time) {
     curChara = storage || "";
+    if (charaTimer) { clearTimeout(charaTimer); charaTimer = null; }
     const dur = (time === undefined ? 350 : time) / 1000;
     charaEl.style.transition = "opacity " + dur + "s ease";
     if (!storage) { charaEl.style.opacity = 0; return; }
     const url = window.CHARA_RESOLVE(storage);
     if (charaEl.getAttribute("src") !== url) {
       charaEl.style.opacity = 0;
-      setTimeout(() => { charaEl.src = url; charaEl.style.opacity = 1; }, charaEl.src ? dur * 500 : 0);
+      charaTimer = setTimeout(() => { charaTimer = null; charaEl.src = url; charaEl.style.opacity = 1; }, charaEl.src ? dur * 500 : 0);
     } else {
       charaEl.style.opacity = 1;
     }
@@ -219,7 +221,8 @@
           document.querySelectorAll(".choice-overlay,.title-overlay,.log-overlay").forEach(el => el.remove());
           textEl.textContent = ""; nameEl.textContent = "";
           setChara(null, 0); setSysMode(false);
-          loadFile(ent.file, "*start");
+          const yFile = ent.file.replace(".ks", "_y.ks");
+          loadFile((lap2 && window.SCENARIOS[yFile]) ? yFile : ent.file, "*start");
           if (choosing) { choosing = false; const c = choiceCancel; choiceCancel = null; if (c) c(); }
           else if (waitingClick && clickResolve) clickResolve();
           else if (!loopActive) run();
@@ -423,6 +426,7 @@
         else if (t === "save_wipe") {
           saveLocked = true;
           try {
+            localStorage.setItem("nero_lap1vars", JSON.stringify(vars)); // 彼の記憶（1周目の選択）
             localStorage.removeItem(SAVE_KEY);
             localStorage.setItem("nero_seed", "1"); // 種は、ひとつだけ残る
           } catch (e) {}
@@ -444,6 +448,7 @@
   // ---- タイトル画面 ----
   function showTitle() {
     setBg("bg_forest_night.jpg", 100);
+    setChara(null, 300);
     const ov = document.createElement("div");
     ov.className = "title-overlay";
     const box = document.createElement("div");
@@ -468,7 +473,13 @@
     mkBtn(startLabel, () => {
       saveLocked = false;
       vars = {}; seeds = []; backlog = [];
-      try { if (localStorage.getItem("nero_seed")) vars.lap2 = "1"; } catch (e) {}
+      try {
+        if (localStorage.getItem("nero_seed")) {
+          const mem = JSON.parse(localStorage.getItem("nero_lap1vars") || "{}");
+          for (const k of Object.keys(mem)) vars[k] = mem[k]; // 彼は、憶えている
+          vars.lap2 = "1";
+        }
+      } catch (e) {}
       window.__vars = vars; window.__seeds = seeds;
       nameEl.textContent = ""; textEl.textContent = "";
       setChara(null, 0);

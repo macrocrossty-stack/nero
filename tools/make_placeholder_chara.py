@@ -131,6 +131,17 @@ def girl(expr):
     if expr == "normal":
         d.ellipse([cx - 40, ey - 8, cx - 16, ey + 16], fill=(96, 88, 78, 255))
         d.ellipse([cx + 16, ey - 8, cx + 40, ey + 16], fill=(96, 88, 78, 255))
+    elif expr == "smile":
+        d.arc([cx - 44, ey - 6, cx - 12, ey + 20], 200, 340, fill=(96, 88, 78, 255), width=8)
+        d.arc([cx + 12, ey - 6, cx + 44, ey + 20], 200, 340, fill=(96, 88, 78, 255), width=8)
+    elif expr == "surprise":
+        d.ellipse([cx - 42, ey - 12, cx - 12, ey + 20], fill=(96, 88, 78, 255))
+        d.ellipse([cx + 12, ey - 12, cx + 42, ey + 20], fill=(96, 88, 78, 255))
+        d.ellipse([cx - 34, ey - 4, cx - 20, ey + 12], fill=(238, 226, 212, 255))
+        d.ellipse([cx + 20, ey - 4, cx + 34, ey + 12], fill=(238, 226, 212, 255))
+    elif expr == "sad":
+        d.rounded_rectangle([cx - 40, ey + 6, cx - 14, ey + 13], 4, fill=(96, 88, 78, 255))
+        d.rounded_rectangle([cx + 14, ey + 6, cx + 40, ey + 13], 4, fill=(96, 88, 78, 255))
     elif expr == "tuning":
         # 調律状態: 見開かれた、金色の光の目。感情がない
         d.ellipse([cx - 44, ey - 12, cx - 12, ey + 20], fill=GOLD)
@@ -152,6 +163,6 @@ if __name__ == "__main__":
         print("wrote", OUT / f"yoru_{e}.png")
     panther().save(OUT / "yoru_panther.png")
     print("wrote", OUT / "yoru_panther.png")
-    for e in ("normal", "tuning"):
+    for e in ("normal", "smile", "surprise", "sad", "tuning"):
         girl(e).save(OUT / f"girl_{e}.png")
         print("wrote", OUT / f"girl_{e}.png")

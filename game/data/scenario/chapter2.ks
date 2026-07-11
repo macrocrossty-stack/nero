@@ -9,6 +9,10 @@
 
 *start
 
+[if var=lap2]
+[jump storage="chapter2_y.ks" target="*start"]
+[endif]
+
 [cm]
 [bg storage="bg_black.jpg" time=100]
 [wait time=600]
@@ -244,16 +248,6 @@
 でも、たしかに笑った。[p][cm]
 
 その夜のスープは、いままでで、いちばんおいしかった。[p][cm]
-
-[if var=lap2]
-#ヨル
-（クロ。ノワール。ヨイ。ネロ。ツキ。クレナ。[r]
-　——そして、ヨル。[p][cm]
-
-　あなたがくださったものを、俺は、[r]
-　ひとつも、失くしたことがない）[p][cm]
-#
-[endif]
 
 [chara_hide time=800]
 [bg storage="bg_black.jpg" time=1500]

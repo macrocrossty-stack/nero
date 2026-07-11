@@ -336,13 +336,15 @@
 回想　はじまりの記憶　——了——[p][cm]
 
 [if var=lap2]
-; 2周目本編: 第5章の真実開示へ戻る
+; 2周目本編: 第5章（ヨル視点）の真実開示へ戻る
 [cm]
 [bg storage="bg_star_room.jpg" time=2000]
-[chara storage="yoru_lowered.png" time=800]
 #
-——ヨルは、そこまでを、静かに、話し終えた。[p][cm]
-[jump storage="chapter5.ks" target="*kaisou_return"]
+——そこまでを、俺は、話し終えた。[p][cm]
+
+七百年ぶんの、たったひとりの証言を。[r]
+はじめての、聞き手に。[p][cm]
+[jump storage="chapter5_y.ks" target="*kaisou_return"]
 [endif]
 
 ; （単体再生時はタイトルへ）
