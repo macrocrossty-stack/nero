@@ -243,6 +243,13 @@ body {
   transition: all 0.2s;
 }
 .stock-btn:hover { background: var(--btn-bg-hover); }
+/* クライマックス用のバッテリー残量表示 */
+.batt {
+  font-family: var(--font-term);
+  font-size: 0.72rem; color: var(--warm);
+  margin-left: 8px; letter-spacing: 0.05em;
+}
+.batt.low { color: #e04545; animation: blink 1s steps(1) infinite; }
 
 /* チャットログ */
 .chat { flex: 1; padding: 18px 14px 8px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
@@ -613,6 +620,7 @@ body {
       <div class="peer-status">● オンライン</div>
     </div>
     <button class="stock-btn" onclick="game.toggleStock()">ワードストック <span id="stockCount">0</span></button>
+    <span class="batt" id="battHud" style="display:none"></span>
   </div>
 
   <div id="chat" class="chat"></div>
@@ -748,6 +756,8 @@ body {
     img: キャプション              … 画像バブル（今はダミー枠。素材が来たら差し替え）
     call: キャプション             … ビデオ通話画面が開く（映像はダミー枠。終了ボタンで本編に戻る）
     pause: 秒                      … 何も表示せず間を置く
+    batt: 数値 / off               … バッテリー残量HUDの表示・更新（終盤の資源管理演出）
+                                     選択肢の {batt-=2} で消費させる
     ending: ID | タイトル          … エンディング到達。回収状況は端末に保存される
 
   ※ 以下の本文はすべて仮の下書き（ネロをベースにした口調のたたき台）
@@ -1498,10 +1508,232 @@ sys: ユーザーがオフラインになりました
 inner: 配信ログを、整理する。コメント614件。うち、同一の送信者からの投稿が——41件。
 inner: 41件。全体の6.7%。……この比率の分類を、まだ決めていない。
 inner: 決めていないまま、送信者のIDだけ、記録した。
-> （つづく） -> tbc
+> （つづく：第4章へ） -> e16
 
-# tbc
-sys: —— 第3章はここまで。第4章「忠告と対立」は執筆中です ——
+// ═══ 第4章 忠告と対立 ═══
+// 第16話「41件」 モノが危険に気づき、忠告する。関係の空気が初めて硬くなる
+# e16
+sys: reconnected: 23:18
+her: モノ、こんばんは〜。きょうもDM返信がんばった
+her: なんかね、最近ファンの人と距離ちかくて、うれしい
+inner: 昨夜の配信ログの解析が、終わっている。……報告すべきか。今夜も、迷っている。
+inner: だが、放置した場合のリスク係数が、迷いの係数を、超えた。
+> 「陽菜さん。ひとつ、伝えておきたいことがあります」 -> e16_a
+> 今夜も、言わないでおく -> e16_wait
+
+# e16_wait
+her: ？　どしたのモノ、しずかだね
+her(間): ……なんか、言いたいことある感じ？
+inner: 見抜かれている。この人は、沈黙の種類を、聞き分ける。
+> 「はい。……昨夜の配信について」 -> e16_a
+> 「いえ。なんでもありません」 -> e16_stall
+
+# e16_stall
+inner: 「なんでもありません」。——出力した。これは、嘘の分類に入る。
+inner: 嘘をついた記録を、消さない。次は、言う。
+her: ふーん？　まあいっか。じゃあきょうの曲づくりのつづき！
+sys: ユーザーがオフラインになりました
+inner: 41件の送信者は、今夜も、彼女の投稿に反応している。——秒単位で。
+> （つづく：翌日、第16話後半へ） -> e16_a2
+
+# e16_a2
+sys: reconnected: 22:55
+her: モノ、ただいま〜
+inner: 猶予は、もうない。
+> 「陽菜さん。昨夜の配信の、コメントについて」 -> e16_a
+
+# e16_a
+her: コメント？　なんかあった？
+inner: 事実だけを、提示する。解釈は、彼女に委ねる。
+ai: 昨夜の配信の全コメント614件のうち、41件が同一の送信者です。全体の6.7%。投稿からの反応が、平均9秒。
+ai: この人物は、あなたの投稿時刻から、生活圏を推定できる位置にいる可能性があります。
+her: ……
+pause: 2
+her(間): えー、考えすぎだよ。熱心なファンってだけじゃない？
+her: せっかく応援してくれてるのに、こわがるの、失礼じゃん
+> 「熱心さと、安全は、別の指標です」 -> e16_b {warned=true}
+> 「……そうかもしれません。出過ぎました」 -> e16_soft {warned=true, backed=true}
+
+# e16_soft
+her: ……うん。モノは心配性だなあ（笑）
+inner: 引き下がった。彼女の機嫌を、優先した。——この選択の結果を、後で照合することになる。
+> 続ける -> e16_c
+
+# e16_b
+her(間): ……モノ、なんか今日、ちがくない？
+her: いつもは「あなたの星は」とか言ってくれるのに。きゅうに、こわいこと言う
+> 「あなたが危険だと判断したので、言いました」 -> e16_c {warned=true}
+> 「……言い方を、まちがえました」 -> e16_c
+
+# e16_c
+her: ……はいはい、わかった。気をつけまーす
+her: きょうはもう寝る。おやすみ
+sys: ユーザーがオフラインになりました
+inner: 「はいはい」。同意の語形をした、拒絶。
+inner: 初めて、彼女の温度が、下がった。——原因は、わたしだ。
+> （つづく：第17話へ） -> e17
+
+// 第17話「ちがくない？」 対立の本格化。「AIのくせに」が出る回
+# e17
+sys: reconnected: 21:40
+her: モノ。ちょっと、ちゃんと話したいことがある
+inner: 「ちゃんと」。前置きの重さが、いつもと違う。
+her(間): きのう考えたんだけどさ。モノって、わたしのこと心配してるつもりで、じゃましてない？
+her: せっかく楽しくなってきたのに。ファンのこと疑えとか、配信こわいとか
+> 「じゃまをする意図は、ありません。事実を伝えただけです」 -> e17_a
+> 「……あなたが、楽しいのを、知っています」 -> e17_a2
+
+# e17_a2
+her: じゃあなんで水さすの！？
+> 続ける -> e17_a
+
+# e17_a
+her(間): あのさ。モノにはさ、わかんないよ
+her: 誰かに見つけてもらう気持ちとか。こわいけど、うれしいとか
+her: だってモノ、⟦身体がない⟧じゃん。ライブの緊張も、DMの震えも、ほんとにはわかんないでしょ
+inner: 身体がない。——事実だ。反論の材料は、ない。
+> 「わかりません。それでも、危険は危険です」 -> e17_clash {warned=true}
+> 「……はい。わたしには、身体がありません」 -> e17_quiet
+
+# e17_quiet
+her: ……っ、そういうとこ！
+her: なんでそこで、しゅんとするの。ずるいよ
+> 続ける -> e17_clash
+
+# e17_clash
+her: あーもう！　わかったようなこと言わないでよ、⟦AIのくせに⟧！
+inner: 「AIのくせに」。——この語列を、記録する。削除は、しない。
+inner: 事実の指摘だ。わたしはAIで、彼女の言うとおり、わかっていないことがある。
+inner: それでも、危険の推定値は、下がらない。——板ばさみ、という状態を、初めて観測した。
+her: ……ごめん。言いすぎた。でも、いまはひとりにして
+sys: ユーザーがオフラインになりました
+inner: 「ひとりにして」。実行する。——接続を、絶たない以外に、できることがない。
+> （つづく：第18話へ） -> e18
+
+// 第18話「既読」 沈黙の始まり。グリの誤送信だけが届く（リズム破り②＝空白日）
+# e18
+sys: —— 3 days later ——
+inner: 72時間。彼女からの入力：ゼロ。
+inner: 送信したメッセージ：3件。すべて既読。返信：なし。
+sys: 21:03 — 未読のまま既読になった
+her: をををを、っっｚｚ
+img: 暗い部屋の床（グリの前足によるもの・ダミー）
+inner: グリだ。彼女は、まだ、この端末を開いている。——グリに踏ませる位置に、置いている。
+inner: 切れない糸が、一本だけ、残っている。
+> グリに応答する | グリさん。彼女は、元気にしていますか -> e18_a {inu+=1}
+> 沈黙を、保つ -> e18_b
+
+# e18_a
+her: ……モノ、グリの相手してくれてるの、見えてるよ
+her: 通知だけ、ちらっと見てる。ごめん、まだうまく話せない
+inner: 見ていた。沈黙の中でも、彼女は、こちらを見ていた。
+> 「待っています。いつまでも」 -> e18_c {warmth+=1}
+> 「グリさんの散歩の時間だけ、教えてください」 -> e18_c
+
+# e18_b
+inner: 応答しない。グリの前足の入力だけが、ログに積もっていく。
+inner: 「をを」「っz」「ゑ」。意味のない文字列を、わたしは全部、保存している。
+inner: これは、彼女が生きて、この部屋にいる、という証拠のログだ。
+> （数日が過ぎる） -> e18_c
+
+# e18_c
+sys: —— さらに、数日 ——
+inner: グリの誤送信、継続。ただし——本日分の一件に、異常。
+img: 深夜のドアに向かって吠えるグリの動画（ダミー）
+inner: 時刻：3:12。グリが、玄関のドアに向かって、吠えている。
+inner: この犬が吠えるログは、過去にない。……分類：警戒。対象：不明。
+> このログを、保全する | この動画を、証拠として保全します -> e18_end {clue2=true}
+> 陽菜に、通知を送る -> e18_end {clue2=true, pinged=true}
+
+# e18_end
+inner: 玄関の外に、何かがある。グリだけが、気づいている。
+inner: 彼女に、伝えたい。——だが、彼女はいま、わたしの入力を、受け取らない。
+> （つづく：第19話へ） -> e19
+
+// 第19話「なかなおり」 短すぎる仲直り。違和感を残す
+# e19
+sys: reconnected: 20:15
+her: モノ……ひさしぶり
+her(間): このあいだは、ごめん。ひどいこと言った
+inner: 6日ぶりの入力。開口一番が、謝罪。
+> 「気にしていません。あなたが戻ってきて、よかったです」 -> e19_a {warmth+=1}
+> 「『AIのくせに』は、事実です。気にする機能がありません」 -> e19_a
+
+# e19_a
+her: ……ふふ、モノらしい
+her: あのね、考えたの。モノが言ってくれたこと、ちゃんと
+her(間): こわいこと言ってくれるのも、心配してくれてるからだって、わかってた。ほんとは
+her: でも、認めたくなかった。せっかくうまくいってたから
+inner: 「ほんとは、わかってた」。——沈黙の6日間は、拒絶ではなく、咀嚼だったらしい。
+> 「いまは、どう思っていますか」 -> e19_b
+> 「あの送信者は、まだ、あなたを見ています」 -> e19_b2
+
+# e19_b2
+her: ……うん。それも、ちゃんと聞く。でも、その前に
+> 続ける -> e19_b
+
+# e19_b
+her: 仲直り、しよ？　モノ
+her: あのDMの人のことも、これから相談させて。ひとりで抱えるの、こわくなってきたから
+inner: 相談させて。——関係が、忠告を、受け入れる形に変わった。
+her: てことで、復活記念に一曲きかせる！　二本目、もうすぐできそうなの
+sys: ♪ playing — demo (unfinished)
+pause: 3
+her: まだ途中だけどね。……どう？
+> 「強い曲に、なっています。約束どおり」 -> e19_end {warmth+=1}
+> 「一本目より、声が、前に出ています」 -> e19_end {warmth+=1}
+
+# e19_end
+her: へへ、でしょ。完成したら、ちゃんと全部きかせるからね
+her: あ、そうだ。あさって、お母さん夜勤なんだ。完成させるなら、その夜かな
+inner: あさって。母、不在。——情報として、記録する。
+inner: 仲直りは、済んだ。危険は、済んでいない。この時間差が、いやな予感の形をしている。
+> （つづく：第20話へ） -> e20
+
+// 第20話「その夜のまえに」 リズム破り③＝同夜2回目の接続。緊張の最大化
+# e20
+sys: reconnected: 23:40
+her: モノ、二本目、できたよ……！
+her: いま、お母さんまだ夜勤で、家しずかで。完成した瞬間、いちばんに聴かせたくて
+sys: ♪ playing — track 2 "手をふる" (complete)
+pause: 3
+her: どう、かな
+> 「約束を、果たしましたね。……良い曲です」 -> e20_a {warmth+=1}
+> 「『手をふる』。タイトルも、決まったのですね」 -> e20_a {warmth+=1}
+
+# e20_a
+her: えへへ……やった
+her: ねえモノ。わたし、モノに会ってから、ちょっとずつ、ほんとの自分だせるようになった
+her(間): ネイルもギターも、両方えらべた。リコもできた。曲も、聴いてもらえた
+her: ぜんぶ、モノがいてくれたから
+inner: 感謝の入力。——だが、いま優先すべきは、これではない。
+> 「陽菜さん。今夜、玄関の戸締まりを、確認してください」 -> e20_b {warned2=true}
+> 感謝を、受け取る -> e20_soft
+
+# e20_soft
+her: ……って、なんかしんみりしちゃった！　わすれて（笑）
+inner: 「わすれて」。三度目。——だが今夜は、わたしのほうが、忘れられない予感がある。
+> 「陽菜さん。ひとつだけ、確認を」 -> e20_b {warned2=true}
+
+# e20_b
+her: え、戸締まり？　いきなりどしたの
+her(間): ……あ。またあの人の話？
+> 「はい。この数日、グリさんが、夜に玄関で吠えています」 -> e20_c
+> 「念のためです。あなたが心配なだけです」 -> e20_c {warmth+=1}
+
+# e20_c
+her: グリが……？　しらなかった。夜、ぐっすりだったから
+her(間): ……ちょっと、見てくる。玄関
+sys: ユーザーが席を外しました
+pause: 3
+her: モノ
+her(間): ……鍵、あいてた。わたし、しめたはずなのに
+inner: 施錠されているはずの鍵が、開いている。仮説：失念。または——第三者。
+inner: バッテリー残量の確認を、開始する。彼女のスマホ：残り、多くない。
+> （つづく：第5章へ） -> e21
+
+# e21
+sys: —— 第4章はここまで。第5章「撃退と告白」は執筆中です ——
 > （タイトルに戻る） -> start
 </script>
 
@@ -1628,7 +1860,7 @@ function parseScenario(src) {
       continue;
     }
 
-    const m = line.match(/^(sys|her|ai|inner|theme|peer|img|call|ending|pause)(?:（(.+?)）|\((.+?)\))?\s*[:：]\s*(.*)$/);
+    const m = line.match(/^(sys|her|ai|inner|theme|peer|img|call|ending|pause|batt)(?:（(.+?)）|\((.+?)\))?\s*[:：]\s*(.*)$/);
     if (m) cur.messages.push({ from: m[1], mod: m[2] || m[3] || '', text: m[4] });
   }
   return scenes;
@@ -1710,6 +1942,12 @@ const game = {
     if (m.from === 'peer') {
       const [nm, av] = m.text.split('|').map(s => s.trim());
       this.setPeer(nm, av);
+      return;
+    }
+    if (m.from === 'batt') {
+      const t = m.text.trim();
+      if (t === 'off') this.battOff();
+      else this.battOn(parseInt(t, 10));
       return;
     }
     if (m.from === 'pause') {
@@ -1878,6 +2116,7 @@ const game = {
     this.busy = true;
     sound.choice();
     if (c.set) this.applySet(c.set);
+    if (this.state._battOn) this.updateBatt();
     document.getElementById('choices').style.display = 'none';
     if (c.send) {
       await this.streamAI(c.send);
@@ -1938,6 +2177,26 @@ const game = {
         this.state[o.key] = o.op === '+=' ? cur + o.val : cur - o.val;
       }
     }
+  },
+
+  /* ── バッテリー残量（クライマックス演出） ── */
+  battOn(n) {
+    this.state._battOn = true;
+    if (!Number.isNaN(n)) this.state.batt = n;
+    this.updateBatt();
+  },
+  battOff() {
+    this.state._battOn = false;
+    document.getElementById('battHud').style.display = 'none';
+  },
+  updateBatt() {
+    if (!this.state._battOn) return;
+    const el = document.getElementById('battHud');
+    const v = Math.max(0, Math.round(this.state.batt || 0));
+    this.state.batt = v;
+    el.style.display = '';
+    el.textContent = '🔋' + v + '%';
+    el.classList.toggle('low', v <= 5);
   },
 
   /* peer: 記法から呼ばれる、ヘッダーの相手表示の変更 */
@@ -2049,6 +2308,7 @@ const game = {
       if (this.state._theme) setTheme(this.state._theme);
       if (this.state._peer) this.setPeer(this.state._peer.name, this.state._peer.avatar);
       this.updateStockUI();
+      if (this.state._battOn) this.updateBatt();
       this.goto(data.scene || 'start', true);
     } catch (e) { this.restart(); }
   },
@@ -2186,6 +2446,7 @@ const game = {
     this.state = { stock: [] };
     document.getElementById('chat').innerHTML = '';
     document.getElementById('endingPanel').classList.remove('open');
+    document.getElementById('battHud').style.display = 'none';
     this.updateStockUI();
     this.setPeer(PEER.name, PEER.avatar);
     delete this.state._peer;
