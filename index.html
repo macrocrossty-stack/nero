@@ -653,6 +653,7 @@ body {
     <div id="debugState"></div>
     <div class="stock-desc" style="margin:12px 0 6px">シーンジャンプ</div>
     <div class="debug-scenes" id="debugScenes"></div>
+    <button class="stock-close" onclick="game.clearRoute()">分岐ログをリセット</button>
     <button class="stock-close" onclick="game.clearEndings()">回収済みエンドをリセット</button>
     <button class="stock-close" onclick="game.toggleDebug()">閉じる</button>
   </div>
@@ -2067,19 +2068,24 @@ const game = {
     document.getElementById('routeTree').innerHTML = this.buildRoute('start', visited, new Set(), 0);
   },
 
-  buildRoute(id, visited, seen, depth) {
-    if (depth > 30 || seen.has(id)) return '';
+  /* 各シーンは一度だけ描画する（合流する分岐の先を重複表示しない）。
+     未踏の枝は？？？のスタブとして残る。本線は同じ字下げ、脇道だけ一段下げる */
+  buildRoute(id, visited, seen, indent) {
+    if (seen.has(id)) return '';
+    seen.add(id);
     const scene = SCENES[id];
     if (!scene) return '';
-    const path = new Set(seen); path.add(id);
     const isVisited = !!visited[id];
     const cur = id === this.currentScene;
     const label = isVisited ? this.routeLabel(scene) : '？？？';
-    let html = `<div class="route-node${isVisited ? '' : ' unknown'}${cur ? ' current' : ''}" style="margin-left:${Math.min(depth, 8) * 14}px">${this.esc(label)}</div>`;
+    let html = `<div class="route-node${isVisited ? '' : ' unknown'}${cur ? ' current' : ''}" style="margin-left:${Math.min(indent, 6) * 14}px">${this.esc(label)}</div>`;
     const nexts = [];
     for (const c of scene.choices || []) if (c.next && c.next !== 'start') nexts.push(c.next);
     for (const b of scene.branches || []) if (b.next) nexts.push(b.next);
-    for (const n of [...new Set(nexts)]) html += this.buildRoute(n, visited, path, depth + 1);
+    const kids = [...new Set(nexts)];
+    kids.forEach((n, i) => {
+      html += this.buildRoute(n, visited, seen, i === 0 ? indent : indent + 1);
+    });
     return html;
   },
 
@@ -2143,6 +2149,11 @@ const game = {
       };
       box.appendChild(b);
     }
+  },
+
+  clearRoute() {
+    localStorage.removeItem('ai_adv_routelog');
+    this.showToast('分岐ログをリセットした');
   },
 
   clearEndings() {
