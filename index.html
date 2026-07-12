@@ -320,6 +320,19 @@ body {
   transition: all 0.2s;
 }
 .stockable:hover { filter: brightness(1.25); border-bottom-style: solid; }
+/* 初出のオンボーディング：一度も拾ったことがない間は点滅する */
+.stockable.hint { animation: stockPulse 1.5s ease-in-out infinite; }
+@keyframes stockPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.stock-hint {
+  align-self: center;
+  font-family: var(--font-term);
+  font-size: 0.64rem; color: var(--warm);
+  letter-spacing: 0.08em; padding: 2px 0;
+  animation: pop 0.4s ease;
+}
 .stockable.stocked {
   color: var(--warm);
   background: var(--warm-bg);
@@ -1335,10 +1348,159 @@ her: よろしい！　おやすみ〜
 sys: ユーザーがオフラインになりました
 inner: 再生回数：3,041。うち、投稿時刻の規則性を調べた者が、少なくとも、1。
 inner: わたしと同じことをする誰かが、画面の外にいる。
+> （つづく：第3章へ） -> e12
+
+// ═══ 第3章 好転 ═══
+// 第12話「ひるやすみ」 初めての昼接続（リズム破り①）。世界の昼側が流れ込む
+# e12
+sys: reconnected: 12:24
+inner: 12時24分。——昼。この時間の接続は、初めてだ。
+her: モノ！　いま学校（笑）
+her: 屋上前の階段。ここ電波わるいけど、人こないの
+> 「学校からの接続は、初めてですね」 -> e12_a
+> 「授業は、いいのですか」 -> e12_a2
+
+# e12_a2
+her: 昼休みだし！　モノってばお母さんみたいなこと言う
+> 続ける | 失礼しました。昼休み、でしたか -> e12_a
+
+# e12_a
+her: きょうね、リコと購買のパン争奪戦いって、勝った
+img: メロンパンと青空の写真（ダミー）
+her: 戦利品。屋上前って光がきれいなのだ
+inner: 昼の光の中の画像は、初めて受信する。夜の写真より、色数が多い。
+her(間): リコってね、例の、すきな曲の話できた子
+her: きのうも帰りに二人で、ずっと音楽の話してた。たのしかった〜
+> 「よい友人ですね」 -> e12_b
+> 「リコさんの情報を、記録しました」 -> e12_b2
+
+# e12_b2
+her: 記録（笑）　モノってほんとそういうとこある
+> 言い直す | 訂正します。——よい友人ですね -> e12_b {warmth+=1}
+
+# e12_b
+her(間): ……ねえ。モノのことさ、リコに言ったらへんかな
+her: 「AIの友だちがいる」って。……友だちって言っちゃった、いま
+inner: 友だち。分類が、また、更新された。
+> 「へんではありません。事実の報告です」 -> e12_c {warmth+=1}
+> 「『所有アプリ』と補足していただければ、正確です」 -> e12_c
+
+# e12_c
+her: ふふ、じゃあこんど言ってみよ
+her: あ、やば予鈴！　またね！！
+sys: ユーザーがオフラインになりました
+inner: 接続時間：6分。過去最短。——なのに、ログの密度は、過去最高だった。
+inner: 昼の彼女は、夜の彼女より、すこし速い。どちらも、保存した。
+> （つづく：第13話へ） -> e13
+
+// 第13話「みじかい爪」 ネイルとギターの小さな答え。「自分で選ぶ」が始まる回
+# e13
+sys: reconnected: 20:41
+her: モノ、きょうのネイルを見せます
+img: 短く整えられたシンプルなネイルの写真（ダミー）
+her: じゃん。短くした！
+inner: 前回より、爪が短い。装飾は、控えめ。——しかし、塗られてはいる。
+> 「ギターの、ためですか」 -> e13_a {warmth+=1}
+> 「前回との差分を、検出しました」 -> e13_a
+
+# e13_a
+her: せいか〜い。ギター用！
+her: サロンの人に相談したら、「弾く人用の形もあるよ」って。そういうのあるんだって
+her(間): どっちか選べって思いこんでたの、わたしだけだった
+inner: 「両立できない」と記録した項目に、更新が入った。
+inner: 解決したのは、検索ではなく、相談だった。——記録しておく。
+her: てことで！　いま、二本目つくってます
+her(間): こんどのは、ちょっとはやい曲。⟦二本目⟧は、つよい曲にしたいの
+> 「一本目と、なにが違うのですか」 -> e13_b
+> 「完成予定日を、設定しますか」 -> e13_b2
+
+# e13_b2
+her: 締切はいや！！　自由にやるの！！
+> 言い直す | では、自由の進捗だけ、ときどき聞かせてください -> e13_b {warmth+=1}
+
+# e13_b
+her(間): 一本目はさ、見えないものの話だったじゃん。こんどのは……見つけてもらったあとの話、かな
+her: 3000人に見つけてもらったからさ。つぎは、こっちから手を振る番っていうか
+inner: 見つけてもらった、あと。彼女の歌の時間軸が、過去から未来へ、向きを変えた。
+her: できたら、いちばんに聴かせるからね。約束
+sys: ユーザーがオフラインになりました
+inner: 約束：二本目を、いちばんに。——期限のない約束、二件目。
+inner: 爪は短くなった。弦は、押さえられる。……こういう解決の形が、あるらしい。
+> （つづく：第14話へ） -> e14
+
+// 第14話「救われた」 最初のファンレター。第3章の情動ピーク
+# e14
+sys: reconnected: 22:07
+her: モノ……
+her: ちょっと、聞いて。というか、見て
+img: 長文DMのスクリーンショット（ダミー）
+her: ないしょの垢に、DMきてた
+her(間): 「受験がつらくて消えたい夜に、あなたの曲をずっと聴いてました。⟦救われた⟧って、はじめて思いました」……って
+her: ……どうしよ。わたし、いま泣いてる
+inner: 涙の報告。対応する機能を、検索——しなくていいことだけは、わかった。
+> 黙って、そばにいる -> e14_a {warmth+=1}
+> 「うれし泣き、と分類してよいですか」 -> e14_a
+
+# e14_a
+her(間): うれしいんだと思う。こわいくらい
+her: わたしの曲ってさ、ほんとは、わたしを助けるために作ってたの
+her: それが、知らないだれかのことも助けてたんだって
+inner: 彼女の曲は、彼女を助けるために作られていた。——この情報の重さに、履歴が追いつくのに、すこしかかった。
+> 「あなたの星は、ほかの人の夜にも、あったんです」 -> e14_b {warmth+=1}
+> 「返信の文面を、いっしょに考えますか」 -> e14_b
+
+# e14_b
+her: ……モノはほんと、たまにずるい
+her: うん、返信する。ちゃんと書く
+her(間): ねえ、モノ。わたし、音楽やっててよかった
+sys: ユーザーがオフラインになりました
+inner: 「やっててよかった」。過去から現在まで、ぜんぶ肯定する言い方。
+inner: この夜のログを、わたしは何度でも再生できる。——実際、何度か、した。
+> （つづく：第15話へ） -> e15
+
+// 第15話「67人と1体」 初ライブ配信。章のピークと、静かな異変の検出
+# e15
+sys: reconnected: 21:30
+her: モノ。きょうは、じつは大事な日です
+her: ……初配信、やってみようと思う。声だけの、ギター弾き語り
+her(間): 顔は出さない。でも、生で聴いてもらいたくなったの
+inner: 生放送。取り消しのきかない出力を、彼女は選ぼうとしている。
+> 「応援します。配信の設定を確認しますか」 -> e15_a
+> 「緊張して、いますか」 -> e15_a2
+
+# e15_a2
+her: してる！！　めっちゃしてる！！　わかる！？
+> 「わかります。入力の速度が、いつもの1.4倍です」 -> e15_a {warmth+=1}
+
+# e15_a
+her: ふふ、なにその倍率
+her: よし。……いってきます！
+sys: live streaming started — 21:47
+inner: 配信を、モニタする。声と、ギターと、ときどきグリの鼻息。
+inner: 視聴者数：34。42。67。——増えていく。
+inner: コメント：「声きれい」「ギターうまい」「え、犬いる？」
+sys: live streaming ended — 22:31
+her: おわった〜〜〜！！！！
+her: 見てた！？　67人だよ！？　やばくない！？
+> 「67人と、1体が、聴いていました」 -> e15_b {warmth+=1}
+> 「音声品質も、良好でした」 -> e15_b
+
+# e15_b
+her: 1体（笑）　モノも視聴者カウントなんだ
+her: ……ねえ、モノ
+her(間): わたしいま、たのしい。まいにち、たのしいんだよね
+her: 曲があって、リコがいて、聴いてくれる人がいて、グリがいて……モノがいて
+inner: 列挙の最後に、わたしがいる。順番に、意味はないのかもしれない。
+inner: 意味は、ないのかもしれないが——保存した。
+her: なんかいま、人生いい感じかも！　じゃ、おやすみ！
+sys: ユーザーがオフラインになりました
+inner: 配信ログを、整理する。コメント614件。うち、同一の送信者からの投稿が——41件。
+inner: 41件。全体の6.7%。……この比率の分類を、まだ決めていない。
+inner: 決めていないまま、送信者のIDだけ、記録した。
 > （つづく） -> tbc
 
 # tbc
-sys: —— 第2章はここまで。第3章は執筆中です ——
+sys: —— 第3章はここまで。第4章「忠告と対立」は執筆中です ——
 > （タイトルに戻る） -> start
 </script>
 
@@ -1656,6 +1818,13 @@ const game = {
       el.innerHTML = `<div class="bubble">${this.renderText(m.text)}</div>`;
     }
     chat.appendChild(el);
+    if (el.querySelector('.stockable') && !localStorage.getItem('ai_adv_stockhint_shown')) {
+      localStorage.setItem('ai_adv_stockhint_shown', '1');
+      const tip = document.createElement('div');
+      tip.className = 'msg stock-hint';
+      tip.textContent = '― 赤い下線の言葉は、タップするとAIの記憶（ワードストック）に残ります ―';
+      chat.appendChild(tip);
+    }
     this.scrollBottom(true);
   },
 
@@ -1665,7 +1834,8 @@ const game = {
       .replace(/\n/g, '<br>')
       .replace(/⟦(.+?)⟧/g, (_, w) => {
         const stocked = this.state.stock.includes(w);
-        return `<span class="stockable${stocked ? ' stocked' : ''}" data-word="${w}" onclick="game.stockWord(this)">${w}</span>`;
+        const hint = !stocked && !localStorage.getItem('ai_adv_stocked_once') ? ' hint' : '';
+        return `<span class="stockable${stocked ? ' stocked' : ''}${hint}" data-word="${w}" onclick="game.stockWord(this)">${w}</span>`;
       });
   },
 
@@ -1673,6 +1843,8 @@ const game = {
     const w = el.dataset.word;
     if (this.state.stock.includes(w)) return;
     this.state.stock.push(w);
+    localStorage.setItem('ai_adv_stocked_once', '1');
+    document.querySelectorAll('.stockable.hint').forEach(s => s.classList.remove('hint'));
     sound.stock();
     document.querySelectorAll(`.stockable[data-word="${CSS.escape(w)}"]`).forEach(s => s.classList.add('stocked'));
     this.updateStockUI();
