@@ -13,6 +13,44 @@
   const SAVE_KEY = "nero_autosave_v1";
   const START_FILE = "prologue.ks";
 
+  // ---- オーディオ（BGM / SE）----
+  // 音声ファイルが未配置でも、再生失敗は握りつぶして無音で進行する。
+  // ホストページ側で window.BGM_RESOLVE / window.SE_RESOLVE を定義すればパスを差し替え可。
+  const BGM_VOL = 0.5, SE_VOL = 0.7;
+  let bgmAudio = null, bgmName = "";
+  const resolveBgm = s => (window.BGM_RESOLVE ? window.BGM_RESOLVE(s) : ("../game/data/bgm/" + s));
+  const resolveSe = s => (window.SE_RESOLVE ? window.SE_RESOLVE(s) : ("../game/data/se/" + s));
+  function playBgm(storage) {
+    if (!storage || storage === bgmName) return;
+    const url = resolveBgm(storage);
+    if (!url) return; // 音声が未配置（リゾルバが空文字）なら無音で進む
+    stopBgm(300);
+    try {
+      const a = new Audio(url);
+      a.loop = true; a.volume = 0;
+      bgmAudio = a; bgmName = storage;
+      a.play().then(() => fadeVol(a, BGM_VOL, 600)).catch(() => {});
+    } catch (e) {}
+  }
+  function stopBgm(ms) {
+    const a = bgmAudio; bgmAudio = null; bgmName = "";
+    if (!a) return;
+    fadeVol(a, 0, ms || 300, () => { try { a.pause(); } catch (e) {} });
+  }
+  function playSe(storage) {
+    if (!storage) return;
+    const url = resolveSe(storage);
+    if (!url) return;
+    try { const a = new Audio(url); a.volume = SE_VOL; a.play().catch(() => {}); } catch (e) {}
+  }
+  function fadeVol(a, to, ms, done) {
+    const from = a.volume, steps = Math.max(1, Math.round(ms / 40)); let i = 0;
+    const id = setInterval(() => {
+      i++; try { a.volume = Math.max(0, Math.min(1, from + (to - from) * i / steps)); } catch (e) {}
+      if (i >= steps) { clearInterval(id); if (done) done(); }
+    }, 40);
+  }
+
   // ---- パーサ ----
   function parse(src) {
     const ops = [];
@@ -120,7 +158,7 @@
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify({
         file, pc, vars, seeds, bg: curBg, chara: curChara, sys: curSys,
-        name: nameEl.textContent, backlog: backlog.slice(-100),
+        bgm: bgmName, name: nameEl.textContent, backlog: backlog.slice(-100),
       }));
     } catch (e) { /* private mode 等は黙って諦める */ }
   }
@@ -406,6 +444,9 @@
         else if (t === "endif") { /* noop */ }
         else if (t === "choice") { await showChoices(o); }
         else if (t === "sysmode") setSysMode(o.attrs.val === "1");
+        else if (t === "playbgm") playBgm(o.attrs.storage);
+        else if (t === "stopbgm") stopBgm(parseInt(o.attrs.time || "600", 10));
+        else if (t === "playse") playSe(o.attrs.storage);
         else if (t === "seeds_burn") {
           // 🌱プレイヤーの選択を、ひとつずつ燃やす
           const list = seeds.length ? seeds.slice() : ["はじめて焼いたパン", "よみきかせた絵本", "たきびの歌"];
@@ -453,6 +494,7 @@
   function showTitle() {
     setBg("bg_forest_night.jpg", 100);
     setChara(null, 300);
+    stopBgm(500);
     const ov = document.createElement("div");
     ov.className = "title-overlay";
     const box = document.createElement("div");
@@ -523,6 +565,7 @@
         if (save.bg) setBg(save.bg, 300);
         setChara(save.chara || null, 0);
         setSysMode(save.sys);
+        if (save.bgm) playBgm(save.bgm);
         ov.remove();
         run();
       });

@@ -61,14 +61,24 @@ tools/
 - [x] 2周目統合（回想差し替え・「つづく」エンド）＋AUTO/SKIP
 - [x] 2周目の完全ヨル視点化（prologue_y〜final_y の7ファイル。全編書き下ろし・立ち絵はステラ表示）
 - [x] 3周目「8かいめのあさ」本文（epilogue.ks。2周目クリアでタイトルと手帳に解放）
-- [x] エンジンv3（選択肢・タイトル画面・オートセーブ・バックログ・立ち絵） ※AUTO/SKIP/メタ演出は今後
+- [x] エンジン（選択肢・タイトル画面・オートセーブ・バックログ・立ち絵・AUTO/SKIP・メタ演出・BGM/SE再生）
+- [x] 音楽再生タグ（`[playbgm]`/`[stopbgm]`/`[playse]`）実装 ※ファイル未配置でも無音で進行。docs/09
+- [x] 配布ビルドスクリプト `tools/build_release.py`（単一HTML・DEBUG_UNLOCK切替）
+- [x] シナリオ全文をNotionに書き出し（推敲用。1周目全編＋2周目プロローグ〜第3章。以降も順次追加）
+- [ ] BGM/SE の選定・配置（方針: 灰羽連盟系。docs/09）※エンジン側は対応済み、素材待ち
+- [ ] スチル・立ち絵の発注/制作（docs/08）
 
-- [ ] BGM/SE の選定・配置（方針: 灰羽連盟系。docs/03）
-- [ ] スチル・立ち絵の発注/制作
+## ビルド
+
+```
+python3 tools/build_preview.py        # preview/scenario_data.js を再生成（ローカルプレビュー用）
+python3 tools/build_release.py         # dist/nero-release.html（配布用・手帳ロック）
+python3 tools/build_release.py --preview  # dist/nero-preview.html（開発用・全章解放）
+```
 
 ## 備考
 
-- `game/data/scenario/` の .ks は改稿版（プロローグ〜第3章）。選択肢タグの仕様は `docs/07_ゲームデザイン.md` 参照。
+- `game/data/scenario/` の .ks が本体。1周目=プロローグ〜終章、2周目=`*_y.ks`、回想=`memory_origin.ks`、3周目=`epilogue.ks`。選択肢タグの仕様は `docs/07_ゲームデザイン.md` 参照。
 - 制作方針・世界観の背骨は `docs/01_企画書.md`、全体プロットは `docs/06_プロット_全体構成.md` を参照。
 - 少女の真の名は仮・ステラ（終章まで非表示のため決定は後回しで支障なし）。
 - クレジットのシナリオ表記は仮に「ヨダカ」（権利配慮でClaude/Anthropic表記は避ける方針。候補: ヨダカ／ヨル／Nero）。
