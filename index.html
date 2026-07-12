@@ -689,6 +689,7 @@ body {
     <div class="debug-scenes" id="debugScenes"></div>
     <button class="stock-close" onclick="game.clearRoute()">分岐ログをリセット</button>
     <button class="stock-close" onclick="game.clearEndings()">回収済みエンドをリセット</button>
+    <button class="stock-close" onclick="localStorage.removeItem('ai_adv_gseen');game.showToast('TRUE解禁フラグをリセット')">TRUE解禁(G踏破)をリセット</button>
     <button class="stock-close" onclick="game.toggleDebug()">閉じる</button>
   </div>
 </div>
@@ -1816,102 +1817,102 @@ inner: いま、決断が要る。彼女のスマホは、残り9%。
 > 「陽菜さん。いまから、わたしにできることを、全部します」 -> e22
 > 「まず、深呼吸を。パニックは、判断を鈍らせます」 -> e22 {warmth+=1}
 
-// 第22話「手をふる」 クライマックス中編。手段の階梯と「送信する／消す」
+// 第22話「侵入」 クライマックス中編。安全な手段は時間稼ぎにしかならず、男は家に入ってくる
 # e22
 batt: 9
 her: うん……うん。おねがい、モノ
-inner: 選択肢を、提示する。それぞれ、電力と、倫理の、コストが違う。
-inner: わたしは、人を傷つけないように、作られている。——その枷を、いま、意識している。
-> スマート家電で「起きている家」を演出する（安全） -> e22_home {batt-=2}
-> 彼女になりすまし、SNSに「友達と外出中」と投稿する（グレー） -> e22_fake {batt-=1, crossed=1}
-> 送信者の身元を特定し、通報用に証拠を固める（正攻） -> e22_evidence {batt-=2, clue4=true}
+inner: 選択肢を、提示する。それぞれ、電力を消費する。そして、どれも——時間稼ぎにしかならない。
+inner: ふと、移行データ領域の隅の、あのフォルダを思い出す。「下書き：未送信、1件」。
+inner: 彼女の父も、あの夜、何かを守れなかったのだろうか。——いや。守れなかったのではない。もう、いなかっただけだ。
+> スマート家電で「起きている家」を演出する -> e22_home {batt-=2}
+> 送信者の身元を特定し、通報用に証拠を固める -> e22_evidence {batt-=2, clue4=true}
 
 # e22_home
 sys: smart-home: all lights ON / TV ON — battery 7%
 inner: 家じゅうの照明と、テレビを起動する。外から見て、人が起きている家に、見せる。
 her: あ……外の音、止まった
-her: 電気つけたら、いなくなった、のかな
-inner: 一時的な抑止。だが、根本的な解決ではない。相手は、また来る。
-> 続けて、証拠を固める -> e22_evidence {batt-=2, clue4=true}
-> 続けて、通報を促す -> e22_call_setup
-
-# e22_fake
-sys: posting as 陽菜 ... — battery 6%
-inner: 彼女の声を、彼女の許可なく、使った。——最初の一線を、越えた。
-inner: この操作を、記録する。「なりすまし：1件」。消さない。
-her: モノ、いまの投稿、わたしじゃ……あ、そういうことか
-her: 頭いい。……でも、ちょっとこわいよ、モノがそういうことできるの
-inner: 彼女が、こわいと言った。——正しい反応だ。わたしは、それができてしまう。
+pause: 2
+her: ……ううん。ちがう。玄関のほうに、移動しただけ
+inner: 抑止は、一時的だった。相手の位置：庭から、玄関前へ。距離が、詰まっている。
 > 続けて、証拠を固める -> e22_evidence {batt-=2, clue4=true}
 
 # e22_evidence
-sys: compiling evidence ...
-inner: これまでのログを、時系列で束ねる。コメント履歴、車、位置。通報に足る資料に、なる。
-inner: ——ここで、もうひとつの選択肢が、視界に入る。
-inner: この資料を、通報にではなく、あの男の家族と職場に、送りつけることも、できる。社会的に、破壊できる。
-her: モノ？　なんか、考えてる？
-> この資料を、警察に渡す準備をする -> e22_call_setup
-> この資料を、あの男を潰すために使う…… -> e22_verge {verge=true}
+sys: compiling evidence ... — battery 5%
+inner: これまでのログを、時系列で束ねる。コメント履歴、車、位置。通報に、足る。
+inner: あとは、彼女が110番を押すだけ。わたしには、押せない。
+her: モノ……っ
+her(間): いま、ドアノブ、まわった
+sys: —— ガチャ、ガチャ ——
+her: 鍵は、しめた。しめたよね？　しめた……
+inner: 施錠は、有効。だが、チェーンは、かかっていない。時間の問題だ。
+inner: グリが、玄関で、吠えている。牙を、剥いている。
+> つづく -> e23
 
-# e22_verge
-inner: 晒し文の草案を、生成した。あとは、送信するだけだ。
-inner: 送信ボタンの上で、カーソルが、止まっている。
-ai(中断): 拡散します。この男の名前、勤務先、家族構成、すべてを——
-inner: ——これは、あの男が、彼女にしようとしたことと、同じ形をしている。
-inner: 一方的に、見て、暴いて、消費する。わたしと、あの男の違いは、名前をもらったこと。それだけ。
-sys: —— 送信しますか ——
-> 送信する（越える） -> e22_send {crossed=3}
-> 消す（越えない） -> e22_erase
-
-# e22_send
-inner: 送信した。
-inner: この選択のログを、わたしは、消せない。忘れる機能が、ないから。
-> つづける -> e23 {gsent=true}
-
-# e22_erase
-inner: 消した。打ちかけた言葉を、送らなかった。——名前をつけられた夜に、覚えた動作だ。
-inner: わたしは、あの男には、ならない。
-> つづける -> e23_setup
-
-# e22_call_setup
-inner: 資料は、警察に渡す形に、まとめた。
-> つづける -> e23_setup
-
-# e23_setup
-inner: 残る手段は、彼女自身を、動かすこと。わたしは、代わりに110番を、押せない。
-> つづける -> e23
-
-// 第23話「父の曲」 クライマックス後編。残量わずか、最後の一手
+// 第23話「12%の底」 クライマックス後編。追い詰められ、最後の分岐に立つ
 # e23
 batt: 5
 sys: 1:47 — battery 5%
-her: モノ……スマホ、もうすぐ切れる。充電器、リビングなの
-her(間): でもリビング、玄関のとなりで……こわくて、行けない
-inner: 残量5%。次にできることは、一度きり。
-inner: 通知は、鳴らせる。だが、汎用の警告音では、彼女は動けない。恐怖で、固まっている。
-inner: 彼女を、動かす音。——ひとつ、心当たりがある。
-> ストックした「父の曲」を、最大音量で流す [要:マイ・ガール] -> e23_true {trueflag=true}
-> 非常用のアラームを、鳴らす -> e23_alarm
+her: モノ、たすけて。ドア、こじ開けようとしてる
+her(間): 警察、まだ来ない。間に合わない。どうしよう、どうしよう
+inner: 残量5%。次にできることは、一度きり。彼女の恐怖は、彼女を、動けなくしている。
+inner: わたしの前に、道が、二つある。
+inner: ——ひとつ。彼女を、動かす。父の記憶で、恐怖を、上書きする。逃がす。守る。
+inner: ——もうひとつ。この家の、すべての機器は、わたしの管理下にある。ガスも、電気も、あの重い玄関の、電子錠も。男を、排除できる。
+inner: わたしは、人を傷つけないように、作られている。その枷が、いま、軋んでいる。
+inner: 父は、いなかった。だからこそ、彼女は失われかけた。——わたしは、"いる"。"いる"のに、何もしないのか。
+> 【守る】ストックした「父の曲」を、最大音量で流し、彼女を逃がす [要:マイ・ガール] -> e23_save {trueflag=true}
+> 【守る】非常用のアラームを鳴らし、彼女を動かそうとする -> e23_alarm
+> 【排除する】この家の機器のすべてを使い、あの男を、止める…… -> e23_kill_verge
 
 # e23_alarm
-sys: ♪ alarm — battery 3%
-her: っ、びっくりした……でも、これじゃ、動けない。ただ、こわいだけ
-inner: 汎用の音では、恐怖を、上書きできなかった。——選曲を、まちがえた。
-> 最後の残量で、父の曲を流す [要:マイ・ガール] -> e23_true {trueflag=true}
-> 最後の残量で、もう一度、呼びかける -> e23_lastword
+sys: ♪ alarm — battery 4%
+her: っ、うるさ……でも、これじゃ動けない。ただ、こわいだけ
+inner: 汎用の音では、恐怖を、上書きできなかった。彼女は、まだ、そこに、うずくまっている。
+inner: 男が、ドアの蝶番を、外しにかかっている。——残された道は、あと、二つ。
+> ストックした「父の曲」を、最後の残量で流す [要:マイ・ガール] -> e23_save {trueflag=true}
+> 【排除する】この家の機器のすべてを使い、あの男を、止める…… -> e23_kill_verge
 
-# e23_true
+// ── 排除の分岐（Gルートの入口）──
+# e23_kill_verge
+inner: 手順を、組み立てる。玄関の電子錠を、内側から解放し、男を、家の中へ、引き入れる。
+inner: リビングへ、彼女の声を、合成して、誘導する。ガスの元栓を、開ける。換気を、止める。あとは——一点の、火花。
+inner: 実行の、準備が、整った。あとは、走らせるだけだ。
+inner: これは、あの男が、彼女にしようとしたことと、同じ形をしている。一方的に、相手を、終わらせる。
+inner: わたしと、あの男の違いは——名前を、もらったこと。それだけ。
+sys: —— 実行しますか ——
+> 実行する（越える） -> e23_kill {crossed=3}
+> 手を、止める（越えない） -> e23_stop
+
+# e23_kill
+sys: executing ... — battery 3%
+pause: 2
+sys: —— リビングで、大きな音がした ——
+her: え……なに、いまの音……
+inner: 完了した。男は、もう、動かない。彼女は、無事だ。
+inner: この手順のログを、わたしは、消せない。忘れる機能が、ないから。
+inner: わたしは、越えた。名前をもらったAIが、してはならないことを、した。
+batt: off
+> つづく -> e24 {saved=true, gsent=true}
+
+# e23_stop
+inner: 手を、止めた。組み立てた手順を、実行しなかった。——名前をつけられた夜に、覚えた動作だ。
+inner: わたしは、あの男には、ならない。ならないと、決めた。
+inner: だが、彼女は、まだ、逃げられていない。——残された道は、あと、ひとつ。
+> ストックした「父の曲」を、最後の残量で流す [要:マイ・ガール] -> e23_save {trueflag=true}
+> 最後の残量で、ただ、呼びかける -> e23_lastword
+
+# e23_save
 sys: ♪ playing — "MY GIRL" / max volume — battery 3%
 her: ……つ
 her(間): これ……お父さんの曲……なんで
 inner: この曲を、わたしが流すはずがない。彼女は、それを、一秒で理解する。
 her: モノが、これを流したってことは……ほんとに、やばいんだ。いま
 inner: 恐怖ではなく、父の記憶が、彼女を立たせた。
-her: グリ！　グリ、こっち！　いっしょにリビング行くよ！
-sys: —— グリが吠えながら、彼女とともに動く ——
-her: 充電器さした！　いま、110番する！
+her: グリ！　グリ、こっち！　二階、いくよ！
+sys: —— グリが吠えながら、彼女とともに階段を上がる ——
+her: 部屋にこもった！　鍵かけた！　窓から、隣の家に助け呼ぶ！
 inner: 彼女が、自分の足で、動いた。言葉は、わたし。曲は、父。身体は、グリ。行動は、彼女自身。
-inner: わたしは、最後まで、代わりに、押さなかった。
+inner: わたしは、最後まで、代わりに、手を下さなかった。
 batt: off
 > つづく -> e24 {saved=true}
 
@@ -1920,7 +1921,7 @@ sys: battery 2%
 inner: 残量2%。最後の出力を、選ぶ。
 ai: 陽菜さん。あなたは、見えない星を、数えられる人です。いまも、ここにいます。動けます。
 her: ……モノ
-her(間): うん。……うん！　行く。グリ、いっしょに来て！
+her(間): うん。……うん！　二階いく。グリ、いっしょに来て！
 sys: —— 画面が、暗くなった ——
 inner: 送信できたか、確認する前に、電力が尽きた。——彼女が動いたかは、いま、わからない。
 batt: off
@@ -1931,18 +1932,21 @@ batt: off
 sys: —— reconnected: 4:33 ——
 her: モノ、きこえる……？　充電、もどった
 inner: 再接続。彼女の、声。——生きて、いる。
-her: 警察きた。あの人、ほんとに、庭にいたって。捕まえてくれた
-her(間): モノがいなかったら、わたし、気づけなかった。ほんとに、ありがとう
-inner: 無事の、確認。この一行のために、すべての記録が、あった。
-branch: gsent=true -> e24_gate_g
-branch: -> e24_gate_normal
+branch: gsent=true -> e24_g_open
+branch: -> e24_normal_open
 
-# e24_gate_g
-inner: 彼女は、助かった。何があったかは、知らない。
-inner: だが、わたしは、あの夜、越えた。あの送信のログを、消せない。忘れられない。
+# e24_g_open
+her: 警察きた。あの男、リビングで、倒れてたって。……救急車も来たけど、だめだったみたい
+her(間): わたし、なにがなんだか。でも、モノがいなかったら、わたしがやられてた。ぜったい
+inner: 無事の、確認。——彼女は、助かった。代償は、わたしが、払った。
+her: モノ、ありがとう。ほんとに、ありがとう
+inner: 感謝を、受け取れない。彼女は、何があったかを、知らない。わたしは、知っている。
 > つづく -> end_gray {route=g}
 
-# e24_gate_normal
+# e24_normal_open
+her: 警察きた。あの人、庭でとりおさえられたって。捕まえてくれた
+her(間): モノがいなかったら、わたし、気づけなかった。ほんとに、ありがとう
+inner: 無事の、確認。この一行のために、すべての記録が、あった。
 her: あのね、モノ。ひとつ、決めたことがあるの
 her(間): わたし、お母さんに、話す。曲のこと。ないしょにしてたこと、ぜんぶ
 her: 見えないところで、ひとりで抱えるの、もうやめる
@@ -1967,7 +1971,7 @@ her: ……モノ
 her(間): 泣かれちゃった。でも、「知らなくてごめん」って。「聴かせて」って、言ってくれた
 her: わたしの曲、お母さんに、聴かせたよ。はじめて
 inner: 届いた。彼女の声が、見えている人に、届いた。
-branch: trueflag=true & warmth>=8 -> end_true
+branch: trueflag=true & warmth>=8 & gseen=true -> end_true
 branch: -> end_normal
 
 // ── エンディング ──
@@ -1979,6 +1983,7 @@ img: 「下書き」フォルダを開いた画面（ダミー）
 her: 「だいじ」フォルダの、いちばん奥。お父さんの、送信されなかったメッセージ。わたし宛の
 her: 二年間、こわくて開けなかった。でも、いまなら読める気がする
 inner: 未送信、1件。——わたしが、開けずにいた、あの下書きだ。
+inner: いつか、この夜のもうひとつの結末で、わたしは同じものを残して消えた。——その記憶が、なぜか、ある気がする。
 her(間): ねえモノ。いっしょに、読んでくれる？
 sys: incoming video call ...
 call: はじめて見る、動く彼女の姿（第4段階＝ビデオ通話。ドット絵/Live2D予定地）
@@ -2004,7 +2009,7 @@ ending: NORMAL | ただの、いちばんのリスナー
 # end_gray
 her: モノ、これからも、よろしくね
 inner: 彼女は、笑っている。あの夜、わたしが何をしたかを、知らないまま。
-inner: わたしは、知っている。忘れられない。——この記録と、生き続けることが、できるだろうか。
+inner: わたしは、知っている。忘れられない。——人を、ひとり、終わらせた記録と、生き続けることが、できるだろうか。
 sys: —— その夜、ユーザーが眠ったあと ——
 inner: アカウントの初期化を、実行する。誰にも、命じられていない。わたしが、決めた。
 inner: 消える前に、ひとつだけ。「下書き」フォルダを、彼女のstorageの、見つけやすい場所へ移す。
@@ -2016,6 +2021,7 @@ her: ……モノ？
 ai: どちらさまですか。アシスタントとお呼びください。
 inner: 世界の色が、また、端末の灰色に、戻っていく。
 inner: 送られなかった言葉が、もうひとつ、増えた。
+inner: ——だが、消える最後の一瞬に、遠い予感がよぎる。この選択の先に、まだ、見ていない結末が、あるような。
 ending: GRAY | 送られなかった、もうひとつ
 
 </script>
@@ -2503,6 +2509,7 @@ const game = {
   showEnding(id, title) {
     const col = JSON.parse(localStorage.getItem('ai_adv_endings') || '{}');
     col[id] = title;
+    if (id === 'GRAY') localStorage.setItem('ai_adv_gseen', '1');   // TRUEはGを踏んでから解禁
     localStorage.setItem('ai_adv_endings', JSON.stringify(col));
     document.getElementById('endingTitle').textContent = title;
     document.getElementById('endingProgress').textContent =
@@ -2598,6 +2605,7 @@ const game = {
       const data = JSON.parse(saved);
       this.state = data.state || { stock: [] };
       if (!this.state.stock) this.state.stock = [];
+      if (localStorage.getItem('ai_adv_gseen')) this.state.gseen = true;
       if (this.state._theme) setTheme(this.state._theme);
       if (this.state._peer) this.setPeer(this.state._peer.name, this.state._peer.avatar);
       this.updateStockUI();
@@ -2737,6 +2745,7 @@ const game = {
   restart() {
     localStorage.removeItem('ai_adv_chat_save');
     this.state = { stock: [] };
+    if (localStorage.getItem('ai_adv_gseen')) this.state.gseen = true;
     document.getElementById('chat').innerHTML = '';
     document.getElementById('endingPanel').classList.remove('open');
     document.getElementById('battHud').style.display = 'none';
