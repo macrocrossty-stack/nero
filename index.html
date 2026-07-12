@@ -407,6 +407,7 @@ body {
   border: 1px solid var(--warm-line);
   color: var(--warm); background: var(--warm-bg);
 }
+.stock-word.pending { opacity: 0.5; border-style: dashed; }
 .stock-empty { font-size: 0.74rem; color: var(--text-faint); padding: 8px 0; }
 .stock-close {
   margin-top: 16px; width: 100%;
@@ -2901,9 +2902,10 @@ const game = {
     const pend = this.state.pending || [];
     document.getElementById('stockCount').textContent = this.state.stock.length + pend.length;
     const list = document.getElementById('stockList');
-    list.innerHTML = this.state.stock.length
-      ? this.state.stock.map(w => `<div class="stock-word">${this.esc(w)}</div>`).join('')
-      : '<div class="stock-empty">まだ何も覚えていない</div>';
+    const kept = this.state.stock.map(w => `<div class="stock-word">${this.esc(w)}</div>`).join('');
+    // この章で拾った未整理の言葉は、薄く（整理でどれを残すか、まだ未確定）
+    const pending = pend.map(w => `<div class="stock-word pending">${this.esc(w)}</div>`).join('');
+    list.innerHTML = (kept + pending) || '<div class="stock-empty">まだ何も覚えていない</div>';
   },
 
   showToast(text) {
