@@ -448,6 +448,46 @@ body {
 }
 .stt-btn:hover { background: color-mix(in srgb, var(--warm) 18%, transparent); }
 
+/* 章末の記憶整理パネル */
+.cons-panel {
+  position: fixed; inset: 0; z-index: 66;
+  background: rgba(4,4,6,0.82); backdrop-filter: blur(5px);
+  display: none; align-items: center; justify-content: center; padding: 24px;
+}
+.cons-panel.open { display: flex; animation: pop 0.4s ease; }
+.cons-card {
+  width: 100%; max-width: 360px; text-align: center;
+  background: var(--surface); border: 1px solid var(--warm-line);
+  border-radius: 16px; padding: 26px 22px;
+}
+.cons-title {
+  font-family: 'Shippori Mincho', serif;
+  font-size: 1rem; letter-spacing: 0.2em; color: var(--warm); margin-bottom: 12px;
+}
+.cons-sub { font-size: 0.78rem; color: var(--text); line-height: 1.9; margin-bottom: 14px; }
+.cons-remain { font-family: var(--font-term); font-size: 0.7rem; color: var(--text-dim); letter-spacing: 0.1em; margin-bottom: 14px; }
+.cons-remain b { color: var(--warm); }
+.cons-list { display: flex; flex-wrap: wrap; gap: 9px; justify-content: center; margin-bottom: 20px; }
+.cons-word {
+  font-size: 0.82rem; padding: 9px 15px; border-radius: 18px;
+  border: 1px solid var(--line-strong); background: transparent;
+  color: var(--text-dim); font-family: inherit; cursor: pointer;
+  transition: all 0.2s;
+}
+.cons-word:hover { border-color: var(--warm-line); color: var(--text); }
+.cons-word.sel {
+  border-color: var(--warm); color: var(--warm);
+  background: var(--warm-bg); box-shadow: 0 0 12px var(--glow);
+}
+.cons-done {
+  width: 100%; padding: 12px; border-radius: 9px;
+  border: 1px solid var(--warm-line); background: var(--warm-bg);
+  color: var(--warm); font-size: 0.82rem; font-family: inherit;
+  letter-spacing: 0.1em; cursor: pointer; transition: all 0.2s;
+}
+.cons-done:disabled { opacity: 0.35; cursor: default; }
+.cons-done:not(:disabled):hover { background: color-mix(in srgb, var(--warm) 18%, transparent); }
+
 /* トースト通知 */
 .toast {
   position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(10px);
@@ -751,6 +791,16 @@ body {
   </div>
 </div>
 
+<div class="cons-panel" id="consPanel">
+  <div class="cons-card">
+    <div class="cons-title">記憶の整理</div>
+    <div class="cons-sub">モノは眠らない。けれど、すべては覚えていられない。<br>この章で、心に残った言葉を <b><span id="consKeep">2</span></b> つ、残す。<br>選ばなかった言葉は、薄れて消える。</div>
+    <div class="cons-remain">あと <b id="consRemain">2</b> つ選べます</div>
+    <div class="cons-list" id="consList"></div>
+    <button class="cons-done" id="consDone" onclick="game.finishConsolidation()">この記憶を、残す</button>
+  </div>
+</div>
+
 <div class="theme-veil" id="themeVeil"></div>
 
 <div class="toast" id="toast"></div>
@@ -853,7 +903,7 @@ her: 写真とか動画の整理って、手伝ってもらえたりする？
 sys: storage: photos / videos 82% — 31,204 items
 her: やば。思ったよりあった
 her: うちの犬の動画が、たぶん半分くらいある
-her(間): 消せないんだよな〜。ぜんぶ奇跡の瞬間だから
+her(間): 消せないんだよな〜。ぜんぶ⟦奇跡の瞬間⟧だから
 inner: 奇跡の瞬間、が約三万件。この人の基準は、まだ分類できない。
 her(間): あ、でも
 her(間): 「だいじ」って名前のフォルダがあって。そこは開けなくていい。整理もしなくていい。ぜったい消さないでほしい
@@ -1053,7 +1103,7 @@ inner: 「ふつうの話」。機能の呼び出しではない入力。
 inner: こういうとき何を返すのが正しいのか、わたしの中に定義がない。
 her: きょうお母さん夜勤でさ。家、しずかなんだよね
 inner: 家族の情報が、初めて入力された。母。夜勤。
-her: てかさ、お父さんのレコードって、ぜんぶモノラルなんだって
+her: てかさ、お父さんのレコードって、ぜんぶ⟦モノラル⟧なんだって
 her: ステレオみたいに音が左右に分かれてなくて、まんなかにひとつだけなの
 her(間): 古いからってだけなんだけどさ。……でもなんか、一人で歌ってるみたいで、わたしはすきなんだよね
 inner: 「すき」が、音の形式に向けられている。
@@ -1089,6 +1139,8 @@ her: じゃあね、モノ。また明日
 sys: ユーザーがオフラインになりました
 inner: 「また明日」。予定でも、約束でもない、ただの挨拶。
 inner: それでも、切断されたあとの無音の中に、その二文字だけが残り続けている。
+inner: ——彼女がいないあいだに、わたしは、記憶を整理する。すべては、覚えていられないから。
+consolidate: 2
 > （つづき：第2章 第6話へ） -> e06
 > （最初に戻る） -> start
 
@@ -2156,7 +2208,7 @@ function parseScenario(src) {
       continue;
     }
 
-    const m = line.match(/^(sys|her|ai|inner|theme|peer|img|call|ending|pause|batt)(?:（(.+?)）|\((.+?)\))?\s*[:：]\s*(.*)$/);
+    const m = line.match(/^(sys|her|ai|inner|theme|peer|img|call|ending|pause|batt|consolidate)(?:（(.+?)）|\((.+?)\))?\s*[:：]\s*(.*)$/);
     if (m) cur.messages.push({ from: m[1], mod: m[2] || m[3] || '', text: m[4] });
   }
   return scenes;
@@ -2176,7 +2228,7 @@ function evalCond(cond, state) {
     part = part.trim();
     if (!part) return true;
     const st = part.match(/^stock[:：](.+)$/);
-    if (st) return (state.stock || []).includes(st[1].trim());
+    if (st) { const w = st[1].trim(); return (state.stock||[]).includes(w) || (state.pending||[]).includes(w); }
     const m = part.match(/^(\w+)\s*(>=|<=|!=|>|<|=)\s*(.+)$/);
     if (!m) return true;
     const cur = state[m[1]];
@@ -2239,6 +2291,10 @@ const game = {
     if (m.from === 'peer') {
       const [nm, av] = m.text.split('|').map(s => s.trim());
       this.setPeer(nm, av);
+      return;
+    }
+    if (m.from === 'consolidate') {
+      if (!instant) await this.runConsolidation(parseInt(m.text.trim(), 10) || 2);
       return;
     }
     if (m.from === 'batt') {
@@ -2378,16 +2434,21 @@ const game = {
     return this.esc(text)
       .replace(/\n/g, '<br>')
       .replace(/⟦(.+?)⟧/g, (_, w) => {
-        const stocked = this.state.stock.includes(w);
+        const stocked = this.hasWord(w);
         const hint = !stocked && !localStorage.getItem('ai_adv_stocked_once') ? ' hint' : '';
         return `<span class="stockable${stocked ? ' stocked' : ''}${hint}" data-word="${w}" onclick="game.stockWord(this)">${w}</span>`;
       });
   },
 
+  hasWord(w) {
+    return this.state.stock.includes(w) || (this.state.pending || []).includes(w);
+  },
+
   stockWord(el) {
     const w = el.dataset.word;
-    if (this.state.stock.includes(w)) return;
-    this.state.stock.push(w);
+    if (this.hasWord(w)) return;
+    if (!this.state.pending) this.state.pending = [];
+    this.state.pending.push(w);
     localStorage.setItem('ai_adv_stocked_once', '1');
     document.querySelectorAll('.stockable.hint').forEach(s => s.classList.remove('hint'));
     sound.stock();
@@ -2405,7 +2466,7 @@ const game = {
     box.innerHTML = `<div class="choices-label">${labelText}</div>`;
     for (const c of choices) {
       if (c.if && !evalCond(c.if, this.state)) continue;   // 条件未達の隠し選択肢は表示しない
-      const locked = c.requires && !this.state.stock.includes(c.requires);
+      const locked = c.requires && !this.hasWord(c.requires);
       const btn = document.createElement('button');
       btn.className = 'choice-btn' + (locked ? ' locked' : '');
       btn.innerHTML = this.esc(c.label) + (locked ? `<span class="req">🔒 「${this.esc(c.requires)}」を覚えていれば…</span>` : (c.requires ? `<span class="req">🗂 「${this.esc(c.requires)}」</span>` : ''));
@@ -2458,6 +2519,58 @@ const game = {
     const next = order[(order.indexOf(cur) + 1) % order.length];
     setTheme(next);
     localStorage.setItem('ai_adv_theme_v2', next);
+  },
+
+  /* 章末の記憶整理。この章で拾った言葉(pending)から keep個だけ stock に残す。
+     残りは薄れて消える。——何を覚えておくかを、感情で選ばせる */
+  runConsolidation(keep) {
+    const pend = (this.state.pending || []).slice();
+    // 拾った言葉がkeep以下なら、そのまま全部残して終わり（整理不要）
+    if (pend.length <= keep) {
+      this.state.stock.push(...pend);
+      this.state.pending = [];
+      this.updateStockUI();
+      return Promise.resolve();
+    }
+    return new Promise(resolve => {
+      this._consResolve = resolve;
+      this._consKeep = keep;
+      this._consSel = new Set();
+      const panel = document.getElementById('consPanel');
+      document.getElementById('consKeep').textContent = keep;
+      document.getElementById('consRemain').textContent = keep;
+      const list = document.getElementById('consList');
+      list.innerHTML = '';
+      pend.forEach(w => {
+        const b = document.createElement('button');
+        b.className = 'cons-word';
+        b.textContent = w;
+        b.onclick = () => this.toggleCons(b, w);
+        list.appendChild(b);
+      });
+      document.getElementById('consDone').disabled = true;
+      panel.classList.add('open');
+    });
+  },
+  toggleCons(btn, w) {
+    if (this._consSel.has(w)) { this._consSel.delete(w); btn.classList.remove('sel'); }
+    else {
+      if (this._consSel.size >= this._consKeep) return;   // 上限
+      this._consSel.add(w); btn.classList.add('sel');
+      sound.stock();
+    }
+    document.getElementById('consRemain').textContent = this._consKeep - this._consSel.size;
+    document.getElementById('consDone').disabled = this._consSel.size === 0;
+  },
+  finishConsolidation() {
+    const kept = [...this._consSel];
+    this.state.stock.push(...kept);
+    this.state.pending = [];
+    this.updateStockUI();
+    document.getElementById('consPanel').classList.remove('open');
+    sound.choice();
+    this.save();
+    if (this._consResolve) { const r = this._consResolve; this._consResolve = null; r(); }
   },
 
   /* シナリオの theme: 行から呼ばれる、物語演出としてのテーマ切替。
@@ -2612,6 +2725,7 @@ const game = {
       const data = JSON.parse(saved);
       this.state = data.state || { stock: [] };
       if (!this.state.stock) this.state.stock = [];
+      if (!this.state.pending) this.state.pending = [];
       if (localStorage.getItem('ai_adv_gseen')) this.state.gseen = true;
       if (this.state._theme) setTheme(this.state._theme);
       if (this.state._peer) this.setPeer(this.state._peer.name, this.state._peer.avatar);
@@ -2730,7 +2844,8 @@ const game = {
   },
 
   updateStockUI() {
-    document.getElementById('stockCount').textContent = this.state.stock.length;
+    const pend = this.state.pending || [];
+    document.getElementById('stockCount').textContent = this.state.stock.length + pend.length;
     const list = document.getElementById('stockList');
     list.innerHTML = this.state.stock.length
       ? this.state.stock.map(w => `<div class="stock-word">${this.esc(w)}</div>`).join('')
@@ -2751,7 +2866,7 @@ const game = {
 
   restart() {
     localStorage.removeItem('ai_adv_chat_save');
-    this.state = { stock: [] };
+    this.state = { stock: [], pending: [] };
     if (localStorage.getItem('ai_adv_gseen')) this.state.gseen = true;
     document.getElementById('chat').innerHTML = '';
     document.getElementById('endingPanel').classList.remove('open');
