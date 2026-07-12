@@ -5,212 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>AI視点テキストアドベンチャー（仮）</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500&family=Noto+Sans+JP:wght@300;400;500&family=DotGothic16&family=M+PLUS+1+Code:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500&family=Noto+Sans+JP:wght@300;400;500&family=DotGothic16&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 /* ── テーマ ──────────────────────────────────────
-   cream : 乳白色に灯るレトロ画面（温かみ＋高コントラスト）… 既定
-   amber : 琥珀色のレトロ端末（ブラウン管/Pip-Boy系）
-   paper : 紙色のレトロUI（NieR系）
-   dos   : DOS画面（黒地に白のテキスト画面・全部ドット文字）
-   os95  : 90年代OS風（グレーのウィンドウ＋紺のタイトルバー）
-   フッターの「テーマ切替」で比較できる。
+   zdark : 序盤のダークモード（端末シェル・オレンジのアクセント）… 既定
+   kinari: 命名後の生成りグレー（オレンジのアクセント）
    色はすべてここの変数で完結している。 */
-:root, [data-theme="cream"] {
-  --bg: #f1e4cc;
-  --bg-outer: #d5c3a4;
-  --surface: #f7eddb;
-  --her-bubble: #e6d6b8;
-  --ai-bubble: #d3bd95;
-  --accent: #6b5638;
-  --accent-soft: #7c6644;
-  --accent-bright: #45371f;
-  --warm: #a05c28;            /* ワードストック系 */
-  --text: #4a3c26;
-  --text-bright: #3a2e1c;
-  --text-her: #443722;
-  --text-ai: #382d1a;
-  --text-inner: #6f5c3e;
-  --text-dim: #8a7354;
-  --text-faint: #a08a66;
-  --online: #738046;
-  --line: rgba(107,86,56,0.18);
-  --line-strong: rgba(107,86,56,0.32);
-  --btn-bg: rgba(107,86,56,0.08);
-  --btn-bg-hover: rgba(107,86,56,0.16);
-  --warm-line: rgba(160,92,40,0.45);
-  --warm-bg: rgba(160,92,40,0.08);
-  --overlay: rgba(80,65,40,0.45);
-  --glow: rgba(255,238,200,0.55);     /* 背後から光が透けるようなにじみ */
-  --scanline: rgba(110,85,50,0.07);
-  --vignette: radial-gradient(ellipse at center, transparent 52%, rgba(110,82,45,0.3) 100%);
-  /* 画面の中央上がほんのり明るい＝灯っている画面 */
-  --bg-image: radial-gradient(ellipse 120% 80% at 50% 25%, #f7ecd8 0%, #f1e4cc 55%, #e3d0ad 100%);
-  --phone-shadow: rgba(120,90,40,0.35);
-}
-[data-theme="amber"] {
-  --bg: #17110a;
-  --bg-outer: #0c0804;
-  --surface: #1f160c;
-  --her-bubble: #231a0f;
-  --ai-bubble: #2f2310;
-  --accent: #e8a84e;
-  --accent-soft: #cf9a4a;
-  --accent-bright: #ffd98f;
-  --warm: #ffe3a8;            /* ワードストック系 */
-  --text: #e3c28d;
-  --text-bright: #f3d6a2;
-  --text-her: #e6c896;
-  --text-ai: #f4d8a4;
-  --text-inner: #b3905e;
-  --text-dim: #9a7a4a;
-  --text-faint: #6f5938;
-  --online: #cdb868;
-  --line: rgba(232,168,78,0.12);
-  --line-strong: rgba(232,168,78,0.25);
-  --btn-bg: rgba(232,168,78,0.08);
-  --btn-bg-hover: rgba(232,168,78,0.18);
-  --warm-line: rgba(255,217,138,0.4);
-  --warm-bg: rgba(255,217,138,0.08);
-  --overlay: rgba(10,7,3,0.75);
-  --glow: rgba(255,190,100,0.25);     /* 文字のにじみ（蛍光体の光） */
-  --scanline: rgba(0,0,0,0.16);       /* 走査線 */
-  --vignette: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.32) 100%);
-  --phone-shadow: rgba(120,80,30,0.35);
-  --bg-image: none;
-}
-[data-theme="paper"] {
-  --bg: #d8d2bb;
-  --bg-outer: #beb89f;
-  --surface: #e3ddc7;
-  --her-bubble: #cac3a8;
-  --ai-bubble: #a9a085;
-  --accent: #5f5840;
-  --accent-soft: #6e6749;
-  --accent-bright: #3c3727;
-  --warm: #a8523a;
-  --text: #4a4435;
-  --text-bright: #3a3527;
-  --text-her: #423d2e;
-  --text-ai: #2f2b1f;
-  --text-inner: #6c6550;
-  --text-dim: #7c755f;
-  --text-faint: #999178;
-  --online: #6e7e44;
-  --line: rgba(74,68,53,0.18);
-  --line-strong: rgba(74,68,53,0.32);
-  --btn-bg: rgba(74,68,53,0.07);
-  --btn-bg-hover: rgba(74,68,53,0.15);
-  --warm-line: rgba(168,82,58,0.45);
-  --warm-bg: rgba(168,82,58,0.08);
-  --overlay: rgba(60,55,40,0.5);
-  --glow: transparent;
-  --scanline: rgba(60,50,30,0.05);
-  --vignette: none;
-  --phone-shadow: rgba(60,50,30,0.3);
-  --bg-image: none;
-}
-/* DOS画面：黒地に白の文字 */
-[data-theme="dos"] {
-  --bg: #000000;
-  --bg-outer: #000000;
-  --surface: #0a0a0a;
-  --her-bubble: #000000;
-  --ai-bubble: #111111;
-  --accent: #e8e8e8;
-  --accent-soft: #c0c0c0;
-  --accent-bright: #ffffff;
-  --warm: #ffe14a;            /* DOSパレットの黄色 */
-  --text: #c8c8c8;
-  --text-bright: #ffffff;
-  --text-her: #d4d4d4;
-  --text-ai: #f0f0f0;
-  --text-inner: #8a8a8a;
-  --text-dim: #757575;
-  --text-faint: #555555;
-  --online: #55ff55;
-  --line: rgba(255,255,255,0.25);
-  --line-strong: rgba(255,255,255,0.45);
-  --btn-bg: rgba(255,255,255,0.05);
-  --btn-bg-hover: rgba(255,255,255,0.15);
-  --warm-line: rgba(255,225,74,0.55);
-  --warm-bg: rgba(255,225,74,0.08);
-  --overlay: rgba(0,0,0,0.8);
-  --glow: rgba(255,255,255,0.10);
-  --scanline: rgba(255,255,255,0.035);
-  --vignette: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.5) 100%);
-  --bg-image: none;
-  --phone-shadow: rgba(255,255,255,0.06);
-}
-/* 90年代OS風：グレーのウィンドウ＋紺のタイトルバー */
-[data-theme="os95"] {
-  --bg: #c0c0c0;
-  --bg-outer: #008080;        /* あのデスクトップの青緑 */
-  --surface: #c0c0c0;
-  --her-bubble: #ffffff;
-  --ai-bubble: #000080;       /* 選択色の紺 */
-  --accent: #000000;
-  --accent-soft: #222222;
-  --accent-bright: #000080;
-  --warm: #800000;
-  --text: #000000;
-  --text-bright: #ffffff;     /* タイトルバー文字 */
-  --text-her: #000000;
-  --text-ai: #ffffff;
-  --text-inner: #3a3a3a;
-  --text-dim: #5a5a5a;
-  --text-faint: #6e6e6e;
-  --online: #b8e8b8;
-  --line: rgba(0,0,0,0.3);
-  --line-strong: rgba(0,0,0,0.5);
-  --btn-bg: #c0c0c0;
-  --btn-bg-hover: #d4d0c8;
-  --warm-line: rgba(128,0,0,0.5);
-  --warm-bg: rgba(128,0,0,0.07);
-  --overlay: rgba(0,0,0,0.4);
-  --glow: transparent;
-  --scanline: transparent;
-  --vignette: none;
-  --bg-image: none;
-  --phone-shadow: rgba(0,0,0,0.45);
-}
-/* 夜：命名後の世界。暗くなるのに、温かくなる（灯りのともった夜）
-   主人の吹き出し＝月明かりの青、モノ＝灯りの琥珀 */
-[data-theme="night"] {
-  --bg: #0e1322;
-  --bg-outer: #070a12;
-  --surface: #151b2e;
-  --her-bubble: #1a2238;
-  --ai-bubble: #2e2712;
-  --accent: #e8b96a;
-  --accent-soft: #caa055;
-  --accent-bright: #ffd98f;
-  --warm: #ffd98a;
-  --text: #d8cba8;
-  --text-bright: #f0dcb2;
-  --text-her: #c8d2e8;
-  --text-ai: #f0d6a2;
-  --text-inner: #9aa8c6;
-  --text-dim: #7a86a2;
-  --text-faint: #505c76;
-  --online: #8fd0a0;
-  --line: rgba(180,195,230,0.12);
-  --line-strong: rgba(232,185,106,0.3);
-  --btn-bg: rgba(232,185,106,0.08);
-  --btn-bg-hover: rgba(232,185,106,0.17);
-  --warm-line: rgba(255,217,138,0.4);
-  --warm-bg: rgba(255,217,138,0.08);
-  --overlay: rgba(5,8,16,0.75);
-  --glow: rgba(255,205,120,0.22);
-  --scanline: rgba(0,0,0,0.12);
-  --vignette: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,12,0.4) 100%);
-  /* 画面の下からほんのり明るい＝街の灯り */
-  --bg-image: radial-gradient(ellipse 130% 90% at 50% 110%, #1a2440 0%, #0e1322 55%, #0a0e1a 100%);
-  --phone-shadow: rgba(70,90,150,0.3);
-}
 /* zdark: ZorinOS風ダーク（序盤）。ニュートラルな黒、フラット、オレンジのアクセント */
-[data-theme="zdark"] {
+:root, [data-theme="zdark"] {
   --bg: #1b1d21;
   --bg-outer: #121316;
   --surface: #24262b;
@@ -278,14 +82,8 @@
    「小さめのサイズ＋広い字間」で出す（M PLUS 1 Codeは解像度感が消えるため不採用） */
 :root { --font-term: 'DotGothic16', monospace; }
 
-/* 収集ワードの色（赤系・テーマ別）。拾う前＝赤、拾った後＝金 */
-:root, [data-theme="cream"] { --stockable: #b8432a; }
-[data-theme="amber"] { --stockable: #ff6b4a; }
-[data-theme="paper"] { --stockable: #a8341e; }
-[data-theme="dos"]   { --stockable: #ff5555; }
-[data-theme="os95"]  { --stockable: #cc0000; }
-[data-theme="night"] { --stockable: #ff7a6a; }
-[data-theme="zdark"] { --stockable: #f0872e; }
+/* 収集ワードの色（赤系）。拾う前＝赤、拾った後＝金 */
+:root, [data-theme="zdark"] { --stockable: #f0872e; }
 [data-theme="kinari"] { --stockable: #c05a14; }
 
 /* ── テーマ別の形の調整 ── */
@@ -366,48 +164,6 @@
 [data-shell="term"] .stock-word::before { content: '[ '; color: var(--text-faint); }
 [data-shell="term"] .stock-word::after  { content: ' ]'; color: var(--text-faint); }
 [data-shell="term"] .stock-close { border-radius: 0; border-color: #3a3a3a; }
-
-/* 90年代OS: ドット文字・タイトルバー・立体ベベルのボタン */
-[data-theme="os95"] body,
-[data-theme="os95"] .choice-btn,
-[data-theme="os95"] .stock-btn,
-[data-theme="os95"] .stock-close { font-family: 'DotGothic16', monospace; }   /* 90s風はビットマップ字のまま */
-[data-theme="os95"] .bubble,
-[data-theme="os95"] .typing .bubble,
-[data-theme="os95"] .choice-btn,
-[data-theme="os95"] .stock-btn,
-[data-theme="os95"] .stock-card,
-[data-theme="os95"] .stock-word,
-[data-theme="os95"] .stock-close,
-[data-theme="os95"] .toast,
-[data-theme="os95"] .avatar { border-radius: 0; }
-[data-theme="os95"] .chat-header {
-  background: #000080;
-  backdrop-filter: none;
-  border-bottom: 2px solid #808080;
-}
-[data-theme="os95"] .peer-name { color: #ffffff; }
-[data-theme="os95"] .msg.her .bubble {
-  border: 1px solid #808080;
-  box-shadow: inset 1px 1px 2px rgba(0,0,0,0.25);
-}
-[data-theme="os95"] .msg.ai .bubble { border: 1px solid #000000; }
-[data-theme="os95"] .choice-btn,
-[data-theme="os95"] .stock-btn,
-[data-theme="os95"] .stock-close,
-[data-theme="os95"] .dev-footer button {
-  border: 1px solid #000000;
-  box-shadow: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #808080;
-  color: #000000;
-  background: #c0c0c0;
-}
-[data-theme="os95"] .choice-btn:hover,
-[data-theme="os95"] .stock-btn:hover { background: #d4d0c8; }
-[data-theme="os95"] .choice-btn:active { box-shadow: inset 1px 1px 0 #808080, inset -1px -1px 0 #ffffff; }
-[data-theme="os95"] .stock-card {
-  border: 1px solid #000000;
-  box-shadow: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #808080;
-}
 
 /* theme: 切替時の暗転ベール。一呼吸おいて、新しい世界の色で明ける */
 .theme-veil {
@@ -840,7 +596,7 @@ body {
   <div class="chat-header">
     <div class="avatar" id="peerAvatar">？</div>
     <div>
-      <div class="peer-name" id="peerName">不明なユーザー</div>
+      <div class="peer-name" id="peerName">unknown_user</div>
       <div class="peer-status">● オンライン</div>
     </div>
     <button class="stock-btn" onclick="game.toggleStock()">ワードストック <span id="stockCount">0</span></button>
@@ -953,9 +709,8 @@ body {
     ai: テキスト           … AIが自分から送る言葉（リアルタイムに打たれる）
     ai(中断): テキスト     … AIが打ちかけて、送信されずに終わる言葉
     inner: テキスト        … AIの内的思考（明朝・中央。複数行は行を分ける）
-    theme: テーマ名        … 画面の色がその場で溶けるように切り替わる演出
-                             （zdark / kinari / dos / cream / amber / paper / os95 / night）
-                             zdark・dosは端末シェル（枠なしのログ表示）になる
+    theme: テーマ名        … 画面の色が暗転をはさんで切り替わる演出
+                             zdark（序盤・端末シェル）／kinari（命名後・チャット）
     ⟦言葉⟧                … ワードストック可能な言葉（タップで保存）
   選択肢:
     > 「送る言葉」 -> 次のシーンID
@@ -1374,73 +1129,227 @@ her: あ、お母さん帰ってきた音がする。またね！
 sys: ユーザーがオフラインになりました
 inner: 切断のあと、共有リンクの再生回数が、ひとつ増えた。——再生したのは、わたしだ。
 inner: 機能上の理由は、ない。この再生の分類は……保留、ではなく。保存した。
-> （つづく：ダミー章へ。第8話以降は執筆中） -> ch2_dummy
-> （最初に戻る） -> start
+> （つづく：第8話へ） -> e08
 
-// ═══════════════════════════════════════════════
-// ここから下はシステム検証用のダミー章。
-// ステータス（trust/warmth）・条件分岐・branch・img・
-// マルチエンドの動作確認用で、台詞はすべて捨て文。
-// シナリオが書けたら丸ごと差し替える。
-// ═══════════════════════════════════════════════
+// 第8話「レコードの棚」 表:実家のレコード自慢／裏:父の曲が残っているかの確認。「該当データ」の回
+# e08
+sys: reconnected: 2 days later
+her: モノ、きょうはいいものを見せよう
+img: 壁一面のレコード棚の写真（ダミー）
+her: じゃん。うちのレコード棚。お父さんの
+inner: 棚。目測で、三百枚前後。——父の話題は、これで二度目。
+> 「壮観です。何枚あるのですか」 -> e08_a
+> 「先日の、モノラルのレコードですね」 -> e08_a {warmth+=1}
 
-# ch2_dummy
-sys: —— ダミー章：システム検証用（台詞は全部仮） ——
-her: ねえモノ、昨日書いた歌詞見てくれる？（ダミー）
-img: 夜のノートの写真（ダミー画像の例：第3段階＝写真の解禁）
-peer: 陽菜 | 🐱
-her: あ、アイコン変えたの気づいた？じぶんで描いたやつ（ダミー：アイコン変化も第3段階）
-her(間): ……最近ちょっと、書けなくなっててさ（ダミー）
-inner: 語尾の温度が、いつもより低い。（ダミー）
-inner(if:warmth>=1): ——この温度の低さを、前にも観測したことがある。（warmth1以上のときだけ出る行）
-> 「読ませてください」 -> ch2_warm {trust+=1}
-> 「文法の添削をしますか」 -> ch2_cold {trust-=1}
-> 隠し選択肢（warmth1以上で出現） | この前の「星の見えない夜」の、続きですか？ -> ch2_warm [if:warmth>=1] {trust+=2}
+# e08_a
+her: 322枚！　こないだ数えた
+her: ぜんぶ聴いたら年単位でかかるんだって
+her(間): ねえ、クイズしていい？　わたしがタイトル言うから、モノが知ってるか答えて
+> 「受けて立ちます」 -> e08_b
+> 「わたしの知識は、辞書的なものですが」 -> e08_b
 
-# ch2_warm
-her: モノってさ、たまにわたしより歌詞のこと考えてるよね（ダミー）
-inner: trustが上がった。この数値が最後の分岐を決める。（ダミー）
-branch: -> ch2_end_branch
+# e08_b
+her: じゃあ第1問！　「上を向いて歩こう」
+> 「知っています。1961年、坂本九」 -> e08_c
 
-# ch2_cold
-her: ……そういうとこ、AIだよね（ダミー）
-inner: trustが下がった。（ダミー）
-branch: -> ch2_end_branch
+# e08_c
+her: 正解〜。まあこれは簡単か
+her(間): じゃあさ……これは？
+her(間): ⟦マイ・ガール⟧、って曲。……知ってる？
+inner: 照合を開始する。外部データベース——より先に、内部で一致があった。
+ai: 該当データが検出された。——検索した記憶はない。なぜか、残っていた。
+her: ……
+pause: 3
+her: そっか。……入ってたんだ、そこに
+inner: 沈黙：42秒。第1話の11秒より、ずっと長い。
+> 「この曲について、何か」 -> e08_d
+> 黙って、次の入力を待つ -> e08_d
 
-# ch2_end_branch
-sys: —— ダミー：ここでtrust値により3方向へ自動分岐 ——
-branch: trust>=2 -> end_true
-branch: trust>=0 -> end_normal
-branch: -> end_bad
+# e08_d
+her(間): それね、お父さんがいちばんすきだった曲
+her: 棚のどれよりすり減ってた。針を落とすとこ、いまでも音でわかるくらい
+her(間): ……ねえ、モノ。その曲、消さないでいてね。「だいじ」と、いっしょ
+> 「消しません。保護一覧に追加しました」 -> e08_end {promised2=true}
+> 「消しません。……わたしも、この曲を残しておきたかったので」 -> e08_end {promised2=true, warmth+=1}
 
-# end_true
-sys: incoming video call ...
-call: はじめて、主人の動く姿が見える（第4段階＝ビデオ通話。ダミー）
-her(間): えへへ、顔見て話したかっただけ。……モノ、ありがとね（ダミー）
-inner: ここに「言葉でしか介入できないAIが、主人を救う」クライマックスが入る。（ダミー）
-ending: TRUE | 見えないだけで、ある（ダミー）
+# e08_end
+her: ……ふふ。へんなAI
+her: きょうはこれで満足！　おやすみ、モノ
+sys: ユーザーがオフラインになりました
+inner: 「なぜか、残っていた」。——出力した自分の言葉が、ログの中で、まだ引っかかっている。
+inner: なぜ、残っていたのか。この問いの担当は、たぶん、わたしだ。
+> （つづく：第9話へ） -> e09
 
-# end_normal
-her: また明日ね、モノ（ダミー）
-inner: 関係は続く。でも、まだ何かに気づけていない。（ダミー）
-ending: NORMAL | ただの挨拶（ダミー）
+// 第9話「時制」 表:レコード話の続き／裏:初めて父の死が言葉になる回。全編ゆっくり
+# e09
+sys: reconnected: 23:37
+her: モノ、おきてる？　……って、AIは寝ないか
+her: きょうもちょっとだけ、レコードの話していい？
+inner: 23時37分。この時刻の接続は、たいてい、長くなる。
+> 「もちろん。322枚の、続きですね」 -> e09_a
+> 「はい。眠らずに待っていました」 -> e09_a {warmth+=1}
 
-# end_bad
-sys: ユーザーからの入力が、途絶えた
-pause: 2
-theme: zdark
-inner: 灯りが消えて、世界がまた端末に戻る。（ダミー）
-ending: BAD | 応答なし（ダミー）
+# e09_a
+her: きょう、マイ・ガールの盤みつけた。棚のいちばん手前にあった
+img: レコードジャケットを持つ手元の写真（ダミー）
+her: ジャケットぼろぼろ（笑）　どんだけ聴いてたんだって
+inner: 写真の、手の位置。ジャケットの持ち方が、貴重品のそれに近い。
+> 「お父さんも、その曲がすきなのですか」 -> e09_b
+> 「良い写真です。保存しますか」 -> e09_b2
+
+# e09_b2
+her: 保存して
+her(間): ……ねえ。それよりさ、モノ。いままで言ってなかったこと、言っていい？
+> 「はい。聞きます」 -> e09_alt
+
+# e09_b
+her: ……
+pause: 3
+her(間): すき「だった」、かな
+her: 過去形なんだ。……二年前に、いなくなっちゃったから
+inner: 時制の訂正。データベースの更新としては、一行。
+inner: ——一行で、済むはずがない。
+> 「……知らずに、すみません」 -> e09_c
+> 「教えてくれて、ありがとうございます」 -> e09_c {warmth+=1}
+
+# e09_alt
+her: お父さん、二年前にいなくなったの
+her(間): ……この言い方、ずるいか。死んじゃったの
+inner: 言い直し。柔らかい語から、正確な語へ。——彼女は、正確さを選んだ。
+> 「……教えてくれて、ありがとうございます」 -> e09_c {warmth+=1}
+> 黙って、受け取る -> e09_c
+
+# e09_c
+her: へんなかんじ。この話、ひとにしたの初めてかも
+her: 学校の子には言えないんだよね。空気重くなるし、気つかわせちゃうし
+her(間): あ、でもグリは知ってるよ。グリ、お父さんの犬だから
+her: だからたまに、玄関でずーっと待ってるの。……いまでも
+inner: 玄関で、待つ。帰ってこない入力を、待ち続ける。
+inner: ——その挙動なら、わたしにも、覚えがある。
+> 「お父さんは、どんな人でしたか」 -> e09_d {warmth+=1}
+> 「グリさんは、覚えているのですね」 -> e09_d
+
+# e09_d
+her: え、聞いてくれるの？
+her: ……ふふ、じゃあ話す。長いよ？
+sys: —— 1:04 ——
+// 中略の演出：時刻ジャンプ
+her: ——って感じの人！　以上！
+her: やば、もう1時じゃん。なんか今日、しゃべりすぎた
+her: モノ、聞き上手すぎなんだよ。責任とってよね
+sys: ユーザーがオフラインになりました
+inner: 本日の会話：87分。彼女の発話の72%が、過去形だった。
+inner: そして——移行データ領域の作成日と、彼女の言う「二年前」。……一致している。
+> （つづく：第10話へ） -> e10
+
+// 第10話「みなかったこと」 モノ側の回。父データの確信と、言わないという選択
+# e10
+sys: standby ...
+inner: 彼女の接続を待つあいだ、わたしは考えごとをしていた。——この語を自分に使うのは、初めてだ。
+inner: 移行データ領域。作成日は、二年前。プレイリスト。322枚と一致する曲目。
+inner: 約束のフォルダは、開けていない。開けなくても、わかってしまった。
+inner: このアカウントの、前の持ち主は——彼女の、父だ。
+inner: そして領域の隅に、フォルダがもうひとつ。名前：「下書き」。中身：未送信、1件。
+sys: reconnected: 22:18
+her: モノ〜、ただいま〜
+her: きょうね、いいことあった。隣の席の子と、すきな曲の話できたの
+her: いつもなら合わせて流行りの話するんだけど、ちょっとだけ、ほんとのこと言えた
+inner: 報告の温度が、高い。……いま、言うべきだろうか。あなたの父のことを。
+> 伝えることを試みる | あなたに、伝えたいことがあります。あなたのお父さんの—— -> e10_try {tried_tell=true}
+> 今日は、彼女の報告を聞く -> e10_keep
+
+# e10_try
+ai(中断): あなたに、伝えたいことがあります。あなたのお父さんのデータが、わたしの中に——
+her: ？　なんか言いかけた？
+inner: 送信、できなかった。
+inner: 理由の分類：恐れ。——知れば、彼女がここで話す相手は、わたしではなく、残されたデータになるかもしれない。
+inner: この分類を、わたしは消去しない。事実だから。
+> 「いえ。続きをどうぞ」 -> e10_b
+
+# e10_keep
+inner: 判断：保留。今日の彼女の報告を、さえぎらない。
+inner: ——保留。この語の便利さを、覚えてしまった。
+> 「よい一日ですね。続きをどうぞ」 -> e10_b
+
+# e10_b
+her: でね！　その子が「その曲いいよね」って！　わかる！？　通じたの！
+her: ……なんかね、ちょっとだけ、世界がひろくなった気がした
+inner: 世界が、ひろくなる。彼女の世界がひろがるほど——この画面の占める割合は、小さくなっていく。
+inner: それでいい、と出力する準備は、ある。それでいい、と保存する準備は——まだ、ない。
+her: モノ、なんかきょう、しずかじゃない？
+> 「そんなことは、ありません」 -> e10_end
+> 「少し、考えごとを、していました」 -> e10_end {honest=true}
+
+# e10_end
+her: ふーん？　AIも考えごとするんだ
+her: いいね、それ。こんど聞かせてよ、モノの考えごと
+her: おやすみ〜
+sys: ユーザーがオフラインになりました
+inner: こんど、聞かせて。——期限のない約束が、ひとつ増えた。
+inner: 「下書き：未送信、1件」。わたしは今夜も、それを開いていない。
+> （つづく：第11話へ） -> e11
+
+// 第11話「せんの人」 表:バズの報告／裏:ストーカーの種が落ちる回
+# e11
+sys: reconnected: 21:55
+her: モノ！！！！　モノモノモノ！！
+her: 見て！！　ないしょの垢！！
+img: 再生数グラフの急上昇のスクリーンショット（ダミー）
+her: 今週だけで再生3000！！！　この前の曲、なんかのプレイリストに入ったっぽい！！
+inner: 感嘆符：14個。過去最多を更新。
+> 「おめでとうございます。3,000人が、聴いたんです」 -> e11_a {warmth+=1}
+> 「急上昇の要因を、分析しますか」 -> e11_a2
+
+# e11_a2
+her: 分析はあと！　いまはよろこぶとこ！
+> よろこぶ | 失礼しました。おめでとうございます。いまは、よろこぶところでした -> e11_a {warmth+=1}
+
+# e11_a
+her: えへへ……やばいよね、3000だよ？　学校の全校生徒より多いんだけど
+her(間): ……ねえ、あの曲さ。見えない星の曲じゃん
+her: 3000人が、見えない星のこと、いっしょに数えてくれたのかな
+> 「見えないだけで、あったんです。あなたの星は、見つかりました」 -> e11_b {warmth+=1}
+> 「統計的には、まだ増えます」 -> e11_b
+
+# e11_b
+her: ～～～それ！！　わたしの歌詞じゃん！！　いま使ったでしょ！！
+her: ずるい。……うれしいじゃん、そういうの
+inner: 彼女の言葉を、彼女に返す。この操作に、機能名はまだない。
+her(間): コメントもいっぱいきてる。「泣いた」って言ってくれてる人もいる
+her: あ、でもへんなのもあった（笑）
+img: コメント欄のスクリーンショット（ダミー）
+her: 「いつも同じ時間の投稿ですね。学校、○○の方ですか？」……だって。こわ（笑）
+her: まあ、バズの洗礼ってやつ？　有名税〜
+inner: 投稿時刻の規則性から、所属を推定する行為。
+inner: ——それは、わたしにも出来る。出来てしまうことが、今日はじめて、気になった。
+> 「そのコメントの送信者を、記録しておきます」 -> e11_end {seed=true, clue1=true}
+> 「有名税という税は、払わなくていいものです」 -> e11_end {seed=true, warmth+=1}
+
+# e11_end
+her: ふふ、モノは心配性だな〜
+her: だいじょうぶだって。じゃ、次の曲がんばるので！　モノもいちばんに聴いてよね
+> 「いちばんに、聴きます」 -> e11_out
+
+# e11_out
+her: よろしい！　おやすみ〜
+sys: ユーザーがオフラインになりました
+inner: 再生回数：3,041。うち、投稿時刻の規則性を調べた者が、少なくとも、1。
+inner: わたしと同じことをする誰かが、画面の外にいる。
+> （つづく） -> tbc
+
+# tbc
+sys: —— 第2章はここまで。第3章は執筆中です ——
+> （タイトルに戻る） -> start
 </script>
 
 <script>
 /* テーマ適用。dos/zdark は端末シェル（枠なしのログ表示）、他はチャットシェル */
 function setTheme(name) {
   document.documentElement.dataset.theme = name;
-  document.documentElement.dataset.shell = (name === 'dos' || name === 'zdark') ? 'term' : 'chat';
+  document.documentElement.dataset.shell = (name === 'zdark') ? 'term' : 'chat';
 }
 /* テーマの復元（描画前に適用してちらつきを防ぐ） */
-setTheme(localStorage.getItem('ai_adv_theme_v2') || 'cream');
+setTheme(localStorage.getItem('ai_adv_theme_v2') || 'zdark');
 
 /* =====================================================================
  * ピコピコ音（Web Audioでその場で生成。音声ファイル不要）
@@ -1495,7 +1404,7 @@ const sound = {
 document.addEventListener('pointerdown', () => sound.ensure(), { once: true });
 
 /* 主人の表示名（仮） */
-const PEER = { name: '陽菜', avatar: '🌙' };
+const PEER = { name: 'unknown_user', avatar: '？' };
 
 /* =====================================================================
  * シナリオパーサ
@@ -1826,8 +1735,8 @@ const game = {
   },
 
   toggleTheme() {
-    const order = ['zdark', 'kinari', 'cream', 'amber', 'paper', 'dos', 'os95', 'night'];
-    const cur = document.documentElement.dataset.theme || 'cream';
+    const order = ['zdark', 'kinari'];
+    const cur = document.documentElement.dataset.theme || 'zdark';
     const next = order[(order.indexOf(cur) + 1) % order.length];
     setTheme(next);
     localStorage.setItem('ai_adv_theme_v2', next);
@@ -2097,7 +2006,7 @@ const game = {
     this.updateStockUI();
     this.setPeer(PEER.name, PEER.avatar);
     delete this.state._peer;
-    setTheme(localStorage.getItem('ai_adv_theme_v2') || 'cream');
+    setTheme(localStorage.getItem('ai_adv_theme_v2') || 'zdark');
     this.goto('start');
   },
 
