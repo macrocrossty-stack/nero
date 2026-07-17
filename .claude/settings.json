@@ -3,7 +3,12 @@
     "allow": [
       "mcp__Notion",
       "mcp__Gmail",
-      "mcp__Google_Calendar"
+      "mcp__Google_Calendar",
+      "mcp__22c130cf-7929-4895-8844-95397e88c1b2",
+      "mcp__c5e0f7e7-a846-4249-beaf-eb11cc6c24ab",
+      "mcp__fc3edc58-c1f0-420d-919f-bef4dea9ad5d",
+      "mcp__bf7c680d-5fdc-5ef4-b4a0-abadb619bf0a",
+      "mcp__Claude_Code_Remote"
     ]
   }
 }
