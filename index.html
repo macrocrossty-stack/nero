@@ -515,6 +515,10 @@ body {
 .media-ph.call { width: 250px; height: 170px; }
 .media-note { font-size: 0.58rem; letter-spacing: 0.12em; }
 .media-cap { font-size: 0.72rem; color: var(--text-dim); margin-top: 6px; }
+.media-img {
+  display: block; width: 220px; max-width: 100%; border-radius: 6px;
+  image-rendering: pixelated;   /* ドット絵を等倍拡大してもボケない */
+}
 
 /* エンディング画面 */
 .ending-panel {
@@ -840,7 +844,9 @@ body {
     her(if:warmth>=1): テキスト   … メッセージにも条件をつけられる
   演出・その他:
     peer: 名前 | 絵文字            … ヘッダーの相手表示を変える
-    img: キャプション              … 画像バブル（今はダミー枠。素材が来たら差し替え）
+    img: キャプション              … 画像バブル（ダミー枠）
+    img: キャプション | assets/x.png … 実画像を表示（ドット絵推奨・自動でくっきり拡大。
+                                       ファイルが無い場合はダミー枠にフォールバック）
     call: キャプション             … ビデオ通話画面が開く（映像はダミー枠。終了ボタンで本編に戻る）
     pause: 秒                      … 何も表示せず間を置く
     batt: 数値 / off               … バッテリー残量HUDの表示・更新（終盤の資源管理演出）
@@ -2702,12 +2708,24 @@ const game = {
     const el = document.createElement('div');
     el.className = 'msg ' + m.from;
     if (m.from === 'img' || m.from === 'call') {
-      // 画像・カメラはダミー枠で表示（素材が来たら差し替える）
+      // 画像:「img: キャプション | assets/ファイル名.png」で実画像を表示。
+      // パス指定がない・読み込みに失敗した場合はダミー枠にフォールバック
       el.className = 'msg her';
-      el.innerHTML = `<div class="bubble media-bubble">`
-        + `<div class="media-ph${m.from === 'call' ? ' call' : ''}">${m.from === 'call' ? '📹' : '📷'}`
-        + `<span class="media-note">${m.from === 'call' ? 'カメラ映像（ダミー）' : '画像（ダミー）'}</span></div>`
-        + `<div class="media-cap">${this.esc(m.text)}</div></div>`;
+      let cap = m.text, src = '';
+      const sep = m.text.indexOf('|');
+      if (sep >= 0) { cap = m.text.slice(0, sep).trim(); src = m.text.slice(sep + 1).trim(); }
+      const dummy = `<div class="media-ph${m.from === 'call' ? ' call' : ''}">${m.from === 'call' ? '📹' : '📷'}`
+        + `<span class="media-note">${m.from === 'call' ? 'カメラ映像（ダミー）' : '画像（ダミー）'}</span></div>`;
+      if (m.from === 'img' && src) {
+        el.innerHTML = `<div class="bubble media-bubble">`
+          + `<img class="media-img" src="${this.esc(src)}" alt="">`
+          + `<div class="media-cap">${this.esc(cap)}</div></div>`;
+        const imgEl = el.querySelector('.media-img');
+        imgEl.onerror = () => { imgEl.outerHTML = dummy; };
+      } else {
+        el.innerHTML = `<div class="bubble media-bubble">${dummy}`
+          + `<div class="media-cap">${this.esc(cap)}</div></div>`;
+      }
     } else if (m.from === 'inner' || m.from === 'sys') {
       el.innerHTML = this.renderText(m.text);
     } else if (m.from === 'ai') {
