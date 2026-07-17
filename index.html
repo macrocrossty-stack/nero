@@ -520,6 +520,44 @@ body {
   image-rendering: pixelated;   /* ドット絵を等倍拡大してもボケない */
 }
 
+/* ── 通話オーバーレイモード ──
+   背景レイヤー（絵/アンビエント）の上に、半透明の吹き出しが流れ続ける。
+   vcall: キャプション | assets/x.png で開始、vcall: end で終了 */
+.vcall-layer { display: none; position: absolute; inset: 0; z-index: 1; overflow: hidden; }
+body[data-vcall="on"] .vcall-layer { display: block; }
+body[data-vcall="on"] .chat-header,
+body[data-vcall="on"] #chat,
+body[data-vcall="on"] #choices,
+body[data-vcall="on"] .dev-footer { position: relative; z-index: 2; }
+.vcall-bg { position: absolute; inset: 0; background: linear-gradient(165deg, #1d2129, #2c2733 55%, #171b23); }
+.vcall-orb { position: absolute; width: 62%; padding-top: 62%; border-radius: 50%; filter: blur(42px); opacity: 0.5; }
+.vcall-orb.a { background: #55486a; top: -12%; left: -16%; animation: vcOrbA 16s ease-in-out infinite alternate; }
+.vcall-orb.b { background: #2c4757; bottom: -20%; right: -14%; animation: vcOrbB 21s ease-in-out infinite alternate; }
+@keyframes vcOrbA { to { transform: translate(14%, 9%) scale(1.15); } }
+@keyframes vcOrbB { to { transform: translate(-11%, -7%) scale(0.9); } }
+.vcall-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
+.vcall-tag {
+  position: absolute; top: 10px; left: 12px; z-index: 2;
+  display: flex; gap: 6px; align-items: center;
+  font-family: var(--font-term); font-size: 0.62rem; color: #eee;
+  background: rgba(0,0,0,0.4); padding: 3px 8px; border-radius: 4px;
+}
+.vcall-tag::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #e5484d; animation: vcRec 1.6s steps(2) infinite; }
+@keyframes vcRec { to { opacity: 0.15; } }
+.vcall-cap {
+  position: absolute; bottom: 12px; left: 12px; right: 12px; z-index: 2;
+  text-align: center; font-size: 0.66rem; color: rgba(255,255,255,0.78);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.65);
+}
+body[data-vcall="on"] #chat { background: transparent; }
+body[data-vcall="on"] .msg .bubble {
+  background: rgba(12,14,18,0.55); color: #f2f2f2;
+  border-color: rgba(255,255,255,0.16);
+  backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+}
+body[data-vcall="on"] .msg.inner, body[data-vcall="on"] .msg.sys { color: #ddd; text-shadow: 0 1px 3px rgba(0,0,0,0.7); }
+body[data-vcall="on"] .chat-header { background: rgba(10,12,16,0.55); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+
 /* エンディング画面 */
 .ending-panel {
   position: fixed; inset: 0; z-index: 70;
@@ -684,6 +722,13 @@ body {
 <body>
 <div class="phone">
 
+  <div class="vcall-layer" id="vcallLayer">
+    <div class="vcall-bg"><div class="vcall-orb a"></div><div class="vcall-orb b"></div></div>
+    <img class="vcall-img" id="vcallImg" alt="" style="display:none">
+    <div class="vcall-tag">LIVE</div>
+    <div class="vcall-cap" id="vcallCap"></div>
+  </div>
+
   <div class="chat-header">
     <div class="avatar" id="peerAvatar">？</div>
     <div>
@@ -732,6 +777,7 @@ body {
     <div id="debugState"></div>
     <div class="stock-desc" style="margin:12px 0 6px">シーンジャンプ</div>
     <div class="debug-scenes" id="debugScenes"></div>
+    <button class="stock-close" onclick="document.body.hasAttribute('data-vcall')?game.vcallEnd():game.vcallStart('','通話UIプレビュー（背景はダミーのアンビエント。ここに絵が流れる）')">通話UIプレビュー切替</button>
     <button class="stock-close" onclick="game.clearRoute()">分岐ログをリセット</button>
     <button class="stock-close" onclick="game.clearEndings()">回収済みエンドをリセット</button>
     <button class="stock-close" onclick="localStorage.removeItem('ai_adv_gseen');game.showToast('TRUE解禁フラグをリセット')">TRUE解禁(G踏破)をリセット</button>
@@ -848,6 +894,8 @@ body {
     img: キャプション | assets/x.png … 実画像を表示（ドット絵推奨・自動でくっきり拡大。
                                        ファイルが無い場合はダミー枠にフォールバック）
     call: キャプション             … ビデオ通話画面が開く（映像はダミー枠。終了ボタンで本編に戻る）
+    vcall: キャプション | assets/x.png … 通話オーバーレイ開始。背景に絵（省略時アンビエント）が流れ、
+                                      その上に吹き出しが半透明で流れ続ける。「vcall: end」で終了
     pause: 秒                      … 何も表示せず間を置く
     batt: 数値 / off               … バッテリー残量HUDの表示・更新（終盤の資源管理演出）
                                      選択肢の {batt-=2} で消費させる
@@ -2523,7 +2571,7 @@ function parseScenario(src) {
       continue;
     }
 
-    const m = line.match(/^(sys|her|ai|inner|theme|peer|img|call|ending|pause|batt|consolidate)(?:（(.+?)）|\((.+?)\))?\s*[:：]\s*(.*)$/);
+    const m = line.match(/^(sys|her|ai|inner|theme|peer|img|call|vcall|ending|pause|batt|consolidate)(?:（(.+?)）|\((.+?)\))?\s*[:：]\s*(.*)$/);
     if (m) cur.messages.push({ from: m[1], mod: m[2] || m[3] || '', text: m[4] });
   }
   return scenes;
@@ -2662,7 +2710,36 @@ const game = {
       await this.startCall(m.text);
       this.addMessage({ from: 'sys', text: 'ビデオ通話が終了しました' });
       await this.wait(600);
+
+    } else if (m.from === 'vcall') {
+      if (m.text.trim() === 'end') {
+        this.vcallEnd();
+        this.addMessage({ from: 'sys', text: '—— 通話終了 ——' });
+      } else {
+        let cap = m.text, src = '';
+        const sep = m.text.indexOf('|');
+        if (sep >= 0) { cap = m.text.slice(0, sep).trim(); src = m.text.slice(sep + 1).trim(); }
+        this.vcallStart(src, cap);
+      }
+      await this.wait(700);
     }
+  },
+
+  /* 通話オーバーレイ：背景に絵（未指定ならアンビエント）、上に吹き出しが流れ続ける */
+  vcallStart(src, cap) {
+    document.body.setAttribute('data-vcall', 'on');
+    const img = document.getElementById('vcallImg');
+    if (src) {
+      img.src = src; img.style.display = 'block';
+      img.onerror = () => { img.style.display = 'none'; };
+    } else {
+      img.style.display = 'none';
+    }
+    document.getElementById('vcallCap').textContent = cap || '';
+    this.scrollBottom(true);
+  },
+  vcallEnd() {
+    document.body.removeAttribute('data-vcall');
   },
 
   /* AIの発言を1文字ずつリアルタイムに打つ。
