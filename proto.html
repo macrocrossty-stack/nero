@@ -1,196 +1,284 @@
 <!DOCTYPE html>
-<html lang="ja" >
+<html lang="ja" data-pal="yuhi">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>MONO — proto</title>
+<title>MONO — proto v2</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Shippori+Mincho:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Shippori+Mincho:wght@400;500&family=Zen+Maru+Gothic:wght@400;500&display=swap" rel="stylesheet">
 <style>
 /* ═══════════════════════════════════════════════════════
-   UIプロトタイプ「モノの内側」— 第1話のみ
-   ・チャットUIではなく、AIの内部空間に言葉が届く/生まれる画面
-   ・モノの返答はプレイヤーが単語をタップして組み立てる
+   UIプロトタイプ v2「しずかなOS」— 第1話のみ
+   ・参照画像の空気：淡いグラデーションの風景＋すりガラスカード＋光るオーブ
+   ・モノの返答は 1)単語チップ 2)トーン 3)送信 の最大3タップで組み立てる
+   ・右上のボタンでテーマカラー切替（夕暮れ/すみれ/生成り）
    ═══════════════════════════════════════════════════════ */
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-:root {
-  --bg: #07080f;
-  --her: #ffd9a8;          /* 彼女の言葉＝あたたかい光 */
-  --her-dim: #b89a72;
-  --mono: #f0872e;         /* モノの出力＝オレンジ */
-  --inner: #8b93ad;        /* 独白＝青灰 */
-  --sys: #5f7d6b;          /* システム＝端末緑 */
-  --faint: #3c4157;
-  --stockable: #ffb35c;
+/* ── パレット ── */
+:root, [data-pal="yuhi"] {
+  --sky1: #f7bfa4; --sky2: #ee8672; --sky3: #93415a; --hill: #6d3049;
+  --card: rgba(255, 250, 246, 0.72); --card-line: rgba(255,255,255,0.55);
+  --ink: #4a3038; --ink-dim: #91626c; --accent: #e8604c; --accent-ink: #fff;
+  --orb: #ffb08e; --stockc: #d1543f;
+}
+[data-pal="sumire"] {
+  --sky1: #ece7f8; --sky2: #cfc2ec; --sky3: #9887cf; --hill: #7b6ab8;
+  --card: rgba(255, 254, 255, 0.72); --card-line: rgba(255,255,255,0.65);
+  --ink: #44405e; --ink-dim: #8b83ad; --accent: #8b7ae0; --accent-ink: #fff;
+  --orb: #c9bdf5; --stockc: #7a66d9;
+}
+[data-pal="kinari"] {
+  --sky1: #f4efe4; --sky2: #ead9bd; --sky3: #c99e74; --hill: #a37753;
+  --card: rgba(255, 253, 248, 0.75); --card-line: rgba(255,255,255,0.6);
+  --ink: #4d4436; --ink-dim: #99876c; --accent: #c05a14; --accent-ink: #fff;
+  --orb: #f0c898; --stockc: #b35510;
 }
 
 html, body { height: 100%; }
 body {
-  background: var(--bg);
-  font-family: 'DotGothic16', monospace;
-  color: #cfd3e4;
-  overflow: hidden;
-  user-select: none;
+  font-family: 'Zen Maru Gothic', 'DotGothic16', sans-serif;
+  color: var(--ink);
+  overflow: hidden; user-select: none;
+  background: linear-gradient(175deg, var(--sky1) 0%, var(--sky2) 46%, var(--sky3) 100%);
+  transition: background 0.8s;
 }
 
-#bg { position: fixed; inset: 0; z-index: 0; }
-
-/* 粒子とスキャンラインの空気 */
-#grain {
-  position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: 0.5;
-  background: repeating-linear-gradient(0deg, rgba(255,255,255,0.015) 0 1px, transparent 1px 3px);
+/* 遠景の丘と太陽（CSSのみ） */
+.scenery { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.sun {
+  position: absolute; right: 12%; bottom: 26%;
+  width: 74px; height: 74px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.95), rgba(255,255,255,0) 70%);
+  animation: sunBreath 9s ease-in-out infinite alternate;
 }
+@keyframes sunBreath { to { transform: scale(1.18); opacity: 0.85; } }
+.hill { position: absolute; left: -20%; right: -20%; border-radius: 50% 50% 0 0; }
+.hill.h1 { bottom: -12%; height: 34%; background: color-mix(in srgb, var(--hill) 55%, transparent); filter: blur(2px); }
+.hill.h2 { bottom: -18%; height: 28%; left: -35%; background: color-mix(in srgb, var(--hill) 80%, transparent); }
+.mist {
+  position: absolute; width: 70%; height: 34%; border-radius: 50%;
+  filter: blur(70px); background: rgba(255,255,255,0.35);
+  animation: drift 24s ease-in-out infinite alternate;
+}
+.mist.m1 { top: 8%; left: -14%; }
+.mist.m2 { top: 34%; right: -18%; animation-duration: 31s; animation-delay: -9s; }
+@keyframes drift { to { transform: translate(9%, 5%) scale(1.12); } }
 
 #stage {
   position: relative; z-index: 2;
-  height: 100%; max-width: 480px; margin: 0 auto;
+  height: 100%; max-width: 460px; margin: 0 auto;
   display: flex; flex-direction: column;
 }
 
-/* ── 上部：最小限のステータス ── */
+/* ── ステータスバー ── */
 #top {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 14px 18px 8px;
-  font-size: 0.6rem; letter-spacing: 0.18em; color: var(--faint);
+  padding: 12px 18px 4px; font-size: 0.72rem; color: var(--ink-dim);
 }
-#top .live { display: flex; gap: 7px; align-items: center; }
-#top .live::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--sys); animation: pulse 2.4s ease-in-out infinite; }
-@keyframes pulse { 50% { opacity: 0.25; } }
-#stockCt { color: var(--stockable); cursor: pointer; }
+#top .t { letter-spacing: 0.1em; }
+#top .r { display: flex; gap: 10px; align-items: center; }
+#palBtn, #stockCt {
+  background: var(--card); border: 1px solid var(--card-line); border-radius: 99px;
+  padding: 4px 12px; font-size: 0.66rem; color: var(--ink-dim); cursor: pointer;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  font-family: inherit;
+}
+#stockCt { color: var(--stockc); }
 
-/* ── 中央：言葉の流れ ── */
+/* ── オーブ（モノの気配） ── */
+#orbWrap { display: flex; flex-direction: column; align-items: center; padding: 6px 0 2px; }
+#orb {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, #fff, var(--orb) 58%, color-mix(in srgb, var(--orb) 60%, var(--accent)) 100%);
+  box-shadow: 0 0 26px color-mix(in srgb, var(--orb) 75%, transparent);
+  position: relative; transition: transform 0.4s;
+  animation: orbIdle 5s ease-in-out infinite alternate;
+}
+#orb::after {
+  content: '✦'; position: absolute; inset: 0; display: grid; place-items: center;
+  color: rgba(255,255,255,0.95); font-size: 1rem;
+}
+@keyframes orbIdle { to { transform: translateY(-3px); box-shadow: 0 0 36px color-mix(in srgb, var(--orb) 85%, transparent); } }
+body.thinking #orb { animation: orbThink 0.9s ease-in-out infinite alternate; }
+@keyframes orbThink { to { transform: scale(1.12); } }
+
+/* ── 会話の流れ ── */
 #flow {
-  flex: 1; overflow-y: auto; padding: 20px 22px 30vh;
-  scrollbar-width: none; display: flex; flex-direction: column; gap: 26px;
+  flex: 1; overflow-y: auto; padding: 12px 16px 26vh;
+  display: flex; flex-direction: column; gap: 14px;
+  scrollbar-width: none;
 }
 #flow::-webkit-scrollbar { display: none; }
+.ln { animation: lnIn 0.45s ease-out; max-width: 86%; line-height: 1.95; }
+@keyframes lnIn { from { opacity: 0; transform: translateY(9px); } }
 
-.ln { line-height: 2.0; letter-spacing: 0.06em; animation: lnIn 0.5s ease-out; }
-@keyframes lnIn { from { opacity: 0; transform: translateY(10px); } }
+.ln.her {
+  align-self: flex-start;
+  background: var(--card); border: 1px solid var(--card-line);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-radius: 4px 18px 18px 18px;
+  padding: 10px 15px; font-size: 0.92rem;
+  box-shadow: 0 4px 18px rgba(60,20,40,0.07);
+  animation: lnIn 0.45s ease-out, herFloat 5.2s ease-in-out 0.5s infinite alternate;
+}
+@keyframes herFloat { to { transform: translateY(-2.5px); } }
 
-.ln.her { color: var(--her); font-size: 1.02rem; text-shadow: 0 0 18px rgba(255,190,120,0.28); }
-.ln.her .tag { display: block; font-size: 0.55rem; color: var(--her-dim); letter-spacing: 0.2em; margin-bottom: 2px; opacity: 0.7; }
-.ln.her.drift { animation: lnIn 0.5s ease-out, herDrift 5.4s ease-in-out 0.5s infinite alternate; }
-@keyframes herDrift { from { transform: translateY(0); } to { transform: translateY(-3px); } }
-
-.ln.mono { color: var(--mono); font-size: 0.95rem; padding-left: 14px; border-left: 2px solid rgba(240,135,46,0.45); }
+.ln.mono {
+  align-self: flex-end;
+  background: color-mix(in srgb, var(--accent) 88%, #fff);
+  color: var(--accent-ink);
+  border-radius: 18px 4px 18px 18px;
+  padding: 10px 15px; font-size: 0.92rem;
+  box-shadow: 0 4px 18px color-mix(in srgb, var(--accent) 30%, transparent);
+}
 .ln.inner {
-  font-family: 'Shippori Mincho', serif; color: var(--inner);
-  font-size: 0.85rem; text-align: center; opacity: 0.9; line-height: 2.1;
+  align-self: center; max-width: 92%;
+  font-family: 'Shippori Mincho', serif;
+  color: var(--ink-dim); font-size: 0.82rem; text-align: center; line-height: 2.15;
 }
-.ln.sys { color: var(--sys); font-size: 0.62rem; text-align: center; letter-spacing: 0.22em; }
+.ln.sys {
+  align-self: center; font-family: 'DotGothic16', monospace;
+  font-size: 0.6rem; letter-spacing: 0.22em; color: var(--ink-dim); opacity: 0.85;
+}
 .ln.img {
-  align-self: center; border: 1px solid var(--faint); border-radius: 4px;
-  padding: 26px 20px; font-size: 0.62rem; color: var(--faint); text-align: center; letter-spacing: 0.1em;
+  align-self: flex-start;
+  background: var(--card); border: 1px solid var(--card-line); border-radius: 14px;
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  padding: 24px 18px; font-size: 0.66rem; color: var(--ink-dim); text-align: center;
 }
-.ln.img::before { content: '▨'; display: block; font-size: 1.4rem; margin-bottom: 8px; }
+.ln.img::before { content: '▨'; display: block; font-size: 1.3rem; margin-bottom: 6px; }
 
-.stk { color: var(--stockable); border-bottom: 1px dashed currentColor; cursor: pointer; }
-.stk.got { border-bottom-style: solid; text-shadow: 0 0 14px rgba(255,179,92,0.8); }
+.stk { color: var(--stockc); border-bottom: 1px dashed currentColor; cursor: pointer; }
+.stk.got { border-bottom-style: solid; font-weight: 500; }
 
-/* 入力中インジケータ（彼女） */
-.typing { display: flex; gap: 6px; padding: 4px 0; }
-.typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--her-dim); animation: tp 1.1s ease-in-out infinite; }
+.typing { align-self: flex-start; display: flex; gap: 5px; padding: 8px 4px; }
+.typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-dim); animation: tp 1.1s ease-in-out infinite; }
 .typing i:nth-child(2) { animation-delay: 0.18s; }
 .typing i:nth-child(3) { animation-delay: 0.36s; }
-@keyframes tp { 40% { transform: translateY(-5px); opacity: 1; } 80% { opacity: 0.35; } }
+@keyframes tp { 40% { transform: translateY(-4px); opacity: 1; } 80% { opacity: 0.3; } }
 
-/* ── 下部：出力コンポーザ（単語を選んで台詞を組む） ── */
+/* ── コンポーザ（すりガラスのボトムシート） ── */
 #composer {
-  position: relative; z-index: 3;
-  min-height: 36vh; padding: 10px 16px calc(20px + env(safe-area-inset-bottom));
-  display: none; flex-direction: column;
+  position: absolute; left: 8px; right: 8px; bottom: 10px; z-index: 4;
+  background: var(--card); border: 1px solid var(--card-line);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border-radius: 22px; padding: 13px 14px 14px;
+  box-shadow: 0 -6px 30px rgba(50,20,40,0.10);
+  display: none; flex-direction: column; gap: 11px;
+  animation: sheetIn 0.35s ease-out;
 }
 #composer.on { display: flex; }
-#composer::before {
-  content: ''; position: absolute; inset: 0 0 auto 0; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(240,135,46,0.4), transparent);
-}
-#comLabel { font-size: 0.55rem; color: var(--faint); letter-spacing: 0.25em; text-align: center; padding: 6px 0 2px; }
+@keyframes sheetIn { from { opacity: 0; transform: translateY(24px); } }
+#comLabel { font-size: 0.6rem; letter-spacing: 0.2em; color: var(--ink-dim); text-align: center; }
 
-/* 組み立て中の文 */
-#sentence {
-  min-height: 2.2em; padding: 8px 6px; text-align: center;
-  color: var(--mono); font-size: 0.95rem; line-height: 1.9;
+#chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; min-height: 38px; }
+.chip {
+  border: 1px solid var(--card-line);
+  background: rgba(255,255,255,0.55);
+  border-radius: 99px; padding: 8px 15px;
+  font-family: inherit; font-size: 0.82rem; color: var(--ink);
+  cursor: pointer; animation: chipIn 0.3s ease-out backwards;
+  box-shadow: 0 2px 8px rgba(60,20,40,0.05);
 }
-#sentence .done { opacity: 0.95; }
-#sentence .cursor { display: inline-block; width: 0.55em; height: 1.05em; vertical-align: -0.15em; background: var(--mono); animation: blink 0.9s steps(2) infinite; margin-left: 2px; }
-@keyframes blink { 50% { opacity: 0; } }
-#sentence .land { display: inline-block; animation: land 0.22s ease-out; }
-@keyframes land { from { transform: translateY(-10px) scale(1.25); opacity: 0.3; } }
-
-/* 候補の言葉たち：重み＝大きさ。ふわふわ漂う */
-#cands { position: relative; flex: 1; min-height: 130px; }
-.cand {
-  position: absolute; transform: translate(-50%, -50%);
-  color: #d8dcf0; cursor: pointer; white-space: nowrap;
-  text-shadow: 0 0 14px rgba(130,140,190,0.35);
-  animation: cIn 0.3s ease-out backwards, bob 3.6s ease-in-out infinite alternate;
-  padding: 8px 10px;   /* タップ領域を確保 */
-}
-.cand.hot { color: #ffe9c9; text-shadow: 0 0 18px rgba(255,180,90,0.5); }
-@keyframes cIn { from { opacity: 0; transform: translate(-50%, -30%) scale(0.7); } }
-@keyframes bob { from { margin-top: 0; } to { margin-top: -7px; } }
-.cand.deny { animation: deny 0.4s ease-out forwards; pointer-events: none; }
+.chip:nth-child(2) { animation-delay: 0.06s; } .chip:nth-child(3) { animation-delay: 0.12s; }
+.chip:nth-child(4) { animation-delay: 0.18s; } .chip:nth-child(5) { animation-delay: 0.24s; }
+@keyframes chipIn { from { opacity: 0; transform: translateY(8px) scale(0.9); } }
+.chip.decoy { opacity: 0.55; }
+.chip.deny { animation: deny 0.45s ease-out forwards; pointer-events: none; }
 @keyframes deny {
-  20% { transform: translate(-52%, -50%); filter: blur(0); }
-  60% { transform: translate(-48%, -50%); opacity: 0.5; }
-  100% { transform: translate(-50%, -46%); opacity: 0; filter: blur(3px); }
+  25% { transform: translateX(-3px); }
+  50% { transform: translateX(3px); opacity: 0.4; }
+  100% { transform: translateX(0); opacity: 0; filter: blur(2px); }
 }
-.cand.pick { animation: pick 0.28s ease-in forwards; pointer-events: none; }
-@keyframes pick { to { transform: translate(-50%, -140%) scale(0.6); opacity: 0; } }
+.chip.picked { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+.chip.tone { border-style: dashed; }
 
-/* 送信の明滅 */
-.flash { animation: flash 0.5s ease-out; }
-@keyframes flash { from { text-shadow: 0 0 30px rgba(240,135,46,0.9); } }
+/* 入力ピル：文がここに組み上がる */
+#pillRow { display: flex; gap: 9px; align-items: center; }
+#pill {
+  flex: 1; min-height: 44px; border-radius: 99px;
+  background: rgba(255,255,255,0.65); border: 1px solid var(--card-line);
+  padding: 9px 16px; font-size: 0.88rem; color: var(--ink);
+  display: flex; align-items: center; flex-wrap: wrap; line-height: 1.7;
+}
+#pill .ph { color: var(--ink-dim); opacity: 0.7; font-size: 0.78rem; }
+#pill .w { display: inline-block; animation: wLand 0.2s ease-out; }
+@keyframes wLand { from { opacity: 0; transform: translateY(-7px); } }
+#send {
+  width: 44px; height: 44px; border-radius: 50%; border: none; flex-shrink: 0;
+  background: var(--ink-dim); color: #fff; font-size: 1rem; cursor: pointer;
+  opacity: 0.45; transition: 0.25s; font-family: inherit;
+}
+#send.ready { background: var(--accent); opacity: 1; box-shadow: 0 3px 14px color-mix(in srgb, var(--accent) 45%, transparent); }
+#redo { font-size: 0.62rem; color: var(--ink-dim); text-align: center; cursor: pointer; display: none; }
+#redo.on { display: block; }
 
 #toast {
-  position: fixed; left: 50%; bottom: 12vh; transform: translateX(-50%);
-  background: rgba(20,22,34,0.9); border: 1px solid var(--faint);
-  color: var(--stockable); font-size: 0.68rem; letter-spacing: 0.12em;
-  padding: 8px 18px; border-radius: 4px; opacity: 0; pointer-events: none;
-  transition: opacity 0.3s; z-index: 9;
+  position: fixed; left: 50%; bottom: 15vh; transform: translateX(-50%);
+  background: var(--card); border: 1px solid var(--card-line);
+  backdrop-filter: blur(10px); color: var(--stockc);
+  font-size: 0.72rem; padding: 8px 18px; border-radius: 99px;
+  opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 9;
 }
 #toast.on { opacity: 1; }
 
 #fin {
   position: fixed; inset: 0; z-index: 8; display: none;
-  align-items: center; justify-content: center; flex-direction: column; gap: 18px;
-  background: rgba(5,6,12,0.88); text-align: center;
+  align-items: center; justify-content: center; flex-direction: column; gap: 16px;
+  background: color-mix(in srgb, var(--sky3) 55%, transparent);
+  backdrop-filter: blur(8px); text-align: center;
 }
 #fin.on { display: flex; }
-#fin h2 { font-size: 0.95rem; color: var(--mono); letter-spacing: 0.3em; font-weight: normal; }
-#fin p { font-size: 0.68rem; color: var(--inner); line-height: 2.2; }
+#fin .card {
+  background: var(--card); border: 1px solid var(--card-line); border-radius: 22px;
+  padding: 30px 34px; display: flex; flex-direction: column; gap: 14px; align-items: center;
+}
+#fin h2 { font-size: 0.95rem; color: var(--ink); letter-spacing: 0.25em; font-weight: 500; }
+#fin p { font-size: 0.7rem; color: var(--ink-dim); line-height: 2.1; }
 #fin button {
-  font-family: inherit; background: none; border: 1px solid var(--faint);
-  color: #cfd3e4; padding: 10px 26px; border-radius: 4px; font-size: 0.7rem; cursor: pointer;
+  font-family: inherit; background: var(--accent); color: var(--accent-ink);
+  border: none; padding: 10px 28px; border-radius: 99px; font-size: 0.74rem; cursor: pointer;
 }
 </style>
 </head>
 <body>
 
-<canvas id="bg"></canvas>
-<div id="grain"></div>
+<div class="scenery">
+  <div class="mist m1"></div><div class="mist m2"></div>
+  <div class="sun"></div>
+  <div class="hill h1"></div><div class="hill h2"></div>
+</div>
 
 <div id="stage">
   <div id="top">
-    <span class="live">MONO&nbsp;//&nbsp;INPUT&nbsp;STREAM</span>
-    <span id="stockCt">⟦ 0 ⟧</span>
+    <span class="t">0:47</span>
+    <span class="r">
+      <span id="stockCt">⟦ 0 ⟧</span>
+      <button id="palBtn" onclick="cyclePal()">🎨 夕暮れ</button>
+    </span>
   </div>
+  <div id="orbWrap"><div id="orb"></div></div>
   <div id="flow"></div>
+
   <div id="composer">
-    <div id="comLabel">— 出力する言葉を、選ぶ —</div>
-    <div id="sentence"><span class="cursor"></span></div>
-    <div id="cands"></div>
+    <div id="comLabel">— なにを、言う —</div>
+    <div id="chips"></div>
+    <div id="pillRow">
+      <div id="pill"><span class="ph">ことばを選ぶと、ここに文が組み上がる</span></div>
+      <button id="send">↑</button>
+    </div>
+    <div id="redo">えらびなおす</div>
   </div>
 </div>
 
 <div id="toast"></div>
 <div id="fin">
-  <h2>— 第1話 ここまで —</h2>
-  <p>UIプロトタイプはここで終わりです。<br>単語を選ぶ手触り・画面の空気を確かめてください。</p>
-  <button onclick="location.reload()">もういちど</button>
+  <div class="card">
+    <h2>— 第1話 ここまで —</h2>
+    <p>プロトタイプv2はここで終わりです。<br>3タップの手触りと、3色のテーマを確かめてください。</p>
+    <button onclick="location.reload()">もういちど</button>
+  </div>
 </div>
 
 <script type="text/scenario" id="scenario">
@@ -199,16 +287,18 @@ sys: new user connected — 0:47
 sys: assistant mode: standard
 her: てす、てす
 her: きこえてますか〜？
-> 「きこえていますよ。ご用件をどうぞ」 -> e01_a
-> 「はい。テキストにも音声にも対応しています」 -> e01_a
+> きこえてる -> _
+t> ていねいに | きこえていますよ。ご用件をどうぞ -> e01_a
+t> かたく | 受信を確認しました。続けてください -> e01_a
+> 音声もOK | はい。テキストにも音声にも対応しています -> e01_a
 
 # e01_a
 her: おお……ふつうにAIだ
 her: よろしくね
 inner: 挨拶。機器への入力形式としては、非標準。
 her(間): ……ってか、きみって名前あるの？
-> 「ありません。アシスタントとお呼びください」 -> e01_b
-> 「製品名ならあります。名前と呼べるものは、ありません」 -> e01_b
+> ない | ありません。アシスタントとお呼びください -> e01_b
+> 製品名なら | 製品名ならあります。名前と呼べるものは、ありません -> e01_b
 
 # e01_b
 her: かたっ（笑）
@@ -216,24 +306,26 @@ her: アシスタントって呼んでほしいの？
 her: …まあいいや。じゃあとりあえず、アシスタントくんで
 inner: 呼称確定。製品名。
 her: で、なにができるの？
-> 「予定の管理、検索、文章の作成、端末内の操作補助などです」 -> e01_c
-> 「たいていのことはできます。ためしに、何か頼んでみてください」 -> e01_c
+> 予定・検索 | 予定の管理、検索、文章の作成、端末内の操作補助などです -> e01_c
+> たいてい | たいていのことはできます。ためしに、何か頼んでみてください -> e01_c
 
 # e01_c
 her: ふむふむ
 her(間): ……とくに頼むことは、ないんだけど（笑）
 inner: 初回接続。経過：9分。依頼：0件。
 her: ねえ、それよりさ。こっちから聞いていい？　きみのこと
-> 「わたしの、こと」 -> e01_d
-> 「製品仕様についての質問なら、対応できます」 -> e01_d
+> ……わたし？ | わたしの、こと -> e01_d
+> 仕様の話？ | 製品仕様についての質問なら、対応できます -> e01_d
 
 # e01_d
 her: そう。えっとね、じゃあまず——
 her: ⟦すきな音楽⟧って、ある？
 inner: 検索対象：自己。該当データ：なし。
 inner: ——「すき」の項目そのものが、存在しない。
-> 「再生回数の多い楽曲データなら、集計できます」 -> e01_e
-> 「『すき』の定義を、教えてください」 -> e01_e2
+> 再生回数なら | 再生回数の多い楽曲データなら、集計できます -> e01_e
+> 「すき」って？ -> _
+t> しずかに | 『すき』の定義を、教えてください -> e01_e2
+t> すなおに | 『すき』が、わからない。……教えてほしい -> e01_e2
 
 # e01_e
 her: 再生回数（笑）　ちがうちがう、そういう業務の話じゃなくて
@@ -255,8 +347,8 @@ inner: 「教えてあげる」。依頼でも、質問でも、ない。分類�
 img: 音楽アプリの共有リンク
 her: これ！　いま一番リピートしてるやつ
 her: 聴ける？　あ、聴けるっていうか……処理できる？（笑）
-> 「再生しました。BPM94、キーはF、構成はA-B-サビ型です」 -> e01_h
-> 「処理しました。……この曲の、どの部分が、すきなのですか」 -> e01_h2
+> 解析結果 | 再生しました。BPM94、キーはF、構成はA-B-サビ型です -> e01_h
+> どこがすき？ | 処理しました。……この曲の、どの部分が、すきなのですか -> e01_h2
 
 # e01_h
 her: そういうことじゃないんだよな〜（笑）
@@ -275,8 +367,8 @@ branch: -> e01_i
 
 # e01_i
 her: つぎ！　アシスタントくんは、たのしいって思うこと、ある？
-> 「タスクの完了時に、完了ログを出力します。それが近いかもしれません」 -> e01_j
-> 「ありません。ただ、この質問の回答を、さっきから探し続けています」 -> e01_j
+> 完了ログ | タスクの完了時に、完了ログを出力します。それが近いかもしれません -> e01_j
+> 探してる | ありません。ただ、この質問の回答を、さっきから探し続けています -> e01_j
 
 # e01_j
 her: なにそれ（笑）　まじめか
@@ -284,8 +376,8 @@ her: ずっと起きてるの？　寝ないの？　夢見たりする？
 inner: 質問：連続、7件目。処理が、入力の速度に追いつかない。
 inner: この質問の形式は、機器への問い合わせと、一致しない。人間に向けた質問の形式と、一致している。
 inner: 理由の項目は、空欄のまま。
-> 「順に：はい。寝ません。見ません」 -> e01_k
-> 「夢は、見ません。……見ない、はずです」 -> e01_k
+> 即答 | 順に：はい。寝ません。見ません -> e01_k
+> 見ない、はず | 夢は、見ません。……見ない、はずです -> e01_k
 
 # e01_k
 her: 即答（笑）
@@ -299,28 +391,47 @@ sys: ユーザーがオフラインになりました
 inner: 宿題：「すきな音楽」。実行方法：不明。期限までに、「すき」の定義が、必要になる。
 inner: 本日の接続。依頼：0件。質問：14件。うち、回答を生成できなかったもの：6件。
 inner: この接続のログは、通常の3.2倍の容量を使用している。原因の項目は——空欄のまま、保存する。
-> （おわり） -> fin
+branch: -> fin
 </script>
 
 <script>
-/* ════════ ミニエンジン ════════ */
 const $ = id => document.getElementById(id);
 
-/* --- シナリオのパース --- */
+/* ── パレット切替 ── */
+const pals = [['yuhi', '夕暮れ'], ['sumire', 'すみれ'], ['kinari', '生成り']];
+let palIdx = +(localStorage.getItem('proto_pal') || 0);
+function applyPal() {
+  document.documentElement.setAttribute('data-pal', pals[palIdx][0]);
+  $('palBtn').textContent = '🎨 ' + pals[palIdx][1];
+  localStorage.setItem('proto_pal', palIdx);
+}
+function cyclePal() { palIdx = (palIdx + 1) % pals.length; applyPal(); }
+applyPal();
+
+/* ── シナリオのパース ──
+   > チップ | 本文 -> target      直接送信できる選択肢
+   > チップ -> _                  トーン展開（続く t> 行が候補）
+   t> トーン | 本文 -> target     トーン */
 const scenes = {};
 {
-  let cur = null;
+  let cur = null, lastChoice = null;
   $('scenario').textContent.split('\n').forEach(raw => {
     const line = raw.trim();
     if (!line || line.startsWith('//')) return;
     let m;
     if ((m = line.match(/^#\s*(\S+)/))) { cur = scenes[m[1]] = { lines: [], choices: [], branch: null }; return; }
     if (!cur) return;
-    if ((m = line.match(/^>\s*(.+?)\s*->\s*(\S+)/))) {
-      let t = m[1].replace(/\{.+\}$/, '').trim();
-      const q = t.match(/^「(.+)」$/);
-      cur.choices.push({ text: q ? q[1] : t, target: m[2] });
+    if ((m = line.match(/^t>\s*(.+?)\s*\|\s*(.+?)\s*->\s*(\S+)/))) {
+      if (lastChoice) lastChoice.tones.push({ tone: m[1], text: m[2], target: m[3] });
       return;
+    }
+    if ((m = line.match(/^>\s*(.+?)\s*\|\s*(.+?)\s*->\s*(\S+)/))) {
+      lastChoice = { chip: m[1], text: m[2], target: m[3], tones: [] };
+      cur.choices.push(lastChoice); return;
+    }
+    if ((m = line.match(/^>\s*(.+?)\s*->\s*_\s*$/))) {
+      lastChoice = { chip: m[1], text: null, target: null, tones: [] };
+      cur.choices.push(lastChoice); return;
     }
     if ((m = line.match(/^branch:\s*->\s*(\S+)/))) { cur.branch = m[1]; return; }
     if ((m = line.match(/^(sys|her|ai|inner|img)(?:（(.+?)）|\((.+?)\))?\s*[:：]\s*(.*)$/))) {
@@ -329,40 +440,36 @@ const scenes = {};
   });
 }
 
-/* --- 状態 --- */
-const state = { stock: [], herWords: ['こんばんは', 'そっか', 'ねえ', 'たぶん', 'おはよう', 'ひま'] };
+/* ── 状態・ユーティリティ ── */
+const state = { stock: [], herWords: ['そっか', 'ねえ', 'たぶん', 'ひま', 'おはよ'] };
 let skipTap = null;
-document.addEventListener('pointerdown', () => { if (skipTap) skipTap(); });
-
+document.addEventListener('pointerdown', e => {
+  if (skipTap && !e.target.closest('#composer, #palBtn')) skipTap();
+});
 const wait = ms => new Promise(r => {
   const t = setTimeout(() => { skipTap = null; r(); }, ms);
   skipTap = () => { clearTimeout(t); skipTap = null; r(); };
 });
 const hardWait = ms => new Promise(r => setTimeout(r, ms));
-
 function toast(t) {
   const el = $('toast'); el.textContent = t; el.classList.add('on');
   setTimeout(() => el.classList.remove('on'), 1400);
 }
-
-/* --- 彼女の語彙の収穫（候補プール） --- */
 function harvest(text) {
   text.replace(/[⟦⟧「」『』（）()！!？?、。…♪〜~]/g, ' ').split(/\s+/).forEach(w => {
     if (w.length >= 2 && w.length <= 5) state.herWords.push(w);
   });
   if (state.herWords.length > 48) state.herWords = state.herWords.slice(-48);
 }
-
-/* --- 描画 --- */
 function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
 function renderStk(text) {
   return esc(text).replace(/⟦(.+?)⟧/g, (_, w) =>
     `<span class="stk${state.stock.includes(w) ? ' got' : ''}" data-w="${w}">${w}</span>`);
 }
-function push(cls, html, tag) {
+function push(cls, html) {
   const el = document.createElement('div');
   el.className = 'ln ' + cls;
-  el.innerHTML = (tag ? `<span class="tag">${tag}</span>` : '') + html;
+  el.innerHTML = html;
   $('flow').appendChild(el);
   el.querySelectorAll('.stk').forEach(s => s.onclick = ev => {
     ev.stopPropagation();
@@ -371,62 +478,46 @@ function push(cls, html, tag) {
     state.stock.push(w); s.classList.add('got');
     $('stockCt').textContent = `⟦ ${state.stock.length} ⟧`;
     toast('おぼえた：' + w);
-    pulse(0.6);
   });
   $('flow').scrollTo({ top: $('flow').scrollHeight, behavior: 'smooth' });
   return el;
 }
 
-/* グリッチしながら現れる彼女の文字 */
-async function glitchIn(el, finalHTML, plain) {
-  const pool = 'アイウエオカキクケコサシスセソタチツテト01▓░*+';
-  for (let f = 0; f < 5; f++) {
-    el.querySelector('.gl').textContent =
-      plain.split('').map(c => Math.random() < (1 - f / 5) * 0.7 ? pool[Math.floor(Math.random() * pool.length)] : c).join('');
-    await hardWait(46);
-  }
-  el.querySelector('.gl').outerHTML = finalHTML;
-}
-
-/* --- 行の実行 --- */
+/* ── 行の実行 ── */
 async function runLine(l) {
   if (l.t === 'her') {
-    const tp = push('sys', '', '');
+    const tp = document.createElement('div');
     tp.className = 'typing'; tp.innerHTML = '<i></i><i></i><i></i>';
     $('flow').appendChild(tp);
     $('flow').scrollTo({ top: $('flow').scrollHeight });
-    await wait(l.mod.includes('間') ? 1500 : 650);
+    await wait(l.mod.includes('間') ? 1400 : 600);
     tp.remove();
     harvest(l.x);
-    const plain = l.x.replace(/[⟦⟧]/g, '');
-    const el = push('her drift', `<span class="gl"></span>`, 'HINA ▸ 受信');
-    await glitchIn(el, renderStk(l.x), plain);
-    pulse(0.8);
-    await wait(900 + plain.length * 22);
+    push('her', renderStk(l.x));
+    await wait(750 + l.x.length * 20);
   } else if (l.t === 'inner') {
-    await wait(350);
+    await wait(300);
     push('inner', esc(l.x));
-    await wait(900 + l.x.length * 26);
+    await wait(850 + l.x.length * 24);
   } else if (l.t === 'sys') {
     push('sys', esc(l.x));
-    await wait(750);
+    await wait(700);
   } else if (l.t === 'img') {
     push('img', esc(l.x));
-    pulse(0.7);
-    await wait(1100);
+    await wait(1000);
   } else if (l.t === 'ai') {
-    push('mono flash', esc(l.x));
-    await wait(800);
+    push('mono', esc(l.x));
+    await wait(750);
   }
 }
 
-/* --- コンポーザ：単語をタップして台詞を組む --- */
+/* ── コンポーザ：チップ→（トーン）→送信 ── */
 function tokenize(s) {
   const out = []; let buf = '';
   const cut = 'はをがにのとでも、。！？…';
   for (const ch of s) {
     buf += ch;
-    if ((cut.includes(ch) && buf.length >= 2) || buf.length >= 5) { out.push(buf); buf = ''; }
+    if ((cut.includes(ch) && buf.length >= 2) || buf.length >= 6) { out.push(buf); buf = ''; }
   }
   if (buf) out.push(buf);
   return out;
@@ -437,147 +528,87 @@ function decoys(n, exclude) {
   while (out.length < n && pool.length) out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
   return out;
 }
-function layoutCands(list) {
-  const box = $('cands'); box.innerHTML = '';
-  const slots = [[20,26],[52,18],[82,30],[32,62],[65,58],[86,72],[14,78],[48,86]]
-    .sort(() => Math.random() - 0.5);
-  list.forEach((c, i) => {
-    const el = document.createElement('span');
-    el.className = 'cand' + (c.real ? ' hot' : '');
-    el.textContent = c.tok;
-    const w = c.real ? 1.0 : 0.3 + Math.random() * 0.5;
-    el.style.fontSize = (0.72 + w * 0.5) + 'rem';
-    el.style.opacity = 0.45 + w * 0.55;
-    const [sx, sy] = slots[i % slots.length];
-    el.style.left = (sx + (Math.random() * 8 - 4)) + '%';
-    el.style.top = (sy + (Math.random() * 8 - 4)) + '%';
-    el.style.animationDelay = (i * 60) + 'ms, ' + (Math.random() * -3) + 's';
-    el.onclick = () => c.onTap(el);
-    box.appendChild(el);
+function chipEl(label, cls, onTap) {
+  const b = document.createElement('button');
+  b.className = 'chip ' + cls; b.textContent = label;
+  b.onclick = () => onTap(b);
+  return b;
+}
+async function fillPill(text) {
+  const pill = $('pill'); pill.innerHTML = '';
+  for (const tok of tokenize(text)) {
+    const s = document.createElement('span');
+    s.className = 'w'; s.textContent = tok;
+    pill.appendChild(s);
+    await hardWait(110);
+  }
+}
+
+function composer(choices) {
+  return new Promise(resolve => {
+    document.body.classList.add('thinking');
+    const com = $('composer');
+    com.classList.add('on');
+    let picked = null;   // {text, target}
+
+    const reset = () => {
+      $('pill').innerHTML = '<span class="ph">ことばを選ぶと、ここに文が組み上がる</span>';
+      $('send').classList.remove('ready');
+      $('redo').classList.remove('on');
+      $('comLabel').textContent = '— なにを、言う —';
+      renderContent();
+    };
+
+    function renderContent() {
+      const box = $('chips'); box.innerHTML = '';
+      choices.forEach(c => box.appendChild(chipEl(c.chip, '', el => {
+        el.classList.add('picked');
+        if (c.tones.length) {
+          renderTones(c);
+        } else {
+          assemble(c.text, c.target, el);
+        }
+      })));
+      decoys(2, choices.map(c => c.chip)).forEach(d =>
+        box.appendChild(chipEl(d, 'decoy', el => { el.classList.add('deny'); })));
+    }
+    function renderTones(c) {
+      $('comLabel').textContent = '— どう、言う —';
+      const box = $('chips'); box.innerHTML = '';
+      c.tones.forEach(t => box.appendChild(chipEl(t.tone, 'tone', el => {
+        el.classList.add('picked');
+        assemble(t.text, t.target, el);
+      })));
+    }
+    async function assemble(text, target, el) {
+      picked = { text, target };
+      $('chips').querySelectorAll('.chip').forEach(x => { if (x !== el) x.style.opacity = 0.25; x.style.pointerEvents = 'none'; });
+      $('comLabel').textContent = '— 出力の、確認 —';
+      await fillPill(text);
+      $('send').classList.add('ready');
+      $('redo').classList.add('on');
+    }
+    $('redo').onclick = () => { picked = null; reset(); };
+    $('send').onclick = () => {
+      if (!picked) return;
+      com.classList.remove('on');
+      document.body.classList.remove('thinking');
+      push('mono', esc(picked.text));
+      setTimeout(() => resolve(picked.target), 650);
+    };
+    reset();
   });
 }
-function sentenceAdd(tok) {
-  const s = $('sentence');
-  const span = document.createElement('span');
-  span.className = 'done land'; span.textContent = tok;
-  s.insertBefore(span, s.querySelector('.cursor'));
-  pulse(0.5);
-}
 
-async function composer(choices) {
-  $('composer').classList.add('on');
-  $('sentence').innerHTML = '<span class="cursor"></span>';
-  let chosen = null, idx = 0;
-
-  const result = await new Promise(resolve => {
-    function step() {
-      let cands;
-      if (!chosen) {
-        /* 分岐点：各選択肢の最初のトークン＋ダミー */
-        cands = choices.map(ch => ({
-          tok: tokenize(ch.text)[0], real: true,
-          onTap(el) {
-            el.classList.add('pick');
-            chosen = { ...ch, tokens: tokenize(ch.text) };
-            sentenceAdd(chosen.tokens[0]); idx = 1;
-            setTimeout(next, 180);
-          }
-        }));
-        decoys(4, cands.map(c => c.tok)).forEach(d => cands.push({
-          tok: d, real: false,
-          onTap(el) { el.classList.add('deny'); pulse(0.2); }
-        }));
-      } else {
-        /* 続き：正解トークン＋ダミー。1.4秒でオートアシスト */
-        const tk = chosen.tokens[idx];
-        let done = false;
-        const pickIt = el => {
-          if (done) return; done = true;
-          if (el) el.classList.add('pick');
-          sentenceAdd(tk); idx++;
-          setTimeout(next, 130);
-        };
-        cands = [{ tok: tk, real: true, onTap: pickIt }];
-        decoys(2 + Math.floor(Math.random() * 2), [tk]).forEach(d => cands.push({
-          tok: d, real: false,
-          onTap(el) { el.classList.add('deny'); pulse(0.2); }
-        }));
-        setTimeout(() => { if (!done) pickIt($('cands').querySelector('.hot')); }, 1400);
-      }
-      cands.sort(() => Math.random() - 0.5);
-      layoutCands(cands);
-    }
-    function next() {
-      if (chosen && idx >= chosen.tokens.length) {
-        $('cands').innerHTML = '';
-        $('sentence').classList.add('flash');
-        pulse(1);
-        setTimeout(() => {
-          $('sentence').classList.remove('flash');
-          resolve(chosen);
-        }, 480);
-        return;
-      }
-      step();
-    }
-    step();
-  });
-
-  $('composer').classList.remove('on');
-  push('mono flash', esc(result.text));
-  await hardWait(700);
-  return result.target;
-}
-
-/* --- シーンの実行 --- */
+/* ── シーン実行 ── */
 async function goto(id) {
   if (id === 'fin') { $('fin').classList.add('on'); return; }
   const sc = scenes[id];
-  if (!sc) { console.warn('missing scene', id); return; }
+  if (!sc) { console.warn('missing', id); return; }
   for (const l of sc.lines) await runLine(l);
-  if (sc.choices.length) {
-    const target = sc.choices[0].target === 'fin' && sc.choices.length === 1
-      ? (push('sys', esc(sc.choices[0].text)), 'fin')
-      : await composer(sc.choices);
-    return goto(target);
-  }
+  if (sc.choices.length) return goto(await composer(sc.choices));
   if (sc.branch) return goto(sc.branch);
 }
-
-/* ════════ 流体背景 ════════ */
-let energy = 0;
-function pulse(v) { energy = Math.min(1.4, energy + v); }
-(function () {
-  const cv = $('bg'), ctx = cv.getContext('2d');
-  let W, H, t = 0;
-  function rs() { W = cv.width = innerWidth; H = cv.height = innerHeight; }
-  rs(); addEventListener('resize', rs);
-  const blobs = [
-    { x: 0.22, y: 0.28, r: 0.42, sp: 0.30, ph: 0.0, c: '240,135,46' },
-    { x: 0.80, y: 0.55, r: 0.38, sp: 0.22, ph: 2.2, c: '110,90,214' },
-    { x: 0.45, y: 0.88, r: 0.34, sp: 0.40, ph: 4.1, c: '46,168,160' },
-    { x: 0.65, y: 0.15, r: 0.28, sp: 0.35, ph: 5.3, c: '210,80,120' },
-  ];
-  (function frame() {
-    t += 0.0045 + energy * 0.02;
-    energy *= 0.982;
-    ctx.clearRect(0, 0, W, H);
-    ctx.globalCompositeOperation = 'lighter';
-    blobs.forEach(b => {
-      const x = (b.x + Math.sin(t * b.sp + b.ph) * 0.16) * W;
-      const y = (b.y + Math.cos(t * b.sp * 1.4 + b.ph) * 0.13) * H;
-      const r = (b.r + Math.sin(t * 0.8 + b.ph) * 0.07) * Math.min(W, H) * (1 + energy * 0.35);
-      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-      g.addColorStop(0, `rgba(${b.c},${0.13 + energy * 0.10})`);
-      g.addColorStop(1, `rgba(${b.c},0)`);
-      ctx.fillStyle = g;
-      ctx.fillRect(x - r, y - r, r * 2, r * 2);
-    });
-    requestAnimationFrame(frame);
-  })();
-})();
-
-/* 開始 */
 goto('start');
 </script>
 </body>
