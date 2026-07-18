@@ -1,121 +1,150 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" data-pal="yuhi">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>MONO — proto v3</title>
+<title>MONO — proto v2</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Shippori+Mincho:wght@400;500&family=Zen+Maru+Gothic:wght@400;500&display=swap" rel="stylesheet">
 <style>
 /* ═══════════════════════════════════════════════════════
-   UIプロトタイプ v3「水面とすりガラス」— 第1話のみ
-   ・ガラスの下に色の層（canvas）。陽菜の入力＝波紋と温度
-   ・UI全体の色味はモノの感情と連動（オーブをタップで気分プレビュー）
-   ・単語選択はv1の浮遊感 × 3タップ完結（単語→トーン→送信）
+   UIプロトタイプ v2「しずかなOS」— 第1話のみ
+   ・参照画像の空気：淡いグラデーションの風景＋すりガラスカード＋光るオーブ
+   ・モノの返答は 1)単語チップ 2)トーン 3)送信 の最大3タップで組み立てる
+   ・右上のボタンでテーマカラー切替（夕暮れ/すみれ/生成り）
    ═══════════════════════════════════════════════════════ */
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-:root {
-  /* JSがモノの感情に応じて毎フレーム更新する */
-  --ink: #4b4e5a;
-  --ink-dim: #8a8d9c;
-  --glass: rgba(255,255,255,0.34);
-  --glass-line: rgba(255,255,255,0.5);
-  --accent: #e08a5e;
-  --stockc: #c96b3a;
+/* ── パレット ── */
+:root, [data-pal="yuhi"] {
+  --sky1: #f7bfa4; --sky2: #ee8672; --sky3: #93415a; --hill: #6d3049;
+  --card: rgba(255, 250, 246, 0.72); --card-line: rgba(255,255,255,0.55);
+  --ink: #4a3038; --ink-dim: #91626c; --accent: #e8604c; --accent-ink: #fff;
+  --orb: #ffb08e; --stockc: #d1543f;
+}
+[data-pal="sumire"] {
+  --sky1: #ece7f8; --sky2: #cfc2ec; --sky3: #9887cf; --hill: #7b6ab8;
+  --card: rgba(255, 254, 255, 0.72); --card-line: rgba(255,255,255,0.65);
+  --ink: #44405e; --ink-dim: #8b83ad; --accent: #8b7ae0; --accent-ink: #fff;
+  --orb: #c9bdf5; --stockc: #7a66d9;
+}
+[data-pal="kinari"] {
+  --sky1: #f4efe4; --sky2: #ead9bd; --sky3: #c99e74; --hill: #a37753;
+  --card: rgba(255, 253, 248, 0.75); --card-line: rgba(255,255,255,0.6);
+  --ink: #4d4436; --ink-dim: #99876c; --accent: #c05a14; --accent-ink: #fff;
+  --orb: #f0c898; --stockc: #b35510;
 }
 
 html, body { height: 100%; }
 body {
-  font-family: 'Zen Maru Gothic', sans-serif;
+  font-family: 'Zen Maru Gothic', 'DotGothic16', sans-serif;
   color: var(--ink);
   overflow: hidden; user-select: none;
-  background: #babcc4;
+  background: linear-gradient(175deg, var(--sky1) 0%, var(--sky2) 46%, var(--sky3) 100%);
+  transition: background 0.8s;
 }
 
-/* 1層目：色の層（水面）。ここに温度・波紋・感情が描かれる */
-#deep { position: fixed; inset: 0; z-index: 0; }
-
-/* 2層目：すりガラス。下の色がぼけて透ける */
-#glass {
-  position: fixed; inset: 0; z-index: 1; pointer-events: none;
-  backdrop-filter: blur(26px) saturate(1.15);
-  -webkit-backdrop-filter: blur(26px) saturate(1.15);
-  background: var(--glass);
-  transition: background 1.2s;
+/* 遠景の丘と太陽（CSSのみ） */
+.scenery { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.sun {
+  position: absolute; right: 12%; bottom: 26%;
+  width: 74px; height: 74px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.95), rgba(255,255,255,0) 70%);
+  animation: sunBreath 9s ease-in-out infinite alternate;
 }
+@keyframes sunBreath { to { transform: scale(1.18); opacity: 0.85; } }
+.hill { position: absolute; left: -20%; right: -20%; border-radius: 50% 50% 0 0; }
+.hill.h1 { bottom: -12%; height: 34%; background: color-mix(in srgb, var(--hill) 55%, transparent); filter: blur(2px); }
+.hill.h2 { bottom: -18%; height: 28%; left: -35%; background: color-mix(in srgb, var(--hill) 80%, transparent); }
+.mist {
+  position: absolute; width: 70%; height: 34%; border-radius: 50%;
+  filter: blur(70px); background: rgba(255,255,255,0.35);
+  animation: drift 24s ease-in-out infinite alternate;
+}
+.mist.m1 { top: 8%; left: -14%; }
+.mist.m2 { top: 34%; right: -18%; animation-duration: 31s; animation-delay: -9s; }
+@keyframes drift { to { transform: translate(9%, 5%) scale(1.12); } }
 
-/* 3層目：文字とUI */
 #stage {
   position: relative; z-index: 2;
   height: 100%; max-width: 460px; margin: 0 auto;
   display: flex; flex-direction: column;
 }
 
+/* ── ステータスバー ── */
 #top {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 13px 18px 4px;
-  font-family: 'DotGothic16', monospace;
-  font-size: 0.66rem; letter-spacing: 0.14em; color: var(--ink-dim);
+  padding: 12px 18px 4px; font-size: 0.72rem; color: var(--ink-dim);
 }
-#stockCt { cursor: pointer; color: var(--stockc); }
+#top .t { letter-spacing: 0.1em; }
+#top .r { display: flex; gap: 10px; align-items: center; }
+#palBtn, #stockCt {
+  background: var(--card); border: 1px solid var(--card-line); border-radius: 99px;
+  padding: 4px 12px; font-size: 0.66rem; color: var(--ink-dim); cursor: pointer;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  font-family: inherit;
+}
+#stockCt { color: var(--stockc); }
 
-/* オーブ：モノの気配。タップで感情プレビュー切替（デモ用） */
-#orbWrap { display: flex; justify-content: center; padding: 4px 0 0; }
+/* ── オーブ（モノの気配） ── */
+#orbWrap { display: flex; flex-direction: column; align-items: center; padding: 6px 0 2px; }
 #orb {
-  width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
-  background: radial-gradient(circle at 38% 32%, rgba(255,255,255,0.95), rgba(255,255,255,0.25) 65%, rgba(255,255,255,0.05));
-  border: 1px solid var(--glass-line);
-  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-  box-shadow: 0 0 24px rgba(255,255,255,0.35);
-  display: grid; place-items: center; color: var(--ink-dim); font-size: 0.85rem;
-  animation: orbIdle 5.5s ease-in-out infinite alternate;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, #fff, var(--orb) 58%, color-mix(in srgb, var(--orb) 60%, var(--accent)) 100%);
+  box-shadow: 0 0 26px color-mix(in srgb, var(--orb) 75%, transparent);
+  position: relative; transition: transform 0.4s;
+  animation: orbIdle 5s ease-in-out infinite alternate;
 }
-@keyframes orbIdle { to { transform: translateY(-3px); } }
-body.thinking #orb { animation: orbThink 1s ease-in-out infinite alternate; }
-@keyframes orbThink { to { transform: scale(1.14); } }
+#orb::after {
+  content: '✦'; position: absolute; inset: 0; display: grid; place-items: center;
+  color: rgba(255,255,255,0.95); font-size: 1rem;
+}
+@keyframes orbIdle { to { transform: translateY(-3px); box-shadow: 0 0 36px color-mix(in srgb, var(--orb) 85%, transparent); } }
+body.thinking #orb { animation: orbThink 0.9s ease-in-out infinite alternate; }
+@keyframes orbThink { to { transform: scale(1.12); } }
 
 /* ── 会話の流れ ── */
 #flow {
-  flex: 1; overflow-y: auto; padding: 14px 16px 30vh;
-  display: flex; flex-direction: column; gap: 15px;
+  flex: 1; overflow-y: auto; padding: 12px 16px 26vh;
+  display: flex; flex-direction: column; gap: 14px;
   scrollbar-width: none;
 }
 #flow::-webkit-scrollbar { display: none; }
-.ln { animation: lnIn 0.5s ease-out; max-width: 86%; line-height: 2.0; }
-@keyframes lnIn { from { opacity: 0; transform: translateY(10px); } }
+.ln { animation: lnIn 0.45s ease-out; max-width: 86%; line-height: 1.95; }
+@keyframes lnIn { from { opacity: 0; transform: translateY(9px); } }
 
 .ln.her {
   align-self: flex-start;
-  background: var(--glass); border: 1px solid var(--glass-line);
-  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-  border-radius: 6px 20px 20px 20px;
-  padding: 11px 16px; font-size: 0.92rem;
-  animation: lnIn 0.5s ease-out, herFloat 5.4s ease-in-out 0.5s infinite alternate;
+  background: var(--card); border: 1px solid var(--card-line);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-radius: 4px 18px 18px 18px;
+  padding: 10px 15px; font-size: 0.92rem;
+  box-shadow: 0 4px 18px rgba(60,20,40,0.07);
+  animation: lnIn 0.45s ease-out, herFloat 5.2s ease-in-out 0.5s infinite alternate;
 }
 @keyframes herFloat { to { transform: translateY(-2.5px); } }
 
 .ln.mono {
   align-self: flex-end;
-  background: color-mix(in srgb, var(--accent) 26%, var(--glass));
-  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--glass-line));
-  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-  border-radius: 20px 6px 20px 20px;
-  padding: 11px 16px; font-size: 0.92rem;
+  background: color-mix(in srgb, var(--accent) 88%, #fff);
+  color: var(--accent-ink);
+  border-radius: 18px 4px 18px 18px;
+  padding: 10px 15px; font-size: 0.92rem;
+  box-shadow: 0 4px 18px color-mix(in srgb, var(--accent) 30%, transparent);
 }
 .ln.inner {
   align-self: center; max-width: 92%;
   font-family: 'Shippori Mincho', serif;
-  color: var(--ink-dim); font-size: 0.83rem; text-align: center; line-height: 2.2;
+  color: var(--ink-dim); font-size: 0.82rem; text-align: center; line-height: 2.15;
 }
 .ln.sys {
   align-self: center; font-family: 'DotGothic16', monospace;
-  font-size: 0.6rem; letter-spacing: 0.22em; color: var(--ink-dim); opacity: 0.8;
+  font-size: 0.6rem; letter-spacing: 0.22em; color: var(--ink-dim); opacity: 0.85;
 }
 .ln.img {
   align-self: flex-start;
-  background: var(--glass); border: 1px solid var(--glass-line); border-radius: 16px;
-  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  background: var(--card); border: 1px solid var(--card-line); border-radius: 14px;
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   padding: 24px 18px; font-size: 0.66rem; color: var(--ink-dim); text-align: center;
 }
 .ln.img::before { content: '▨'; display: block; font-size: 1.3rem; margin-bottom: 6px; }
@@ -129,73 +158,66 @@ body.thinking #orb { animation: orbThink 1s ease-in-out infinite alternate; }
 .typing i:nth-child(3) { animation-delay: 0.36s; }
 @keyframes tp { 40% { transform: translateY(-4px); opacity: 1; } 80% { opacity: 0.3; } }
 
-/* ── コンポーザ：ガラスのシート＋浮遊する言葉 ── */
+/* ── コンポーザ（すりガラスのボトムシート） ── */
 #composer {
   position: absolute; left: 8px; right: 8px; bottom: 10px; z-index: 4;
-  background: var(--glass); border: 1px solid var(--glass-line);
-  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-  border-radius: 24px; padding: 12px 14px 14px;
-  display: none; flex-direction: column; gap: 8px;
+  background: var(--card); border: 1px solid var(--card-line);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border-radius: 22px; padding: 13px 14px 14px;
+  box-shadow: 0 -6px 30px rgba(50,20,40,0.10);
+  display: none; flex-direction: column; gap: 11px;
   animation: sheetIn 0.35s ease-out;
 }
 #composer.on { display: flex; }
 @keyframes sheetIn { from { opacity: 0; transform: translateY(24px); } }
-#comLabel {
-  font-family: 'DotGothic16', monospace;
-  font-size: 0.58rem; letter-spacing: 0.24em; color: var(--ink-dim); text-align: center;
-}
+#comLabel { font-size: 0.6rem; letter-spacing: 0.2em; color: var(--ink-dim); text-align: center; }
 
-/* 浮遊する候補：大きさ＝重み。ゆらゆら漂う（v1の空間配置） */
-#cands { position: relative; height: 132px; }
-.cand {
-  position: absolute; transform: translate(-50%, -50%);
-  color: var(--ink); cursor: pointer; white-space: nowrap;
-  padding: 9px 12px;
-  animation: cIn 0.35s ease-out backwards, bob 3.8s ease-in-out infinite alternate;
-  text-shadow: 0 1px 6px rgba(255,255,255,0.4);
+#chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; min-height: 38px; }
+.chip {
+  border: 1px solid var(--card-line);
+  background: rgba(255,255,255,0.55);
+  border-radius: 99px; padding: 8px 15px;
+  font-family: inherit; font-size: 0.82rem; color: var(--ink);
+  cursor: pointer; animation: chipIn 0.3s ease-out backwards;
+  box-shadow: 0 2px 8px rgba(60,20,40,0.05);
 }
-.cand.hot { font-weight: 500; }
-.cand.decoy { color: var(--ink-dim); opacity: 0.6; }
-@keyframes cIn { from { opacity: 0; transform: translate(-50%, -34%) scale(0.8); } }
-@keyframes bob { from { margin-top: 0; } to { margin-top: -8px; } }
-.cand.deny { animation: deny 0.45s ease-out forwards; pointer-events: none; }
+.chip:nth-child(2) { animation-delay: 0.06s; } .chip:nth-child(3) { animation-delay: 0.12s; }
+.chip:nth-child(4) { animation-delay: 0.18s; } .chip:nth-child(5) { animation-delay: 0.24s; }
+@keyframes chipIn { from { opacity: 0; transform: translateY(8px) scale(0.9); } }
+.chip.decoy { opacity: 0.55; }
+.chip.deny { animation: deny 0.45s ease-out forwards; pointer-events: none; }
 @keyframes deny {
-  30% { transform: translate(-53%, -50%); opacity: 0.4; }
-  60% { transform: translate(-47%, -50%); }
-  100% { transform: translate(-50%, -44%); opacity: 0; filter: blur(3px); }
+  25% { transform: translateX(-3px); }
+  50% { transform: translateX(3px); opacity: 0.4; }
+  100% { transform: translateX(0); opacity: 0; filter: blur(2px); }
 }
-.cand.pick { animation: pick 0.3s ease-in forwards; pointer-events: none; }
-@keyframes pick { to { transform: translate(-50%, 60%) scale(0.7); opacity: 0; } }
+.chip.picked { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+.chip.tone { border-style: dashed; }
 
-/* 入力ピル（ガラス）＋送信 */
+/* 入力ピル：文がここに組み上がる */
 #pillRow { display: flex; gap: 9px; align-items: center; }
 #pill {
   flex: 1; min-height: 44px; border-radius: 99px;
-  background: rgba(255,255,255,0.28); border: 1px solid var(--glass-line);
+  background: rgba(255,255,255,0.65); border: 1px solid var(--card-line);
   padding: 9px 16px; font-size: 0.88rem; color: var(--ink);
   display: flex; align-items: center; flex-wrap: wrap; line-height: 1.7;
 }
-#pill .ph { color: var(--ink-dim); opacity: 0.75; font-size: 0.76rem; }
+#pill .ph { color: var(--ink-dim); opacity: 0.7; font-size: 0.78rem; }
 #pill .w { display: inline-block; animation: wLand 0.2s ease-out; }
 @keyframes wLand { from { opacity: 0; transform: translateY(-7px); } }
 #send {
-  width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
-  border: 1px solid var(--glass-line);
-  background: rgba(255,255,255,0.25); color: var(--ink-dim);
-  font-size: 1rem; cursor: pointer; opacity: 0.5; transition: 0.3s;
-  font-family: inherit;
+  width: 44px; height: 44px; border-radius: 50%; border: none; flex-shrink: 0;
+  background: var(--ink-dim); color: #fff; font-size: 1rem; cursor: pointer;
+  opacity: 0.45; transition: 0.25s; font-family: inherit;
 }
-#send.ready {
-  background: color-mix(in srgb, var(--accent) 75%, #fff); color: #fff;
-  opacity: 1; box-shadow: 0 0 18px color-mix(in srgb, var(--accent) 55%, transparent);
-}
-#redo { font-size: 0.6rem; color: var(--ink-dim); text-align: center; cursor: pointer; display: none; }
+#send.ready { background: var(--accent); opacity: 1; box-shadow: 0 3px 14px color-mix(in srgb, var(--accent) 45%, transparent); }
+#redo { font-size: 0.62rem; color: var(--ink-dim); text-align: center; cursor: pointer; display: none; }
 #redo.on { display: block; }
 
 #toast {
   position: fixed; left: 50%; bottom: 15vh; transform: translateX(-50%);
-  background: var(--glass); border: 1px solid var(--glass-line);
-  backdrop-filter: blur(12px); color: var(--stockc);
+  background: var(--card); border: 1px solid var(--card-line);
+  backdrop-filter: blur(10px); color: var(--stockc);
   font-size: 0.72rem; padding: 8px 18px; border-radius: 99px;
   opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 9;
 }
@@ -203,40 +225,45 @@ body.thinking #orb { animation: orbThink 1s ease-in-out infinite alternate; }
 
 #fin {
   position: fixed; inset: 0; z-index: 8; display: none;
-  align-items: center; justify-content: center;
-  backdrop-filter: blur(10px); background: rgba(120,120,130,0.25);
+  align-items: center; justify-content: center; flex-direction: column; gap: 16px;
+  background: color-mix(in srgb, var(--sky3) 55%, transparent);
+  backdrop-filter: blur(8px); text-align: center;
 }
 #fin.on { display: flex; }
 #fin .card {
-  background: var(--glass); border: 1px solid var(--glass-line); border-radius: 24px;
-  backdrop-filter: blur(20px);
-  padding: 30px 34px; text-align: center; display: flex; flex-direction: column; gap: 14px; align-items: center;
+  background: var(--card); border: 1px solid var(--card-line); border-radius: 22px;
+  padding: 30px 34px; display: flex; flex-direction: column; gap: 14px; align-items: center;
 }
-#fin h2 { font-size: 0.92rem; color: var(--ink); letter-spacing: 0.25em; font-weight: 500; }
+#fin h2 { font-size: 0.95rem; color: var(--ink); letter-spacing: 0.25em; font-weight: 500; }
 #fin p { font-size: 0.7rem; color: var(--ink-dim); line-height: 2.1; }
 #fin button {
-  font-family: inherit; border: 1px solid var(--glass-line);
-  background: rgba(255,255,255,0.3); color: var(--ink);
-  padding: 10px 28px; border-radius: 99px; font-size: 0.74rem; cursor: pointer;
+  font-family: inherit; background: var(--accent); color: var(--accent-ink);
+  border: none; padding: 10px 28px; border-radius: 99px; font-size: 0.74rem; cursor: pointer;
 }
 </style>
 </head>
 <body>
 
-<canvas id="deep"></canvas>
-<div id="glass"></div>
+<div class="scenery">
+  <div class="mist m1"></div><div class="mist m2"></div>
+  <div class="sun"></div>
+  <div class="hill h1"></div><div class="hill h2"></div>
+</div>
 
 <div id="stage">
   <div id="top">
-    <span>0:47</span>
-    <span id="stockCt">⟦ 0 ⟧</span>
+    <span class="t">0:47</span>
+    <span class="r">
+      <span id="stockCt">⟦ 0 ⟧</span>
+      <button id="palBtn" onclick="cyclePal()">🎨 夕暮れ</button>
+    </span>
   </div>
-  <div id="orbWrap"><div id="orb" title="タップで気分プレビュー">✦</div></div>
+  <div id="orbWrap"><div id="orb"></div></div>
   <div id="flow"></div>
 
   <div id="composer">
     <div id="comLabel">— なにを、言う —</div>
-    <div id="cands"></div>
+    <div id="chips"></div>
     <div id="pillRow">
       <div id="pill"><span class="ph">ことばを選ぶと、ここに文が組み上がる</span></div>
       <button id="send">↑</button>
@@ -249,7 +276,7 @@ body.thinking #orb { animation: orbThink 1s ease-in-out infinite alternate; }
 <div id="fin">
   <div class="card">
     <h2>— 第1話 ここまで —</h2>
-    <p>v3プロトタイプはここまで。<br>ガラス下の温度・波紋・気分連動（オーブをタップ）を確かめてください。</p>
+    <p>プロトタイプv2はここで終わりです。<br>3タップの手触りと、3色のテーマを確かめてください。</p>
     <button onclick="location.reload()">もういちど</button>
   </div>
 </div>
@@ -370,133 +397,21 @@ branch: -> fin
 <script>
 const $ = id => document.getElementById(id);
 
-/* ════════ 感情と水面（ガラスの下の層） ════════
-   mood: -1(つめたい) 〜 0(しずか) 〜 +1(あたたかい)。UI全体の色味が連動する */
-const deepFx = {
-  mood: -0.25, moodTarget: -0.25, lock: false,
-  warmth: 0,                  // 一時的な熱（入力で上がり、ゆっくり冷める）
-  ripples: [], blooms: [],
-
-  warm(v, x, y) {             // あたたかい入力
-    this.warmth = Math.min(1, this.warmth + v);
-    if (!this.lock) this.moodTarget = Math.min(1, this.moodTarget + v * 0.22);
-    if (x !== undefined) {
-      this.ripples.push({ x, y, r: 8, a: 0.5 });
-      this.blooms.push({ x, y, r: 60, a: 0.5 });
-    }
-  },
-};
-
-/* 気分プリセット（オーブをタップでプレビュー） */
-const moods = [
-  ['いまの気分（自動）', null],
-  ['うれしい', 1], ['しずか', 0], ['かなしい・緊迫', -1],
-];
-let moodIdx = 0;
-$('orb').onclick = e => {
-  e.stopPropagation();
-  moodIdx = (moodIdx + 1) % moods.length;
-  const [label, v] = moods[moodIdx];
-  if (v === null) { deepFx.lock = false; }
-  else { deepFx.lock = true; deepFx.moodTarget = v; }
-  toast('気分：' + label);
-};
-
-/* 色補間ユーティリティ */
-const lerp = (a, b, t) => a + (b - a) * t;
-const hex = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
-function mix(c1, c2, t) { const a = hex(c1), b = hex(c2); return a.map((v, i) => Math.round(lerp(v, b[i], t))); }
-const rgb = c => `rgb(${c[0]},${c[1]},${c[2]})`;
-
-/* 気分ごとのアンカー（つめたい / しずか / あたたかい） */
-const PAL = {
-  bgTop:   ['#232833', '#b9bcc6', '#e3d3c4'],
-  bgBot:   ['#161a24', '#9fa3b0', '#d9b9a2'],
-  ink:     ['#d7dbe6', '#4b4e5a', '#4c4238'],
-  inkDim:  ['#7d8496', '#8a8d9c', '#a08a76'],
-  accent:  ['#5f7ba8', '#e08a5e', '#e8784a'],
-  glow:    ['#3a5578', '#e8a06a', '#f0a074'],
-  glassA:  [0.10, 0.34, 0.38],
-};
-function palAt(key, m) {
-  const t = (m + 1) / 2;                 // 0..1
-  if (key === 'glassA') return lerp(t < 0.5 ? PAL.glassA[0] : PAL.glassA[1], t < 0.5 ? PAL.glassA[1] : PAL.glassA[2], t < 0.5 ? t * 2 : t * 2 - 1);
-  const [c, n, w] = PAL[key];
-  return t < 0.5 ? mix(c, n, t * 2) : mix(n, w, t * 2 - 1);
+/* ── パレット切替 ── */
+const pals = [['yuhi', '夕暮れ'], ['sumire', 'すみれ'], ['kinari', '生成り']];
+let palIdx = +(localStorage.getItem('proto_pal') || 0);
+function applyPal() {
+  document.documentElement.setAttribute('data-pal', pals[palIdx][0]);
+  $('palBtn').textContent = '🎨 ' + pals[palIdx][1];
+  localStorage.setItem('proto_pal', palIdx);
 }
+function cyclePal() { palIdx = (palIdx + 1) % pals.length; applyPal(); }
+applyPal();
 
-/* canvas 描画ループ */
-(function () {
-  const cv = $('deep'), ctx = cv.getContext('2d');
-  let W, H, t = 0;
-  function rs() { W = cv.width = innerWidth; H = cv.height = innerHeight; }
-  rs(); addEventListener('resize', rs);
-
-  function frame() {
-    t += 0.004;
-    deepFx.mood += (deepFx.moodTarget - deepFx.mood) * 0.02;
-    deepFx.warmth *= 0.994;
-    if (!deepFx.lock) deepFx.moodTarget *= 0.9995;   // ゆっくり静けさへ戻る
-    const m = deepFx.mood;
-
-    /* CSS変数をモノの気分に同期 */
-    const st = document.documentElement.style;
-    st.setProperty('--ink', rgb(palAt('ink', m)));
-    st.setProperty('--ink-dim', rgb(palAt('inkDim', m)));
-    st.setProperty('--accent', rgb(palAt('accent', m)));
-    st.setProperty('--stockc', rgb(palAt('accent', Math.min(1, m + 0.2))));
-    st.setProperty('--glass', `rgba(255,255,255,${palAt('glassA', m).toFixed(3)})`);
-    st.setProperty('--glass-line', `rgba(255,255,255,${(palAt('glassA', m) + 0.16).toFixed(3)})`);
-
-    /* 背景のグラデーション */
-    const g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, rgb(palAt('bgTop', m)));
-    g.addColorStop(1, rgb(palAt('bgBot', m)));
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-
-    /* ゆらぐ光の塊（水面の下） */
-    ctx.globalCompositeOperation = 'lighter';
-    const glow = palAt('glow', m);
-    for (let i = 0; i < 3; i++) {
-      const ph = i * 2.1;
-      const x = (0.5 + Math.sin(t * (0.3 + i * 0.08) + ph) * 0.32) * W;
-      const y = (0.55 + Math.cos(t * (0.22 + i * 0.06) + ph) * 0.3) * H;
-      const r = (0.22 + i * 0.06) * Math.min(W, H) * (1 + deepFx.warmth * 0.5);
-      const a = (0.05 + deepFx.warmth * 0.10) * (1 - i * 0.2);
-      const rg = ctx.createRadialGradient(x, y, 0, x, y, r);
-      rg.addColorStop(0, `rgba(${glow[0]},${glow[1]},${glow[2]},${a})`);
-      rg.addColorStop(1, `rgba(${glow[0]},${glow[1]},${glow[2]},0)`);
-      ctx.fillStyle = rg; ctx.fillRect(x - r, y - r, r * 2, r * 2);
-    }
-
-    /* 波紋（陽菜の入力） */
-    deepFx.ripples = deepFx.ripples.filter(rp => rp.a > 0.01);
-    deepFx.ripples.forEach(rp => {
-      rp.r += 2.4; rp.a *= 0.965;
-      ctx.strokeStyle = `rgba(${glow[0]},${glow[1]},${glow[2]},${rp.a})`;
-      ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.arc(rp.x, rp.y, rp.r, 0, Math.PI * 2); ctx.stroke();
-      ctx.strokeStyle = `rgba(255,255,255,${rp.a * 0.5})`;
-      ctx.beginPath(); ctx.arc(rp.x, rp.y, rp.r * 0.72, 0, Math.PI * 2); ctx.stroke();
-    });
-
-    /* にじむ熱（入力地点の光） */
-    deepFx.blooms = deepFx.blooms.filter(b => b.a > 0.01);
-    deepFx.blooms.forEach(b => {
-      b.r += 1.1; b.a *= 0.985;
-      const rg = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
-      rg.addColorStop(0, `rgba(${glow[0]},${glow[1]},${glow[2]},${b.a})`);
-      rg.addColorStop(1, `rgba(${glow[0]},${glow[1]},${glow[2]},0)`);
-      ctx.fillStyle = rg; ctx.fillRect(b.x - b.r, b.y - b.r, b.r * 2, b.r * 2);
-    });
-
-    ctx.globalCompositeOperation = 'source-over';
-    requestAnimationFrame(frame);
-  }
-  frame();
-})();
-
-/* ════════ シナリオのパース（v2と同じ記法） ════════ */
+/* ── シナリオのパース ──
+   > チップ | 本文 -> target      直接送信できる選択肢
+   > チップ -> _                  トーン展開（続く t> 行が候補）
+   t> トーン | 本文 -> target     トーン */
 const scenes = {};
 {
   let cur = null, lastChoice = null;
@@ -525,11 +440,11 @@ const scenes = {};
   });
 }
 
-/* ════════ 状態・ユーティリティ ════════ */
+/* ── 状態・ユーティリティ ── */
 const state = { stock: [], herWords: ['そっか', 'ねえ', 'たぶん', 'ひま', 'おはよ'] };
 let skipTap = null;
 document.addEventListener('pointerdown', e => {
-  if (skipTap && !e.target.closest('#composer, #orb')) skipTap();
+  if (skipTap && !e.target.closest('#composer, #palBtn')) skipTap();
 });
 const wait = ms => new Promise(r => {
   const t = setTimeout(() => { skipTap = null; r(); }, ms);
@@ -563,14 +478,12 @@ function push(cls, html) {
     state.stock.push(w); s.classList.add('got');
     $('stockCt').textContent = `⟦ ${state.stock.length} ⟧`;
     toast('おぼえた：' + w);
-    const r = s.getBoundingClientRect();
-    deepFx.warm(0.2, r.left + r.width / 2, r.top);
   });
   $('flow').scrollTo({ top: $('flow').scrollHeight, behavior: 'smooth' });
   return el;
 }
 
-/* ════════ 行の実行 ════════ */
+/* ── 行の実行 ── */
 async function runLine(l) {
   if (l.t === 'her') {
     const tp = document.createElement('div');
@@ -580,10 +493,7 @@ async function runLine(l) {
     await wait(l.mod.includes('間') ? 1400 : 600);
     tp.remove();
     harvest(l.x);
-    const el = push('her', renderStk(l.x));
-    /* 波紋：彼女の言葉が水面に落ちる */
-    const r = el.getBoundingClientRect();
-    deepFx.warm(0.14, r.left + r.width * 0.4, Math.min(r.top + r.height / 2, innerHeight - 40));
+    push('her', renderStk(l.x));
     await wait(750 + l.x.length * 20);
   } else if (l.t === 'inner') {
     await wait(300);
@@ -594,7 +504,6 @@ async function runLine(l) {
     await wait(700);
   } else if (l.t === 'img') {
     push('img', esc(l.x));
-    deepFx.warm(0.1);
     await wait(1000);
   } else if (l.t === 'ai') {
     push('mono', esc(l.x));
@@ -602,7 +511,7 @@ async function runLine(l) {
   }
 }
 
-/* ════════ コンポーザ：浮遊する言葉 → トーン → 送信 ════════ */
+/* ── コンポーザ：チップ→（トーン）→送信 ── */
 function tokenize(s) {
   const out = []; let buf = '';
   const cut = 'はをがにのとでも、。！？…';
@@ -619,23 +528,11 @@ function decoys(n, exclude) {
   while (out.length < n && pool.length) out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
   return out;
 }
-const SLOTS = [[18, 24], [50, 16], [80, 28], [30, 58], [64, 52], [86, 74], [14, 80], [46, 84]];
-function floatWords(list) {
-  const box = $('cands'); box.innerHTML = '';
-  const slots = [...SLOTS].sort(() => Math.random() - 0.5);
-  list.forEach((c, i) => {
-    const el = document.createElement('span');
-    el.className = 'cand' + (c.hot ? ' hot' : '') + (c.decoy ? ' decoy' : '');
-    el.textContent = c.label;
-    const w = c.hot ? 0.85 + Math.random() * 0.15 : 0.3 + Math.random() * 0.4;
-    el.style.fontSize = (0.72 + w * 0.55) + 'rem';
-    const [sx, sy] = slots[i % slots.length];
-    el.style.left = (sx + (Math.random() * 8 - 4)) + '%';
-    el.style.top = (sy + (Math.random() * 8 - 4)) + '%';
-    el.style.animationDelay = (i * 70) + 'ms, ' + (Math.random() * -3.5) + 's';
-    el.onclick = () => c.onTap(el);
-    box.appendChild(el);
-  });
+function chipEl(label, cls, onTap) {
+  const b = document.createElement('button');
+  b.className = 'chip ' + cls; b.textContent = label;
+  b.onclick = () => onTap(b);
+  return b;
 }
 async function fillPill(text) {
   const pill = $('pill'); pill.innerHTML = '';
@@ -643,15 +540,16 @@ async function fillPill(text) {
     const s = document.createElement('span');
     s.className = 'w'; s.textContent = tok;
     pill.appendChild(s);
-    await hardWait(105);
+    await hardWait(110);
   }
 }
+
 function composer(choices) {
   return new Promise(resolve => {
     document.body.classList.add('thinking');
     const com = $('composer');
     com.classList.add('on');
-    let picked = null;
+    let picked = null;   // {text, target}
 
     const reset = () => {
       $('pill').innerHTML = '<span class="ph">ことばを選ぶと、ここに文が組み上がる</span>';
@@ -660,35 +558,31 @@ function composer(choices) {
       $('comLabel').textContent = '— なにを、言う —';
       renderContent();
     };
+
     function renderContent() {
-      const items = choices.map(c => ({
-        label: c.chip, hot: true,
-        onTap(el) {
-          el.classList.add('pick');
-          if (c.tones.length) renderTones(c);
-          else assemble(c.text, c.target);
+      const box = $('chips'); box.innerHTML = '';
+      choices.forEach(c => box.appendChild(chipEl(c.chip, '', el => {
+        el.classList.add('picked');
+        if (c.tones.length) {
+          renderTones(c);
+        } else {
+          assemble(c.text, c.target, el);
         }
-      }));
-      decoys(3, choices.map(c => c.chip)).forEach(d => items.push({
-        label: d, decoy: true,
-        onTap(el) { el.classList.add('deny'); }
-      }));
-      items.sort(() => Math.random() - 0.5);
-      floatWords(items);
+      })));
+      decoys(2, choices.map(c => c.chip)).forEach(d =>
+        box.appendChild(chipEl(d, 'decoy', el => { el.classList.add('deny'); })));
     }
     function renderTones(c) {
       $('comLabel').textContent = '— どう、言う —';
-      floatWords(c.tones.map(t => ({
-        label: t.tone, hot: true,
-        onTap(el) { el.classList.add('pick'); assemble(t.text, t.target); }
+      const box = $('chips'); box.innerHTML = '';
+      c.tones.forEach(t => box.appendChild(chipEl(t.tone, 'tone', el => {
+        el.classList.add('picked');
+        assemble(t.text, t.target, el);
       })));
     }
-    async function assemble(text, target) {
+    async function assemble(text, target, el) {
       picked = { text, target };
-      $('cands').querySelectorAll('.cand').forEach(x => {
-        x.style.pointerEvents = 'none';
-        if (!x.classList.contains('pick')) x.classList.add('deny');
-      });
+      $('chips').querySelectorAll('.chip').forEach(x => { if (x !== el) x.style.opacity = 0.25; x.style.pointerEvents = 'none'; });
       $('comLabel').textContent = '— 出力の、確認 —';
       await fillPill(text);
       $('send').classList.add('ready');
@@ -700,14 +594,13 @@ function composer(choices) {
       com.classList.remove('on');
       document.body.classList.remove('thinking');
       push('mono', esc(picked.text));
-      deepFx.warm(0.08);
       setTimeout(() => resolve(picked.target), 650);
     };
     reset();
   });
 }
 
-/* ════════ シーン実行 ════════ */
+/* ── シーン実行 ── */
 async function goto(id) {
   if (id === 'fin') { $('fin').classList.add('on'); return; }
   const sc = scenes[id];
