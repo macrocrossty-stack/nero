@@ -518,7 +518,12 @@ const amb = {
     o.connect(g); g.connect(this.master);
     o.start(); o.stop(C.currentTime + dur + 0.05);
   },
-  drop()    { this.tone(620, 0.5, 0.14, 'sine', 180); },                       // 波紋
+  drop() {                                                                    // 波紋（連続時は軽く短く）
+    const now = this.ctx ? this.ctx.currentTime : 0;
+    const soon = now - (this._lastDrop || 0) < 0.9;
+    this._lastDrop = now;
+    this.tone(560, soon ? 0.1 : 0.2, soon ? 0.04 : 0.07, 'sine', soon ? 480 : 350);
+  },
   pluck()   { this.tone(760 + Math.random() * 240, 0.12, 0.06, 'triangle'); }, // 単語
   chime()   { this.tone(659, 0.7, 0.06); setTimeout(() => this.tone(988, 0.9, 0.05), 130); },  // 送信
   sparkle() { this.tone(1319, 0.25, 0.05); setTimeout(() => this.tone(1760, 0.35, 0.04), 90); }, // ストック
