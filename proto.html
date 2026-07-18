@@ -290,7 +290,10 @@ body.thinking #orb { animation: orbThink 1s ease-in-out infinite alternate; }
 <div id="stage">
   <div id="top">
     <span id="dayline"><i>☀</i><span class="track"><b id="dayDot"></b></span><i>☾</i><em>0:47</em></span>
-    <span id="stockCt">⟦ 0 ⟧</span>
+    <span style="display:flex;gap:10px;align-items:center">
+      <span id="muteBtn" style="cursor:pointer">♪</span>
+      <span id="stockCt">⟦ 0 ⟧</span>
+    </span>
   </div>
   <div id="orbWrap"><div id="orb" title="タップで気分プレビュー">✦</div></div>
   <div id="flow"></div>
@@ -430,6 +433,100 @@ branch: -> fin
 
 <script>
 const $ = id => document.getElementById(id);
+
+/* ════════ 生成アンビエント（音源ファイル不要） ════════
+   静かなパッドの和音がゆっくり移り変わる。モノの気分と連動：
+   あたたかい→明るい和音・開いた音色、つめたい→暗い和音・こもった音色。
+   イベント音：彼女の入力＝水滴、単語タップ＝小さな爪弾き、送信＝チャイム */
+const amb = {
+  ctx: null, master: null, filter: null, voices: [], started: false,
+  muted: localStorage.getItem('proto_mute') === '1',
+
+  start() {
+    if (this.started) return;
+    this.started = true;
+    const C = this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    this.master = C.createGain();
+    this.master.gain.value = 0;
+    /* かんたんな残響（フィードバックディレイ2系統） */
+    const wet = C.createGain(); wet.gain.value = 0.35;
+    [[0.27, 0.34], [0.41, 0.28]].forEach(([dt, fb]) => {
+      const d = C.createDelay(); d.delayTime.value = dt;
+      const g = C.createGain(); g.gain.value = fb;
+      this.master.connect(d); d.connect(g); g.connect(d); d.connect(wet);
+    });
+    this.master.connect(C.destination); wet.connect(C.destination);
+    /* パッドの共通フィルタ */
+    this.filter = C.createBiquadFilter();
+    this.filter.type = 'lowpass'; this.filter.frequency.value = 700; this.filter.Q.value = 0.4;
+    this.filter.connect(this.master);
+    /* 空気（ごく小さなノイズ） */
+    const buf = C.createBuffer(1, C.sampleRate * 2, C.sampleRate);
+    const ch = buf.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < ch.length; i++) { last = last * 0.97 + (Math.random() * 2 - 1) * 0.03; ch[i] = last; }
+    const noise = C.createBufferSource(); noise.buffer = buf; noise.loop = true;
+    const ng = C.createGain(); ng.gain.value = 0.05;
+    noise.connect(ng); ng.connect(this.filter); noise.start();
+    if (!this.muted) this.master.gain.linearRampToValueAtTime(0.12, C.currentTime + 4);
+    this.nextChord();
+    setInterval(() => this.nextChord(), 11000);
+  },
+
+  CHORDS: {
+    warm: [[130.81, 196.00, 329.63, 392.00], [174.61, 220.00, 293.66, 349.23]],
+    neutral: [[174.61, 220.00, 261.63, 329.63], [146.83, 220.00, 246.94, 329.63]],
+    cold: [[110.00, 164.81, 196.00, 246.94], [103.83, 155.56, 207.65, 246.94]],
+  },
+  nextChord() {
+    const C = this.ctx, m = deepFx.mood;
+    const set = m > 0.3 ? this.CHORDS.warm : m < -0.3 ? this.CHORDS.cold : this.CHORDS.neutral;
+    const chord = set[Math.floor(Math.random() * set.length)];
+    /* 音色も気分に追従（あたたかいほど開く） */
+    this.filter.frequency.linearRampToValueAtTime(500 + (m + 1) * 500, C.currentTime + 6);
+    /* 旧声部をゆっくり消し、新声部をゆっくり立ち上げる */
+    this.voices.forEach(v => {
+      v.g.gain.linearRampToValueAtTime(0, C.currentTime + 5);
+      setTimeout(() => { try { v.o1.stop(); v.o2.stop(); } catch (e) {} }, 5600);
+    });
+    this.voices = chord.map((f, i) => {
+      const o1 = C.createOscillator(), o2 = C.createOscillator(), g = C.createGain();
+      o1.type = 'sine'; o2.type = 'triangle';
+      o1.frequency.value = f; o2.frequency.value = f * 1.003;   // わずかなうねり
+      g.gain.value = 0;
+      g.gain.linearRampToValueAtTime(0.045 / (1 + i * 0.35), C.currentTime + 5);
+      o1.connect(g); o2.connect(g); g.connect(this.filter);
+      o1.start(); o2.start();
+      return { o1, o2, g };
+    });
+  },
+
+  tone(freq, dur, vol, type = 'sine', slideTo) {
+    if (!this.ctx || this.muted) return;
+    const C = this.ctx, o = C.createOscillator(), g = C.createGain();
+    o.type = type; o.frequency.value = freq;
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, C.currentTime + dur);
+    g.gain.value = vol;
+    g.gain.exponentialRampToValueAtTime(0.0001, C.currentTime + dur);
+    o.connect(g); g.connect(this.master);
+    o.start(); o.stop(C.currentTime + dur + 0.05);
+  },
+  drop()    { this.tone(620, 0.5, 0.09, 'sine', 180); },                       // 波紋
+  pluck()   { this.tone(760 + Math.random() * 240, 0.12, 0.06, 'triangle'); }, // 単語
+  chime()   { this.tone(659, 0.7, 0.06); setTimeout(() => this.tone(988, 0.9, 0.05), 130); },  // 送信
+  sparkle() { this.tone(1319, 0.25, 0.05); setTimeout(() => this.tone(1760, 0.35, 0.04), 90); }, // ストック
+  toggle() {
+    this.muted = !this.muted;
+    localStorage.setItem('proto_mute', this.muted ? '1' : '0');
+    if (this.ctx) this.master.gain.linearRampToValueAtTime(this.muted ? 0 : 0.12, this.ctx.currentTime + 0.8);
+    $('muteBtn').textContent = this.muted ? '♪̶' : '♪';
+    $('muteBtn').style.opacity = this.muted ? 0.4 : 1;
+  },
+};
+document.addEventListener('DOMContentLoaded', () => {
+  $('muteBtn').onclick = e => { e.stopPropagation(); amb.toggle(); };
+  if (amb.muted) { $('muteBtn').textContent = '♪̶'; $('muteBtn').style.opacity = 0.4; }
+});
 
 /* ════════ 感情と水面（ガラスの下の層） ════════
    mood: -1(つめたい) 〜 0(しずか) 〜 +1(あたたかい)。UI全体の色味が連動する */
@@ -642,6 +739,7 @@ function push(cls, html) {
     state.stock.push(w); s.classList.add('got');
     $('stockCt').textContent = `⟦ ${state.stock.length} ⟧`;
     toast('おぼえた：' + w);
+    amb.sparkle();
     const r = s.getBoundingClientRect();
     deepFx.warm(0.2, r.left + r.width / 2, r.top);
   });
@@ -663,6 +761,7 @@ async function runLine(l) {
     /* 波紋：彼女の言葉が水面に落ちる */
     const r = el.getBoundingClientRect();
     deepFx.warm(0.14, r.left + r.width * 0.4, Math.min(r.top + r.height / 2, innerHeight - 40));
+    amb.drop();
     await wait(750 + l.x.length * 20);
   } else if (l.t === 'inner') {
     await wait(300);
@@ -744,6 +843,7 @@ function composer(choices) {
         label: c.chip, hot: true,
         onTap(el) {
           el.classList.add('pick');
+          amb.pluck();
           if (c.tones.length) renderTones(c);
           else assemble(c.text, c.target);
         }
@@ -759,7 +859,7 @@ function composer(choices) {
       $('comLabel').textContent = '— どう、言う —';
       floatWords(c.tones.map(t => ({
         label: t.tone, hot: true,
-        onTap(el) { el.classList.add('pick'); assemble(t.text, t.target); }
+        onTap(el) { el.classList.add('pick'); amb.pluck(); assemble(t.text, t.target); }
       })));
     }
     async function assemble(text, target) {
@@ -780,6 +880,7 @@ function composer(choices) {
       document.body.classList.remove('thinking');
       push('mono', esc(picked.text));
       deepFx.warm(0.08);
+      amb.chime();
       setTimeout(() => resolve(picked.target), 650);
     };
     reset();
@@ -814,6 +915,7 @@ async function goto(id) {
     }, { passive: true });
     b.addEventListener('click', () => res());
   });
+  amb.start();
   b.classList.add('away');
   await hardWait(550);
   goto('start');
