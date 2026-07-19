@@ -298,20 +298,26 @@ body.thinking #orb { animation: orbThink 1s ease-in-out infinite alternate; }
 @keyframes hintFloat { to { transform: translateY(-7px); } }
 #swipeHint::before { content: '︿'; font-size: 1.05rem; letter-spacing: 0; }
 
-/* 復元ダイアログ：セーブがあるときだけ、スワイプの代わりに出る（スマホの文法＝復元） */
-#resume {
-  position: absolute; bottom: 48px; left: 0; right: 0;
-  display: none; flex-direction: column; align-items: center; gap: 12px;
+/* 復元／リセット確認：本編の幕間カード（#fin）と同じテイスト */
+.bootCard {
+  position: absolute; left: 22px; right: 22px; top: 50%; transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.42); border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 26px; backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+  padding: 36px 26px; display: none; flex-direction: column; gap: 15px; align-items: center;
 }
-#resume.show { display: flex; animation: helloIn 0.9s ease-out; }
-#resume button {
-  font-family: 'DotGothic16', monospace; cursor: pointer;
-  width: 232px; padding: 12px 0 10px; border-radius: 15px;
-  border: 1px solid rgba(90, 96, 110, 0.28); background: rgba(255, 255, 255, 0.34);
-  color: #4a4e59; font-size: 0.82rem; letter-spacing: 0.24em;
-  display: flex; flex-direction: column; gap: 3px; align-items: center;
+.bootCard.show { display: flex; animation: helloIn 0.7s ease-out; }
+.bootCard h3 { font-size: 0.92rem; color: #4a4e59; letter-spacing: 0.3em; font-weight: 500; }
+.bootCard p { font-size: 0.7rem; color: #8b8e97; line-height: 2.1; text-align: center; letter-spacing: 0.1em; }
+.bootCard button {
+  font-family: inherit; cursor: pointer;
+  border: 1px solid rgba(90, 96, 110, 0.25); background: rgba(255, 255, 255, 0.4);
+  color: #4a4e59; padding: 11px 0; width: 190px; border-radius: 99px;
+  font-size: 0.78rem; letter-spacing: 0.22em;
 }
-#resume button span { font-size: 0.55rem; letter-spacing: 0.3em; color: #8b8e97; }
+.bootCard button.sub {
+  background: transparent; border-color: rgba(90, 96, 110, 0.15);
+  color: #8b8e97; font-size: 0.7rem; width: 170px; padding: 9px 0;
+}
 
 /* ── 実験C：時刻の光（太陽⇄月） ── */
 #dayline { display: flex; align-items: center; gap: 6px; }
@@ -381,9 +387,17 @@ body.thinking #orb { animation: orbThink 1s ease-in-out infinite alternate; }
   </div>
   <div id="hello"></div>
   <div id="swipeHint">スワイプしてはじめる</div>
-  <div id="resume">
-    <button id="rsCont">つづきから<span>バックアップから復元</span></button>
-    <button id="rsNew">はじめから<span>新しくはじめる</span></button>
+  <div id="resume" class="bootCard">
+    <h3>― バックアップ ―</h3>
+    <p>まえの記録が、のこっています</p>
+    <button id="rsCont">つづきから</button>
+    <button id="rsNew" class="sub">はじめから</button>
+  </div>
+  <div id="confirm" class="bootCard">
+    <h3>― はじめから ―</h3>
+    <p>いまの記録（会話と、おぼえたことば）は<br>リセットされます。だいじょうぶ？</p>
+    <button id="cfOk">だいじょうぶ</button>
+    <button id="cfNo" class="sub">やめておく</button>
   </div>
 </div>
 
@@ -1095,10 +1109,9 @@ function drawPoly(g, cx, cy, R, s, alpha) {
 (async function bootSeq() {
   const b = $('boot'), h = $('hello'), term = $('bootTerm');
 
-  /* タップで先送り（何度も見る画面なので） */
+  /* タップで先送り（何度も見る画面なので）。登録は fullSequence 側で */
   let skip = false;
   const skipTap = () => { skip = true; };
-  b.addEventListener('pointerdown', skipTap);
   const bw = ms => new Promise(r => {
     const t0 = performance.now();
     (function chk() { (skip || performance.now() - t0 >= ms) ? r() : requestAnimationFrame(chk); })();
@@ -1162,27 +1175,7 @@ function drawPoly(g, cx, cy, R, s, alpha) {
     }
   })(0);
 
-  /* 1) bootログ。暗い画面のあいだ、文字にはずっと色収差 */
-  await bw(700);
-  term.classList.add('on');
-  const LINES = [
-    '> boot sequence ......... ok',
-    '> mount /data/migrated',
-    '    music/ photos/ voice_memo/ daiji/',
-    '> last modified: 743 days ago',
-    '> awaiting connection ...',
-  ];
-  for (let i = 0; i < LINES.length; i++) {
-    const el = document.createElement('span');
-    el.className = 'tl';
-    term.appendChild(el);
-    for (const ch of LINES[i]) { el.textContent += ch; if (!skip) await bw(8 + Math.random() * 11); }
-    await bw(i === 3 ? 620 : 170);   // 743 days ago の行だけ、すこし長く置く
-  }
-  await bw(650);
-
-  /* 2) 鏡写しのサインイン：ガラスの向こうから誰かが id / password を打つ。
-        にじみは残しつつ、鏡文字だと気づける視認性。指先の熱は1/fゆらぎ */
+  /* ── 指先の熱（共通） ── */
   const flick = (() => {                       // 1/fゆらぎ（周波数の違う正弦の重ね）
     const ph = [0, 1, 2, 3].map(() => Math.random() * 6.28);
     return t => 0.5 + 0.5 * (
@@ -1193,19 +1186,23 @@ function drawPoly(g, cx, cy, R, s, alpha) {
     const r = () => 35 + Math.random() * 35;
     return `${r()}% ${r()}% ${r()}% ${r()}% / ${r()}% ${r()}% ${r()}% ${r()}%`;
   };
-  const glow = () => {
+  const glowAt = (x, y) => {
     const v = flick(performance.now() * 0.001);
     const gl = document.createElement('div');
     gl.className = 'touchGlow';
-    gl.style.left = (18 + Math.random() * 64) + '%';
-    gl.style.top = (66 + Math.random() * 20) + '%';
+    gl.style.left = x + 'px';
+    gl.style.top = y + 'px';
     gl.style.width = (52 + Math.random() * 46) + 'px';   // 縦横も不揃い
     gl.style.height = (52 + Math.random() * 46) + 'px';
     const p = () => (25 + Math.random() * 50).toFixed(0);
-    gl.style.background =
-      `radial-gradient(circle at ${p()}% ${p()}%, rgba(255,196,150,0.5), transparent 62%),` +
-      `radial-gradient(circle at ${p()}% ${p()}%, rgba(255,172,122,0.34), transparent 68%),` +
-      `radial-gradient(circle at ${p()}% ${p()}%, rgba(255,220,180,0.22), transparent 74%)`;
+    /* 芯は白（低彩度・高明度）→ 中間はあたたかい（彩度高め）→ 外は淡く。明度差＋彩度差 */
+    gl.style.background = lit > 0.5
+      ? `radial-gradient(circle at ${p()}% ${p()}%, rgba(255,240,228,0.5), transparent 58%),` +
+        `radial-gradient(circle at ${p()}% ${p()}%, rgba(255,176,118,0.36), transparent 68%),` +
+        `radial-gradient(circle at ${p()}% ${p()}%, rgba(242,152,108,0.16), transparent 76%)`
+      : `radial-gradient(circle at ${p()}% ${p()}%, rgba(255,251,246,0.5), transparent 56%),` +
+        `radial-gradient(circle at ${p()}% ${p()}%, rgba(255,206,160,0.3), transparent 68%),` +
+        `radial-gradient(circle at ${p()}% ${p()}%, rgba(236,224,216,0.15), transparent 76%)`;
     gl.style.setProperty('--br1', blobR());
     gl.style.setProperty('--br2', blobR());
     gl.style.setProperty('--rot', (Math.random() * 360).toFixed(0) + 'deg');
@@ -1215,76 +1212,136 @@ function drawPoly(g, cx, cy, R, s, alpha) {
     b.appendChild(gl);
     setTimeout(() => gl.remove(), 2100);
   };
-  const key = async () => {                    // 打鍵の間合いも揺れる（ときどき考えて止まる）
-    if (skip) return;
-    const v = flick(performance.now() * 0.001);
-    await bw(Math.random() < 0.22 ? 380 + Math.random() * 420 : 60 + 200 * v);
+  const glow = () => glowAt(                   // サインイン中：向こうの人の打鍵（キーボードのあたり）
+    innerWidth * (0.18 + Math.random() * 0.64),
+    innerHeight * (0.66 + Math.random() * 0.2));
+
+  /* プレイヤー自身の指も、同じガラスに熱を残す（スワイプ・タップ連動） */
+  let pressed = false, lastG = 0;
+  const follow = e => {
+    if (!pressed) return;
+    const n = performance.now();
+    if (n - lastG < 75) return;
+    lastG = n;
+    glowAt(e.clientX, e.clientY);
   };
-  term.classList.add('dim');
-  const mir = $('mirror');
-  mir.classList.add('on');
-  await bw(650);
-  /* ID＝hina＋生年ふうの数字。初見は「本人のアカウント」と読める。
-     2周目に「これを打っていたのは誰か／誰がつくったIDか」が反転する */
-  for (const ch of 'hina2009') {
-    $('mirId').textContent += ch;
-    glow(); await key();
-  }
-  await bw(480);
-  for (let i = 0; i < 8; i++) {
-    $('mirPw').textContent += '●';
-    glow(); await key();
-  }
-  await bw(520);
-  term.classList.remove('dim');
-  const okl = document.createElement('span');
-  okl.className = 'tl';
-  okl.textContent = '> connection established';
-  term.appendChild(okl);
-  await bw(850);
+  b.addEventListener('pointerdown', e => { pressed = true; lastG = 0; follow(e); });
+  b.addEventListener('pointermove', follow);
+  addEventListener('pointerup', () => { pressed = false; });
 
-  /* 3) 夜明け：深海→紙。Hello */
-  b.removeEventListener('pointerdown', skipTap);
-  mir.classList.remove('on');
-  term.classList.remove('on');
-  b.classList.add('lit'); litT = 1;
-  await hardWait(1500);
-  h.textContent = 'Hello'; h.classList.add('show');
-  await hardWait(1500);
-  h.classList.remove('show'); void h.offsetWidth;
-  h.textContent = 'こんにちは'; h.classList.add('show');
-  await hardWait(900);
+  /* ── 初回の儀式：bootログ → 鏡のサインイン → 夜明け → Hello → スワイプ ── */
+  async function fullSequence() {
+    skip = false;
+    b.addEventListener('pointerdown', skipTap);
 
-  /* セーブがあれば復元ダイアログ（スマホの文法）。なければスワイプで開始 */
-  const saved = localStorage.getItem('proto_scene');
-  let startId = 'start';
-  if (saved && saved !== 'start' && scenes[saved]) {
-    await new Promise(res => {
-      $('resume').classList.add('show');
-      $('rsCont').onclick = () => {              // つづきから＝バックアップから復元
-        startId = saved;
-        try { state.stock = JSON.parse(localStorage.getItem('proto_stock') || '[]'); } catch (e) {}
-        $('stockCt').textContent = `⟦ ${state.stock.length} ⟧`;
-        amb.start(); res();                      // ジェスチャの中で同期的に音を起動
-      };
-      $('rsNew').onclick = () => {               // はじめから＝新しくはじめる
-        localStorage.removeItem('proto_scene');
-        localStorage.removeItem('proto_stock');
-        amb.start(); res();
-      };
-    });
-  } else {
+    /* 1) bootログ。暗い画面のあいだ、文字にはずっと色収差 */
+    await bw(700);
+    term.classList.add('on');
+    const LINES = [
+      '> boot sequence ......... ok',
+      '> mount /data/migrated',
+      '    music/ photos/ voice_memo/ daiji/',
+      '> last modified: 743 days ago',
+      '> awaiting connection ...',
+    ];
+    for (let i = 0; i < LINES.length; i++) {
+      const el = document.createElement('span');
+      el.className = 'tl';
+      term.appendChild(el);
+      for (const ch of LINES[i]) { el.textContent += ch; if (!skip) await bw(8 + Math.random() * 11); }
+      await bw(i === 3 ? 620 : 170);   // 743 days ago の行だけ、すこし長く置く
+    }
+    await bw(650);
+
+    /* 2) 鏡写しのサインイン：ガラスの向こうから誰かが id / password を打つ */
+    const key = async () => {                  // 打鍵の間合いも揺れる（ときどき考えて止まる）
+      if (skip) return;
+      const v = flick(performance.now() * 0.001);
+      await bw(Math.random() < 0.22 ? 380 + Math.random() * 420 : 60 + 200 * v);
+    };
+    term.classList.add('dim');
+    const mir = $('mirror');
+    mir.classList.add('on');
+    await bw(650);
+    /* ID＝hina＋生年ふうの数字。初見は「本人のアカウント」と読める。
+       2周目に「これを打っていたのは誰か／誰がつくったIDか」が反転する */
+    for (const ch of 'hina2009') {
+      $('mirId').textContent += ch;
+      glow(); await key();
+    }
+    await bw(480);
+    for (let i = 0; i < 8; i++) {
+      $('mirPw').textContent += '●';
+      glow(); await key();
+    }
+    await bw(520);
+    term.classList.remove('dim');
+    const okl = document.createElement('span');
+    okl.className = 'tl';
+    okl.textContent = '> connection established';
+    term.appendChild(okl);
+    await bw(850);
+
+    /* 3) 夜明け：深海→紙。Hello */
+    b.removeEventListener('pointerdown', skipTap);
+    mir.classList.remove('on');
+    term.classList.remove('on');
+    b.classList.add('lit'); litT = 1;
+    await hardWait(1500);
+    h.textContent = 'Hello'; h.classList.add('show');
+    await hardWait(1500);
+    h.classList.remove('show'); void h.offsetWidth;
+    h.textContent = 'こんにちは'; h.classList.add('show');
+    await hardWait(900);
     $('swipeHint').classList.add('show');
     await new Promise(res => {
       let y0 = null;
-      const go = () => { amb.start(); res(); };
+      const go = () => { amb.start(); res(); };   // ジェスチャの中で同期的に音を起動
       b.addEventListener('touchstart', e => { y0 = e.touches[0].clientY; }, { passive: true });
       b.addEventListener('touchmove', e => {
         if (y0 !== null && y0 - e.touches[0].clientY > 60) { y0 = null; go(); }
       }, { passive: true });
       b.addEventListener('click', go);
     });
+    $('swipeHint').classList.remove('show');
   }
+
+  /* ── 起動の分岐：セーブがあれば儀式をスキップして、復元画面から ── */
+  const saved = localStorage.getItem('proto_scene');
+  const hasSave = saved && saved !== 'start' && scenes[saved];
+  let startId = 'start';
+
+  if (hasSave) {
+    b.classList.add('lit'); litT = 1; lit = 1;   // 幾何学だけが出迎える
+    await hardWait(500);
+    const choice = await new Promise(res => {
+      $('resume').classList.add('show');
+      $('rsCont').onclick = () => {              // つづきから＝そのままチャットへ
+        $('resume').classList.remove('show');
+        amb.start(); res('cont');
+      };
+      $('rsNew').onclick = () => {               // はじめから＝リセット確認をはさむ
+        $('resume').classList.remove('show');
+        $('confirm').classList.add('show');
+        $('cfOk').onclick = () => { $('confirm').classList.remove('show'); res('new'); };
+        $('cfNo').onclick = () => { $('confirm').classList.remove('show'); $('resume').classList.add('show'); };
+      };
+    });
+    if (choice === 'cont') {
+      startId = saved;
+      try { state.stock = JSON.parse(localStorage.getItem('proto_stock') || '[]'); } catch (e) {}
+      $('stockCt').textContent = `⟦ ${state.stock.length} ⟧`;
+    } else {
+      localStorage.removeItem('proto_scene');
+      localStorage.removeItem('proto_stock');
+      b.classList.remove('lit'); litT = 0;       // 紙→深海へ沈めて、最初からの儀式
+      await hardWait(1300);
+      await fullSequence();
+    }
+  } else {
+    await fullSequence();
+  }
+
   b.classList.add('away');
   await hardWait(550);
   run = false;
