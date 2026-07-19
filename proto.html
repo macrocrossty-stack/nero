@@ -63,12 +63,7 @@ body {
 /* オーブ：モノの気配。タップで感情プレビュー切替（デモ用） */
 #orbWrap { display: flex; justify-content: center; padding: 4px 0 0; }
 #orb {
-  width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
-  background: radial-gradient(circle at 38% 32%, rgba(255,255,255,0.95), rgba(255,255,255,0.25) 65%, rgba(255,255,255,0.05));
-  border: 1px solid var(--glass-line);
-  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-  box-shadow: 0 0 24px rgba(255,255,255,0.35);
-  display: grid; place-items: center; color: var(--ink-dim); font-size: 0.85rem;
+  width: 48px; height: 48px; cursor: pointer;
   animation: orbIdle 5.5s ease-in-out infinite alternate;
 }
 @keyframes orbIdle { to { transform: translateY(-3px); } }
@@ -198,7 +193,7 @@ body.thinking #orb { animation: orbThink 1s ease-in-out infinite alternate; }
   display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 28px;
   transition: transform 0.65s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.65s, background-color 2s;
 }
-#boot.lit { background: #e8e4db; }
+#boot.lit { background: #ced1d9; }   /* チャット画面の基調（しずか）と同じ温度 */
 #boot.away { transform: translateY(-100%); opacity: 0.3; pointer-events: none; }
 
 /* 深海の水流と、変形しつづける幾何学。1枚のcanvasでクロスフェード */
@@ -206,7 +201,7 @@ body.thinking #orb { animation: orbThink 1s ease-in-out infinite alternate; }
   position: absolute; inset: 0; pointer-events: none;
   filter: blur(22px); transition: filter 2.4s;
 }
-#boot.lit #bootGeo { filter: blur(5px); }
+#boot.lit #bootGeo { filter: blur(1.5px); }   /* 深度はcanvas側で点ごとに描き分ける */
 
 /* bootログ：暗い画面のあいだ、文字にはずっと色収差がかかっている */
 #bootTerm {
@@ -357,7 +352,7 @@ body.thinking #orb { animation: orbThink 1s ease-in-out infinite alternate; }
       <span id="stockCt">⟦ 0 ⟧</span>
     </span>
   </div>
-  <div id="orbWrap"><div id="orb" title="タップで気分プレビュー">✦</div></div>
+  <div id="orbWrap"><canvas id="orb" width="96" height="96" title="タップで気分プレビュー"></canvas></div>
   <div id="flow"></div>
 
   <div id="composer">
@@ -976,6 +971,61 @@ async function goto(id) {
   if (sc.branch) return goto(sc.branch);
 }
 
+/* ── 変形しつづける幾何学（起動画面とロゴで共用） ──
+   近い要素＝濃く・太く・鋭く／遠い要素＝淡く・細く・にじむ（shadowBlurで被写界深度） */
+const geoPts = Array.from({ length: 13 }, () => ({
+  th: Math.random() * Math.PI * 2, ph: Math.acos(Math.random() * 2 - 1),
+  r0: 0.55 + Math.random() * 0.45, sp: 0.12 + Math.random() * 0.3, off: Math.random() * 100,
+}));
+function drawPoly(g, cx, cy, R, s, alpha) {
+  const ry = s * 0.14, rx = s * 0.09;
+  const P = geoPts.map(p => {
+    const r = p.r0 * (0.82 + 0.26 * Math.sin(s * p.sp + p.off));   // 呼吸＝変形
+    const x = r * Math.sin(p.ph) * Math.cos(p.th + s * 0.05);
+    const y = r * Math.cos(p.ph);
+    const z = r * Math.sin(p.ph) * Math.sin(p.th + s * 0.05);
+    const x1 = x * Math.cos(ry) + z * Math.sin(ry);
+    let z1 = -x * Math.sin(ry) + z * Math.cos(ry);
+    const y1 = y * Math.cos(rx) + z1 * Math.sin(rx);
+    z1 = -y * Math.sin(rx) + z1 * Math.cos(rx);
+    const pr = 1 / (1.9 + z1);
+    const d = Math.max(0, Math.min(1, (pr - 0.42) / 0.55));        // 0=奥 1=手前
+    return { x: cx + x1 * R * pr * 2.6, y: cy + y1 * R * pr * 2.6, d };
+  });
+  g.save();
+  g.shadowColor = 'rgba(70,76,90,0.55)';
+  for (let i = 0; i < P.length; i++) for (let j = i + 1; j < P.length; j++) {
+    const dist = Math.hypot(P[i].x - P[j].x, P[i].y - P[j].y);
+    if (dist < R * 1.5) {
+      const d = (P[i].d + P[j].d) / 2;                             // 辺の深度＝両端の平均
+      g.beginPath(); g.moveTo(P[i].x, P[i].y); g.lineTo(P[j].x, P[j].y);
+      g.shadowBlur = (1 - d) * R * 0.14;                           // 奥ほどにじむ
+      g.strokeStyle = `rgba(70,76,90,${alpha * (0.14 + 0.5 * d) * (1 - dist / (R * 1.5))})`;
+      g.lineWidth = (0.55 + 0.75 * d) * Math.max(0.9, R / 65);     // 小サイズでも細りすぎない
+      g.stroke();
+    }
+  }
+  P.forEach(p => {
+    g.beginPath(); g.arc(p.x, p.y, (0.9 + 2.1 * p.d) * Math.max(0.8, R / 65), 0, 7);
+    g.shadowBlur = (1 - p.d) * R * 0.1;
+    g.fillStyle = `rgba(70,76,90,${alpha * (0.2 + 0.5 * p.d)})`;
+    g.fill();
+  });
+  g.restore();
+}
+
+/* チャット画面のロゴ＝同じ幾何学の小さな個体（同じ形が息をしている） */
+(function orbGeo() {
+  const cv = $('orb');
+  if (!cv) return;
+  const g = cv.getContext('2d');
+  (function loop(t) {
+    requestAnimationFrame(loop);
+    g.clearRect(0, 0, 96, 96);
+    drawPoly(g, 48, 48, 30, t * 0.001, 0.95);
+  })(0);
+})();
+
 /* ── OS風起動シーケンス：bootログ → 鏡写しのサインイン → 夜明け → Hello ── */
 (async function bootSeq() {
   const b = $('boot'), h = $('hello'), term = $('bootTerm');
@@ -994,83 +1044,56 @@ async function goto(id) {
   let lit = 0, litT = 0, run = true;
   const fitGeo = () => { cv.width = innerWidth; cv.height = innerHeight; };
   fitGeo(); addEventListener('resize', fitGeo);
-  const gpts = Array.from({ length: 13 }, () => ({
-    th: Math.random() * Math.PI * 2, ph: Math.acos(Math.random() * 2 - 1),
-    r0: 0.55 + Math.random() * 0.45, sp: 0.12 + Math.random() * 0.3, off: Math.random() * 100,
-  }));
   (function drawGeo(t) {
     if (!run) return;
     requestAnimationFrame(drawGeo);
     const W = cv.width, H = cv.height, s = t * 0.001;
     cx2.clearRect(0, 0, W, H);
     lit += (litT - lit) * 0.02;
-    /* 深海：周波数の違う波を重ねた光の帯。帯自体も漂い、明滅する */
+    /* 深海：多周波の波×振幅そのものの呼吸×帯の漂い×明滅。二度描き（広いにじみ＋芯） */
     if (lit < 0.98) {
       cx2.globalAlpha = 1 - lit;
       for (let i = 0; i < 6; i++) {
+        const amp = 0.65 + 0.35 * Math.sin(s * (0.11 + i * 0.023) + i * 2.2);   // 波の振幅も揺れる
         const base = H * (0.14 + i * 0.15)
-          + Math.sin(s * 0.05 + i * 1.7) * H * 0.07      // 帯そのものの漂い
+          + Math.sin(s * 0.05 + i * 1.7) * H * 0.07
           + Math.sin(s * 0.023 + i * 4.1) * H * 0.04;
         cx2.beginPath();
         for (let x = -80; x <= W + 80; x += 22) {
-          const y = base
-            + Math.sin(x * 0.004 * (1 + i * 0.13) + s * (0.16 + i * 0.05) + i * 2.1) * H * 0.055
+          const y = base + amp * (
+              Math.sin(x * 0.004 * (1 + i * 0.13) + s * (0.16 + i * 0.05) + i * 2.1) * H * 0.055
             + Math.sin(x * 0.011 + s * 0.31 + i * 4.2) * H * 0.022
             + Math.sin(x * 0.0016 - s * 0.09 + i * 1.3) * H * 0.05
-            + Math.sin(x * 0.027 + s * 0.7 + i) * H * 0.007;
+            + Math.sin(x * 0.027 + s * 0.7 + i) * H * 0.007);
           x === -80 ? cx2.moveTo(x, y) : cx2.lineTo(x, y);
         }
+        const tw = 0.10 + 0.07 * Math.sin(s * (0.23 + i * 0.04) + i * 2.6);
         cx2.lineWidth = 30 + ((i * 37) % 70);
-        const tw = 0.10 + 0.07 * Math.sin(s * (0.23 + i * 0.04) + i * 2.6);   // 明滅
         cx2.strokeStyle = `rgba(${140 + i * 14},${198 - i * 9},${205 - i * 5},${Math.max(0.03, tw)})`;
         cx2.stroke();
+        cx2.lineWidth = 9 + ((i * 13) % 16);                       // 同じ道筋に、明るい芯
+        cx2.strokeStyle = `rgba(${180 + i * 8},${218 - i * 6},${222 - i * 4},${Math.max(0.02, tw * 0.55)})`;
+        cx2.stroke();
       }
-      /* 細い光の筋（速い流れのフィラメント） */
-      for (let k = 0; k < 2; k++) {
+      /* 細い光の筋：速さも高さも別々の3本 */
+      for (let k = 0; k < 3; k++) {
         cx2.beginPath();
         for (let x = -40; x <= W + 40; x += 18) {
-          const y = H * (0.32 + k * 0.33)
+          const y = H * (0.24 + k * 0.26)
             + Math.sin(x * 0.006 + s * (0.5 + k * 0.17) + k * 2.4) * H * 0.05
-            + Math.sin(x * 0.019 - s * 0.9 + k * 5) * H * 0.014
+            + Math.sin(x * 0.019 - s * (0.9 + k * 0.2) + k * 5) * H * 0.014
             + Math.sin(s * 0.07 + k * 3) * H * 0.06;
           x === -40 ? cx2.moveTo(x, y) : cx2.lineTo(x, y);
         }
-        cx2.lineWidth = 2.2;
-        cx2.strokeStyle = `rgba(200,232,236,${0.07 + 0.06 * Math.sin(s * 0.9 + k * 3.1)})`;
+        cx2.lineWidth = 1.6 + k * 0.7;
+        cx2.strokeStyle = `rgba(200,232,236,${0.06 + 0.06 * Math.sin(s * (0.7 + k * 0.3) + k * 3.1)})`;
         cx2.stroke();
       }
       cx2.globalAlpha = 1;
     }
-    /* 幾何学：形が決まらない多面体（呼吸のテンポで変形） */
+    /* 幾何学：形が決まらない多面体（共有描画・深度つき） */
     if (lit > 0.02) {
-      const gx = W / 2, gy = H * 0.37, R = Math.min(W, H) * 0.18;
-      const ry = s * 0.14, rx = s * 0.09;
-      const P = gpts.map(p => {
-        const r = p.r0 * (0.82 + 0.26 * Math.sin(s * p.sp + p.off));
-        let x = r * Math.sin(p.ph) * Math.cos(p.th + s * 0.05);
-        let y = r * Math.cos(p.ph);
-        let z = r * Math.sin(p.ph) * Math.sin(p.th + s * 0.05);
-        const x1 = x * Math.cos(ry) + z * Math.sin(ry);
-        let z1 = -x * Math.sin(ry) + z * Math.cos(ry);
-        const y1 = y * Math.cos(rx) + z1 * Math.sin(rx);
-        z1 = -y * Math.sin(rx) + z1 * Math.cos(rx);
-        const pr = 1 / (1.9 + z1);
-        return { x: gx + x1 * R * pr * 2.6, y: gy + y1 * R * pr * 2.6, d: pr };
-      });
-      cx2.globalAlpha = lit;
-      for (let i = 0; i < P.length; i++) for (let j = i + 1; j < P.length; j++) {
-        const d = Math.hypot(P[i].x - P[j].x, P[i].y - P[j].y);
-        if (d < R * 1.5) {
-          cx2.beginPath(); cx2.moveTo(P[i].x, P[i].y); cx2.lineTo(P[j].x, P[j].y);
-          cx2.strokeStyle = `rgba(70,76,90,${0.5 * (1 - d / (R * 1.5))})`;
-          cx2.lineWidth = 1; cx2.stroke();
-        }
-      }
-      P.forEach(p => {
-        cx2.beginPath(); cx2.arc(p.x, p.y, 1.4 + p.d * 2.2, 0, 7);
-        cx2.fillStyle = 'rgba(70,76,90,0.4)'; cx2.fill();
-      });
-      cx2.globalAlpha = 1;
+      drawPoly(cx2, W / 2, H * 0.37, Math.min(W, H) * 0.18, s, lit);
     }
   })(0);
 
@@ -1078,12 +1101,9 @@ async function goto(id) {
   await bw(700);
   term.classList.add('on');
   const LINES = [
-    '> system boot sequence',
-    '> loading language model .......... ok',
-    '> loading memory .................. ok',
-    '> mount /data/migrated ............ ok',
-    '> ls /data/migrated',
-    '    music/  photos/  voice_memo/  daiji/',
+    '> boot sequence ......... ok',
+    '> mount /data/migrated',
+    '    music/ photos/ voice_memo/ daiji/',
     '> last modified: 743 days ago',
     '> awaiting connection ...',
   ];
@@ -1091,8 +1111,8 @@ async function goto(id) {
     const el = document.createElement('span');
     el.className = 'tl';
     term.appendChild(el);
-    for (const ch of LINES[i]) { el.textContent += ch; if (!skip) await bw(9 + Math.random() * 13); }
-    await bw(i === 6 ? 620 : 170);   // 743 days ago の行だけ、すこし長く置く
+    for (const ch of LINES[i]) { el.textContent += ch; if (!skip) await bw(8 + Math.random() * 11); }
+    await bw(i === 3 ? 620 : 170);   // 743 days ago の行だけ、すこし長く置く
   }
   await bw(650);
 
@@ -1125,15 +1145,14 @@ async function goto(id) {
   const mir = $('mirror');
   mir.classList.add('on');
   await bw(650);
-  const GLYPHS = 'abcdefghijkmnpqrstuvwxyz23456789';
-  const nId = 7 + Math.floor(Math.random() * 3);
-  for (let i = 0; i < nId; i++) {
-    $('mirId').textContent += GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
+  /* ID＝父が娘の名前でつくったID。ぼけた鏡文字なので初見はほぼ読めない。
+     2周目に「これを打っていたのは誰か」がわかる */
+  for (const ch of 'hina.papa') {
+    $('mirId').textContent += ch;
     glow(); await key();
   }
   await bw(480);
-  const nPw = 8 + Math.floor(Math.random() * 4);
-  for (let i = 0; i < nPw; i++) {
+  for (let i = 0; i < 8; i++) {
     $('mirPw').textContent += '●';
     glow(); await key();
   }
