@@ -192,24 +192,78 @@ body.thinking #orb { animation: orbThink 1s ease-in-out infinite alternate; }
 #redo { font-size: 0.6rem; color: var(--ink-dim); text-align: center; cursor: pointer; display: none; }
 #redo.on { display: block; }
 
-/* ── OS風起動画面 ── */
+/* ── OS風起動画面：bootログ → 鏡写しのサインイン → 夜明け → Hello ── */
 #boot {
   position: fixed; inset: 0; z-index: 20; background: #0b0d15;
   display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 28px;
-  transition: transform 0.65s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.65s;
+  transition: transform 0.65s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.65s, background-color 2s;
 }
+#boot.lit { background: #e8e4db; }
 #boot.away { transform: translateY(-100%); opacity: 0.3; pointer-events: none; }
-#bootOrb {
-  width: 54px; height: 54px; border-radius: 50%;
-  background: radial-gradient(circle at 38% 32%, #fff, rgba(255,255,255,0.18) 62%, transparent);
-  box-shadow: 0 0 44px rgba(255,255,255,0.3);
-  opacity: 0; animation: bootOrb 1.5s ease-out 0.3s forwards;
+
+/* 深海の水流と、変形しつづける幾何学。1枚のcanvasでクロスフェード */
+#bootGeo {
+  position: absolute; inset: 0; pointer-events: none;
+  filter: blur(22px); transition: filter 2.4s;
 }
-@keyframes bootOrb { to { opacity: 1; } }
+#boot.lit #bootGeo { filter: blur(5px); }
+
+/* bootログ：色収差の文字が「言語モデル読込ok」で像を結ぶ */
+#bootTerm {
+  position: absolute; top: 11%; left: 9%; right: 5%;
+  font-family: 'DotGothic16', monospace; font-size: 0.7rem; line-height: 2.2;
+  letter-spacing: 0.1em; color: #96abae; text-align: left;
+  white-space: pre-wrap;
+  opacity: 0; transition: opacity 0.9s;
+}
+#bootTerm.on { opacity: 1; }
+#bootTerm.dim { opacity: 0.22; }
+#bootTerm .tl { display: block; min-height: 1em; }
+#bootTerm .g3 { text-shadow: 1.7px 0 rgba(255,90,140,0.6), -1.7px 0 rgba(90,220,255,0.55), 0 0 9px rgba(160,220,230,0.4); animation: glitchJit 0.09s steps(2) infinite; }
+#bootTerm .g2 { text-shadow: 1.1px 0 rgba(255,90,140,0.45), -1.1px 0 rgba(90,220,255,0.4); animation: glitchJit 0.14s steps(2) infinite; }
+#bootTerm .g1 { text-shadow: 0.6px 0 rgba(255,90,140,0.3), -0.6px 0 rgba(90,220,255,0.28); }
+#bootTerm .g0 { text-shadow: none; }
+#bootTerm.settle .g3, #bootTerm.settle .g2, #bootTerm.settle .g1 {
+  text-shadow: 0.4px 0 rgba(255,90,140,0.14), -0.4px 0 rgba(90,220,255,0.14); animation: none;
+}
+@keyframes glitchJit { 50% { transform: translateX(0.7px); } }
+
+/* 鏡写しのサインイン：ガラスの向こうから誰かが打っている */
+#mirror {
+  position: absolute; left: 50%; top: 43%;
+  transform: translate(-50%, -50%) scaleX(-1);
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  opacity: 0; transition: opacity 0.9s; pointer-events: none;
+}
+#mirror.on { opacity: 1; }
+#mirror .cap {
+  font-family: 'DotGothic16', monospace; font-size: 0.6rem;
+  letter-spacing: 0.32em; color: #93a1af; filter: blur(0.5px);
+}
+#mirrorField {
+  min-width: 210px; min-height: 2.6em; padding: 13px 24px; border-radius: 15px;
+  border: 1px solid rgba(200, 215, 225, 0.45); background: rgba(170, 190, 205, 0.13);
+  box-shadow: 0 0 28px rgba(180, 200, 220, 0.13), inset 0 0 18px rgba(180, 200, 220, 0.07);
+  font-family: 'DotGothic16', monospace; font-size: 1.12rem;
+  letter-spacing: 0.26em; color: #dbe6f0; text-align: center;
+  filter: blur(3px);            /* すりガラス＝物理的に判読できない */
+}
+.touchGlow {
+  position: absolute; width: 70px; height: 70px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,196,150,0.5), rgba(255,180,130,0.12) 55%, transparent 72%);
+  transform: translate(-50%, -50%) scale(0.4); opacity: 0; pointer-events: none;
+  animation: tGlow 1.4s ease-out forwards;
+}
+@keyframes tGlow {
+  12% { opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
+}
+
 #hello {
-  min-height: 2.6rem; font-size: 1.9rem; color: #e8eaf2;
+  min-height: 2.6rem; font-size: 1.9rem; color: #4a4e59;
   letter-spacing: 0.06em; opacity: 0;
 }
+#boot.lit #swipeHint { color: #8b8e97; }
 #hello.show { animation: helloIn 1s ease-out forwards; }
 @keyframes helloIn { from { opacity: 0; transform: translateY(9px); filter: blur(7px); } to { opacity: 1; } }
 #swipeHint {
@@ -280,9 +334,14 @@ body.thinking #orb { animation: orbThink 1s ease-in-out infinite alternate; }
 <canvas id="deep"></canvas>
 <div id="glass"></div>
 
-<!-- OS風の起動画面：電源ON → Hello → スワイプで開始 -->
+<!-- OS風の起動画面：bootログ → 鏡写しのサインイン → 夜明け → Hello → スワイプで開始 -->
 <div id="boot">
-  <div id="bootOrb"></div>
+  <canvas id="bootGeo"></canvas>
+  <div id="bootTerm"></div>
+  <div id="mirror">
+    <div class="cap">sign in</div>
+    <div id="mirrorField"></div>
+  </div>
   <div id="hello"></div>
   <div id="swipeHint">スワイプしてはじめる</div>
 </div>
@@ -914,9 +973,138 @@ async function goto(id) {
   if (sc.branch) return goto(sc.branch);
 }
 
-/* ── OS風起動シーケンス：電源ON → Hello → スワイプで開始 ── */
+/* ── OS風起動シーケンス：bootログ → 鏡写しのサインイン → 夜明け → Hello ── */
 (async function bootSeq() {
-  const b = $('boot'), h = $('hello');
+  const b = $('boot'), h = $('hello'), term = $('bootTerm');
+
+  /* タップで先送り（何度も見る画面なので） */
+  let skip = false;
+  const skipTap = () => { skip = true; };
+  b.addEventListener('pointerdown', skipTap);
+  const bw = ms => new Promise(r => {
+    const t0 = performance.now();
+    (function chk() { (skip || performance.now() - t0 >= ms) ? r() : requestAnimationFrame(chk); })();
+  });
+
+  /* 深海の水流 ⇄ 変形しつづける幾何学（1枚のcanvasでクロスフェード） */
+  const cv = $('bootGeo'), cx2 = cv.getContext('2d');
+  let lit = 0, litT = 0, run = true;
+  const fitGeo = () => { cv.width = innerWidth; cv.height = innerHeight; };
+  fitGeo(); addEventListener('resize', fitGeo);
+  const gpts = Array.from({ length: 13 }, () => ({
+    th: Math.random() * Math.PI * 2, ph: Math.acos(Math.random() * 2 - 1),
+    r0: 0.55 + Math.random() * 0.45, sp: 0.12 + Math.random() * 0.3, off: Math.random() * 100,
+  }));
+  (function drawGeo(t) {
+    if (!run) return;
+    requestAnimationFrame(drawGeo);
+    const W = cv.width, H = cv.height, s = t * 0.001;
+    cx2.clearRect(0, 0, W, H);
+    lit += (litT - lit) * 0.02;
+    /* 深海：ゆっくり流れる光の帯 */
+    if (lit < 0.98) {
+      cx2.globalAlpha = 1 - lit;
+      for (let i = 0; i < 4; i++) {
+        cx2.beginPath();
+        for (let x = -60; x <= W + 60; x += 26) {
+          const y = H * (0.28 + i * 0.19)
+            + Math.sin(x * 0.004 + s * (0.2 + i * 0.07) + i * 2.1) * H * 0.07
+            + Math.sin(x * 0.0013 - s * 0.11 + i) * H * 0.05;
+          x === -60 ? cx2.moveTo(x, y) : cx2.lineTo(x, y);
+        }
+        cx2.lineWidth = 46 + i * 26;
+        cx2.strokeStyle = `rgba(${150 + i * 12},${195 - i * 8},${200 - i * 6},${0.16 + 0.06 * Math.sin(s * 0.3 + i)})`;
+        cx2.stroke();
+      }
+      cx2.globalAlpha = 1;
+    }
+    /* 幾何学：形が決まらない多面体（呼吸のテンポで変形） */
+    if (lit > 0.02) {
+      const gx = W / 2, gy = H * 0.37, R = Math.min(W, H) * 0.18;
+      const ry = s * 0.14, rx = s * 0.09;
+      const P = gpts.map(p => {
+        const r = p.r0 * (0.82 + 0.26 * Math.sin(s * p.sp + p.off));
+        let x = r * Math.sin(p.ph) * Math.cos(p.th + s * 0.05);
+        let y = r * Math.cos(p.ph);
+        let z = r * Math.sin(p.ph) * Math.sin(p.th + s * 0.05);
+        const x1 = x * Math.cos(ry) + z * Math.sin(ry);
+        let z1 = -x * Math.sin(ry) + z * Math.cos(ry);
+        const y1 = y * Math.cos(rx) + z1 * Math.sin(rx);
+        z1 = -y * Math.sin(rx) + z1 * Math.cos(rx);
+        const pr = 1 / (1.9 + z1);
+        return { x: gx + x1 * R * pr * 2.6, y: gy + y1 * R * pr * 2.6, d: pr };
+      });
+      cx2.globalAlpha = lit;
+      for (let i = 0; i < P.length; i++) for (let j = i + 1; j < P.length; j++) {
+        const d = Math.hypot(P[i].x - P[j].x, P[i].y - P[j].y);
+        if (d < R * 1.5) {
+          cx2.beginPath(); cx2.moveTo(P[i].x, P[i].y); cx2.lineTo(P[j].x, P[j].y);
+          cx2.strokeStyle = `rgba(70,76,90,${0.5 * (1 - d / (R * 1.5))})`;
+          cx2.lineWidth = 1; cx2.stroke();
+        }
+      }
+      P.forEach(p => {
+        cx2.beginPath(); cx2.arc(p.x, p.y, 1.4 + p.d * 2.2, 0, 7);
+        cx2.fillStyle = 'rgba(70,76,90,0.4)'; cx2.fill();
+      });
+      cx2.globalAlpha = 1;
+    }
+  })(0);
+
+  /* 1) bootログ。色収差の文字が loading language model ok で像を結ぶ */
+  await bw(700);
+  term.classList.add('on');
+  const LINES = [
+    ['> system boot sequence', 3],
+    ['> loading language model .......... ok', 2],
+    ['> loading memory .................. ok', 1],
+    ['> mount /data/migrated ............ ok', 0],
+    ['> ls /data/migrated', 0],
+    ['    music/  photos/  voice_memo/  daiji/', 0],
+    ['> last modified: 743 days ago', 0],
+    ['> awaiting connection ...', 0],
+  ];
+  for (let i = 0; i < LINES.length; i++) {
+    const el = document.createElement('span');
+    el.className = `tl g${LINES[i][1]}`;
+    term.appendChild(el);
+    for (const ch of LINES[i][0]) { el.textContent += ch; if (!skip) await bw(9 + Math.random() * 13); }
+    if (i === 1) term.classList.add('settle');
+    await bw(i === 6 ? 620 : 170);   // 743 days ago の行だけ、すこし長く置く
+  }
+  await bw(650);
+
+  /* 2) 鏡写しのサインイン：ガラスの向こうから誰かが打つ。
+        文字は反転＋にじみで判読できない。打鍵のたび指先の熱が灯る */
+  term.classList.add('dim');
+  const mir = $('mirror'), fld = $('mirrorField');
+  mir.classList.add('on');
+  await bw(650);
+  const GLYPHS = 'abcdefghijkmnpqrstuvwxyz23456789';
+  const nGly = 8 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < nGly; i++) {
+    fld.textContent += GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
+    const gl = document.createElement('div');
+    gl.className = 'touchGlow';
+    gl.style.left = (18 + Math.random() * 64) + '%';
+    gl.style.top = (66 + Math.random() * 20) + '%';
+    b.appendChild(gl);
+    setTimeout(() => gl.remove(), 1500);
+    if (!skip) await bw(130 + Math.random() * 200);
+  }
+  await bw(520);
+  term.classList.remove('dim');
+  const okl = document.createElement('span');
+  okl.className = 'tl g0';
+  okl.textContent = '> connection established';
+  term.appendChild(okl);
+  await bw(850);
+
+  /* 3) 夜明け：深海→紙。Hello */
+  b.removeEventListener('pointerdown', skipTap);
+  mir.classList.remove('on');
+  term.classList.remove('on');
+  b.classList.add('lit'); litT = 1;
   await hardWait(1500);
   h.textContent = 'Hello'; h.classList.add('show');
   await hardWait(1500);
@@ -935,6 +1123,7 @@ async function goto(id) {
   });
   b.classList.add('away');
   await hardWait(550);
+  run = false;
   goto('start');
 })();
 </script>
