@@ -1,3 +1,4 @@
 {
-  "model": "claude-fable-5"
+  "model": "claude-fable-5",
+  "switchModelsOnFlag": false
 }
