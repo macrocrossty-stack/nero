@@ -485,8 +485,8 @@ body.tut #flow .stk:not(.got)::before { animation-duration: 1.05s; }
       <span id="stockCt">⟦ 0 ⟧</span>
     </span>
   </div>
-  <div id="orbWrap"><canvas id="orb" width="116" height="116" title="タップで気分プレビュー"></canvas></div>
   <div id="peerName"></div>
+  <div id="orbWrap"><canvas id="orb" width="116" height="116" title="タップで気分プレビュー"></canvas></div>
   <div id="flow"></div>
 
   <div id="composer">
@@ -2015,6 +2015,7 @@ sys: ユーザーが席を外しました
 pause: 2
 inner: この家に監視カメラはない。かわりに、鼻と耳と、玄関で待つ習性がいてくれる。
 her: なでてきた。グリ、しっぽで返事してた
+branch: -> e20_e
 
 # e20_e
 her: よし。……じゃあ、決めよう。どうするか
@@ -3261,6 +3262,32 @@ function decoys(n, exclude) {
   while (out.length < n && pool.length) out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
   return out;
 }
+
+/* 選択肢 → 単語チップの抽出。
+   文まるごとを選ばせず、「言葉を選ぶと文が組み上がる」体験に統一する。
+   ・ラベル | 本文 形式＝手書きラベル優先（短ければそのまま）
+   ・「」形式＝文の中から、他の選択肢に出てこない特徴的な語を選ぶ */
+function chipTokens(text) {
+  const out = [];
+  let buf = '';
+  const cut = 'はをがにのとでもへ、。！？…——　・';
+  for (const ch of text.replace(/[⟦⟧「」]/g, '')) {
+    if (cut.includes(ch)) { if (buf.length >= 2) out.push(buf); buf = ''; }
+    else buf += ch;
+  }
+  if (buf.length >= 2) out.push(buf);
+  return out;
+}
+function chipFor(c, vis) {
+  const hand = c.send && c.label !== c.send;          // 手書きラベルか
+  if (hand && c.label.length <= 9) return c.label;
+  const text = hand ? c.label : (c.send || c.label);
+  const others = vis.filter(o => o !== c).map(o => o.send || o.label);
+  const toks = chipTokens(text);
+  const uniq = toks.filter(t => !others.some(o => o.includes(t)));
+  const pick = (uniq.length ? uniq : toks).sort((a, b) => b.length - a.length)[0];
+  return (pick || text).slice(0, 8);
+}
 const SLOTS = [[18, 24], [50, 16], [80, 28], [30, 58], [64, 52], [86, 74], [14, 80], [46, 84]];
 function floatWords(list) {
   const box = $('cands'); box.innerHTML = '';
@@ -3360,8 +3387,9 @@ function composer(choices) {
       const vis = choices.filter(c => evalCond(c.cond));
       const items = vis.map(c => {
         const locked = c.requires && !hasWord(c.requires);
+        const chip = chipFor(c, vis);               // 文ではなく「単語」を浮かべる
         return {
-          label: locked ? '🔒 ' + c.label : c.label,
+          label: locked ? '🔒 ' + chip : chip,
           hot: !locked, lock: locked,
           onTap(el) {
             if (locked) {
@@ -3375,7 +3403,7 @@ function composer(choices) {
           }
         };
       });
-      decoys(2, vis.map(c => c.label)).forEach(d => items.push({
+      decoys(3, items.map(c => c.label)).forEach(d => items.push({
         label: d, decoy: true,
         onTap(el) { el.classList.add('deny'); }
       }));
@@ -3416,7 +3444,9 @@ function composer(choices) {
 }
 
 /* ════════ シーン実行 ════════ */
+let runStamp = 0;   // デバッグジャンプ等で旧ループを打ち切るための世代トークン
 async function goto(id) {
+  const my = ++runStamp;
   const sc = scenes[id];
   if (!sc) { console.warn('missing', id); push('sys', esc('—— ここから先は、まだ書かれていない ——')); return; }
   state.scene = id;
@@ -3425,6 +3455,7 @@ async function goto(id) {
     const ifM = (l.mod || '').match(/if[:：]([^,，]+)/);
     if (ifM && !evalCond(ifM[1].trim())) continue;
     const r = await runLine(l);
+    if (runStamp !== my) return;      // 別のgotoが始まっていたら退く
     if (r === 'stop') return;
   }
   for (const b of sc.branches) {
@@ -3432,6 +3463,7 @@ async function goto(id) {
   }
   if (sc.choices.length) {
     const c = await composer(sc.choices);
+    if (runStamp !== my) return;
     if (c.set) applySet(c.set);
     if (state.battOn) updateBatt();
     save();
@@ -3824,6 +3856,8 @@ function drawPoly(g, cx, cy, R, s, alpha) {
     /* 状態表示を更新して開く */
     $('dbgState').textContent =
       'scene: ' + (state.scene || '-') + '\n' +
+      'theme: ' + state.theme + '（シナリオのtheme:行で切替。zdark=夜/kinari=紙）\n' +
+      'mood: ' + deepFx.mood.toFixed(2) + '（-1つめたい〜+1あたたかい。選択で上がり、放置で0へ）\n' +
       'stock: ' + JSON.stringify(state.stock) + '\n' +
       'pending: ' + JSON.stringify(state.pending) + '\n' +
       'flags: ' + JSON.stringify(state.flags, null, 1);
@@ -3862,6 +3896,11 @@ function drawPoly(g, cx, cy, R, s, alpha) {
     ['warmth+5', () => { state.flags.warmth = (state.flags.warmth || 0) + 5; save(); open(); }],
     ['batt=15', () => { state.battOn = true; state.batt = 15; updateBatt(); save(); }],
     ['チュートリアル再表示', () => { localStorage.removeItem('proto_tut'); toast('次のひかる言葉で再表示'); }],
+    ['テーマ切替', () => { switchPalette(palB === 'zdark' ? 'kinari' : 'zdark'); toast('テーマ：' + state.theme + ' へ遷移中'); }],
+    ['気分：冷', () => { deepFx.lock = true; deepFx.moodTarget = -1; toast('気分 -1'); }],
+    ['気分：静', () => { deepFx.lock = true; deepFx.moodTarget = 0; toast('気分 0'); }],
+    ['気分：温', () => { deepFx.lock = true; deepFx.moodTarget = 1; toast('気分 +1'); }],
+    ['気分：自動に戻す', () => { deepFx.lock = false; toast('気分：自動'); }],
     ['セーブ全消去', () => { localStorage.clear(); location.reload(); }],
   ];
   const abox = $('dbgActs');
