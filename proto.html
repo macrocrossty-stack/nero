@@ -363,6 +363,8 @@ body.thinking #orb { animation: orbThink 1s ease-in-out infinite alternate; }
   background: rgba(255,255,255,0.3); color: var(--ink);
   padding: 10px 28px; border-radius: 99px; font-size: 0.74rem; cursor: pointer;
 }
+/* チュートリアルは画面を覆わない：本物のひかる言葉（画面下）が見えたまま、上部にカードだけ */
+#tutPop { background: transparent; backdrop-filter: none; align-items: flex-start; padding-top: 12vh; }
 #tutPop .card { margin: 0 26px; }
 #tutPop .stk { pointer-events: none; }   /* 見本の光（タップ不可） */
 </style>
@@ -1008,6 +1010,11 @@ function composer(choices) {
     document.body.classList.add('thinking');
     const com = $('composer');
     com.classList.add('on');
+    /* シートに隠れないよう、直前のやり取りを上へ逃がす */
+    setTimeout(() => {
+      $('flow').style.paddingBottom = com.offsetHeight + 18 + 'px';
+      $('flow').scrollTo({ top: $('flow').scrollHeight, behavior: 'smooth' });
+    }, 80);
     let picked = null;
 
     const reset = () => {
@@ -1059,6 +1066,7 @@ function composer(choices) {
       $('send').classList.remove('ready');
       $('redo').classList.remove('on');
       com.classList.remove('on');
+      $('flow').style.paddingBottom = '';
       document.body.classList.remove('thinking');
       push('mono', esc(p.text));
       deepFx.warm(0.08);
@@ -1139,7 +1147,9 @@ function drawPoly(g, cx, cy, R, s, alpha) {
 (async function bootSeq() {
   const b = $('boot'), h = $('hello'), term = $('bootTerm');
 
-  /* タップで先送り（何度も見る画面なので）。登録は fullSequence 側で */
+  amb.init();   // 音の器だけ先に用意（最初のタップで解錠→サインインの打鍵音が鳴る）
+
+  /* タップで先送り（段階ごと。ターミナルを飛ばしてもサインインは再生される） */
   let skip = false;
   const skipTap = () => { skip = true; };
   const bw = ms => new Promise(r => {
@@ -1285,6 +1295,7 @@ function drawPoly(g, cx, cy, R, s, alpha) {
       await bw(i === 3 ? 620 : 170);   // 743 days ago の行だけ、すこし長く置く
     }
     await bw(650);
+    skip = false;                      // 先送りはここまで。サインインは自分の目で見る
 
     /* 2) 鏡写しのサインイン：ガラスの向こうから誰かが id / password を打つ */
     const key = async () => {                  // 打鍵の間合いも揺れる（ときどき考えて止まる）
