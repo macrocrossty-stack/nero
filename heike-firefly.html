@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#000000">
+<title>ヘイケボタル 明滅シミュレータ</title>
+<style>
+  :root {
+    /* ヘイケボタルの発光色（黄緑〜緑、ピーク波長 約560nm 付近）を近似 */
+    --glow-core: #eaffd2;
+    --glow-mid:  #b6ff5a;
+    --glow-edge: #6fdc2e;
+    --ui: #7a3b3b;          /* 夜間の視覚を壊さない暗い赤系UI */
+    --ui-dim: #4a2626;
+    --ui-line: rgba(180,80,80,0.22);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    height: 100%;
+    background: #000;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: manipulation;
+    color: var(--ui);
+    font-family: -apple-system, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+    -webkit-user-select: none; user-select: none;
+  }
+  #stage {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: #000;
+  }
+  /* 全画面のわずかな光のにじみ（明滅に同期） */
+  #wash {
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 46%, var(--glow-mid) 0%, transparent 62%);
+    opacity: 0; will-change: opacity;
+  }
+  /* ホタルの発光器（点光源） */
+  #lantern {
+    position: relative;
+    width: 44vmin; height: 44vmin;
+    border-radius: 50%;
+    opacity: 0; will-change: opacity, transform;
+    background: radial-gradient(circle at 50% 50%,
+        var(--glow-core) 0%,
+        var(--glow-mid) 26%,
+        var(--glow-edge) 46%,
+        transparent 70%);
+    filter: blur(0.4vmin);
+  }
+
+  /* ── コントロール ── */
+  #panel {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+    background: linear-gradient(to top, rgba(0,0,0,0.92) 60%, rgba(0,0,0,0));
+    transition: transform .3s ease, opacity .3s ease;
+    z-index: 5;
+  }
+  #panel.hidden { transform: translateY(105%); opacity: 0; }
+  .row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .modebtn {
+    flex: 1; padding: 9px 4px; border-radius: 9px;
+    border: 1px solid var(--ui-line); background: rgba(120,50,50,0.06);
+    color: var(--ui); font-size: 12px; line-height: 1.4; text-align: center;
+  }
+  .modebtn small { display: block; font-size: 9.5px; color: var(--ui-dim); margin-top: 2px; }
+  .modebtn.active { border-color: rgba(200,90,90,0.6); background: rgba(150,60,60,0.18); color: #b06a6a; }
+  .modebtn.active small { color: #7a3b3b; }
+
+  .slider-wrap { margin-bottom: 12px; }
+  .slider-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--ui-dim); margin-bottom: 4px; }
+  input[type=range] {
+    width: 100%; height: 22px; background: transparent; -webkit-appearance: none;
+  }
+  input[type=range]::-webkit-slider-runnable-track {
+    height: 3px; background: var(--ui-line); border-radius: 2px;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 20px; height: 20px; margin-top: -8.5px;
+    border-radius: 50%; background: #8a4a4a; border: 1px solid rgba(200,120,120,0.5);
+  }
+  .btnrow { display: flex; gap: 8px; align-items: center; }
+  #power {
+    flex: 1; padding: 13px; border-radius: 11px;
+    border: 1px solid rgba(120,220,60,0.35); background: rgba(120,220,60,0.10);
+    color: #9be84b; font-size: 15px; font-weight: 600; letter-spacing: .08em;
+  }
+  #power.on { border-color: rgba(200,90,90,0.4); background: rgba(150,60,60,0.14); color: #b06a6a; }
+  .icobtn {
+    width: 46px; padding: 13px 0; border-radius: 11px; text-align: center;
+    border: 1px solid var(--ui-line); background: rgba(120,50,50,0.06); color: var(--ui); font-size: 15px;
+  }
+  .icobtn.active { border-color: rgba(200,90,90,0.6); color: #b06a6a; }
+
+  /* ── オーバーレイ（起動案内 / 情報） ── */
+  .overlay {
+    position: fixed; inset: 0; z-index: 20; overflow-y: auto;
+    background: rgba(0,0,0,0.94); padding: 26px 22px calc(30px + env(safe-area-inset-bottom));
+    display: none;
+  }
+  .overlay.show { display: block; }
+  .sheet { max-width: 560px; margin: 0 auto; }
+  .overlay h1 { font-size: 19px; color: #b6ff5a; font-weight: 600; letter-spacing: .06em; margin-bottom: 4px; }
+  .overlay h2 { font-size: 13px; color: #8a4a4a; font-weight: 600; margin: 18px 0 8px; letter-spacing: .05em; }
+  .overlay p, .overlay li { font-size: 13px; line-height: 1.75; color: #9a6a6a; }
+  .overlay .lead { color: #b6a; color: #a88; margin: 8px 0 4px; }
+  .overlay ul { padding-left: 1.15em; margin: 4px 0; }
+  .overlay li { margin-bottom: 5px; }
+  .overlay .em { color: #b6ff5a; }
+  .overlay .warn { color: #d59a5a; }
+  .overlay a { color: #7fb0d0; word-break: break-all; }
+  .overlay .sci { border-left: 2px solid var(--ui-line); padding-left: 12px; margin: 6px 0; }
+  .closebtn {
+    margin-top: 22px; width: 100%; padding: 13px; border-radius: 11px;
+    border: 1px solid rgba(120,220,60,0.35); background: rgba(120,220,60,0.10);
+    color: #9be84b; font-size: 15px; font-weight: 600;
+  }
+  .tinytag { display:inline-block; font-size:10px; color:var(--ui-dim); border:1px solid var(--ui-line); border-radius:5px; padding:1px 6px; margin-left:6px; vertical-align:middle;}
+  #info-fab {
+    position: fixed; top: calc(10px + env(safe-area-inset-top)); right: 12px; z-index: 6;
+    width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--ui-line);
+    background: rgba(0,0,0,0.4); color: var(--ui); font-size: 15px;
+  }
+  #hint {
+    position: fixed; top: calc(12px + env(safe-area-inset-top)); left: 0; right: 0;
+    text-align: center; font-size: 11px; color: var(--ui-dim); z-index: 4; pointer-events: none;
+    transition: opacity .4s; letter-spacing: .05em;
+  }
+  #cam { display: none; }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div id="wash"></div>
+  <div id="lantern"></div>
+</div>
+
+<div id="hint">画面をタップでUIの表示／非表示</div>
+<button id="info-fab" aria-label="情報">i</button>
+<video id="cam" playsinline muted></video>
+
+<!-- コントロールパネル -->
+<div id="panel">
+  <div class="row" id="modes">
+    <button class="modebtn active" data-mode="female">誘引<small>未交尾メス</small></button>
+    <button class="modebtn" data-mode="male">探索<small>飛翔オス</small></button>
+    <button class="modebtn" data-mode="mated">交尾済<small>ちらつき</small></button>
+  </div>
+
+  <div class="slider-wrap">
+    <div class="slider-label"><span>気温 / 発光間隔</span><span id="tempVal">22℃ ・ 約0.9秒</span></div>
+    <input type="range" id="temp" min="15" max="30" step="0.5" value="22">
+  </div>
+
+  <div class="slider-wrap">
+    <div class="slider-label"><span>明るさ（画面の光量）</span><span id="briVal">100%</span></div>
+    <input type="range" id="bri" min="20" max="100" step="1" value="100">
+  </div>
+
+  <div class="btnrow">
+    <button id="power">開始</button>
+    <button id="dialog" class="icobtn" aria-label="応答モード">対話</button>
+  </div>
+</div>
+
+<!-- 起動案内オーバーレイ -->
+<div class="overlay show" id="startOverlay">
+  <div class="sheet">
+    <h1>ヘイケボタル 明滅シミュレータ</h1>
+    <p class="lead">ヘイケボタル（<i>Aquatica lateralis</i>）が実際に反応する光の明滅を、観測データに基づいて再現します。iPhone を野外で光源として使えます。</p>
+
+    <h2>実際に反応させるコツ</h2>
+    <ul>
+      <li><span class="warn">画面の明るさを最大</span>に。<span class="warn">True Tone / Night Shift / 自動明るさ調整はオフ</span>（発光色が変わり反応が落ちます）。</li>
+      <li><span class="warn">自動ロックを「なし」</span>に（設定 → 画面表示と明るさ）。長押しでも画面は点灯を維持します。</li>
+      <li>ヘイケボタルの生息地（<span class="em">水田・湿地・池のふち・ゆるい流れ</span>）の草むらのそばで、画面を上や横に向けて低く構える。</li>
+      <li>時期は<span class="em">6〜8月、日没後20〜21時頃</span>のよく晴れて蒸し暑い風の弱い夜。街灯の少ない暗い場所。</li>
+      <li>まず<span class="em">「誘引（未交尾メス）」</span>で飛翔中のオスを呼び、近くのホタルが光ったら「対話」で応答します。</li>
+    </ul>
+
+    <p class="warn" style="margin-top:10px;font-size:12px;">※ ホタルは繁殖のためにわずかな期間だけ光ります。長時間の点灯・接近・捕獲は繁殖の妨げになります。観察は短時間・低刺激で。地域の保護ルールを守ってください。</p>
+
+    <button class="closebtn" id="startBtn">開始する</button>
+  </div>
+</div>
+
+<!-- 情報オーバーレイ -->
+<div class="overlay" id="infoOverlay">
+  <div class="sheet">
+    <h1>再現の根拠</h1>
+    <p>ヘイケボタルは弱い黄緑色（発光ピーク 約560nm 付近）を、素早いリズムで明滅させます。オスは飛びながら光り、草上のメスがそれに応答して居場所を知らせ、互いを見つけます。この明滅の<span class="em">時間パターン</span>が種の識別信号として働きます。</p>
+
+    <h2>3つのモード</h2>
+    <div class="sci">
+      <p><span class="em">誘引（未交尾メス）</span><span class="tinytag">オスが最も反応</span><br>
+      短く単純な発光を約1秒間隔で反復。ちらつき（二重発光）が無く弱め。LED実験（e-firefly）で、飛翔オス・静止オスは<span class="em">発光時間が短く・ちらつきが弱い光</span>ほど強く誘引されました。オスを呼ぶならこれ。</p>
+    </div>
+    <div class="sci">
+      <p><span class="em">探索（飛翔オス）</span><br>
+      1回の発光（約0.57秒）の中に約0.14秒間隔の二山のちらつきを持ち、約0.62秒の暗間隔をはさんで反復。飛び回るオスの光を再現。近くのメスの応答を促します。</p>
+    </div>
+    <div class="sci">
+      <p><span class="em">交尾済みメス</span><br>
+      発光が長くなり、はっきりちらつきます。交尾を終えたメスの信号で、オスの誘引効果は弱め。比較用。</p>
+    </div>
+
+    <h2>気温 / 発光間隔</h2>
+    <p>明滅の間隔は気温で変わります。冷涼（北海道など）で約1秒、暖かい地域（本州以南）で約0.5秒。スライダーで再現します。</p>
+
+    <h2>対話（応答）モード<span class="tinytag">実験的</span></h2>
+    <p>背面カメラで近くのホタルの光を検知し、少し遅れて（応答遅延）1回だけ光り返します。メスがオスの合図に一定の遅れで応答する仕組みを模しています。暗所で光点にカメラを向けてください。感度・遅延はモード起動後に調整できます。</p>
+
+    <h2>出典</h2>
+    <ul style="font-size:12px;">
+      <li>Ohba et al., <i>Flickering flash signals and mate recognition in the Asian firefly, Aquatica lateralis</i>, Scientific Reports (2023). <a href="https://www.nature.com/articles/s41598-023-29552-6">nature.com/articles/s41598-023-29552-6</a></li>
+      <li>ナショナル ジオグラフィック日本版「蛍の光、交尾していないメスだけ瞬かず、ヘイケボタルで発見」<a href="https://natgeo.nikkeibp.co.jp/atcl/news/23/031500131/">記事</a></li>
+      <li>クボタのたんぼ「光の交信ができるヘイケボタル」／ウェザーニュース「日本を代表する三種の蛍の生態」</li>
+    </ul>
+    <p style="font-size:11px;color:var(--ui-dim);margin-top:8px;">※ 画面表示は近似です。実際の反応は個体・気温・光害・時期など多くの条件に左右されます。</p>
+
+    <button class="closebtn" id="infoClose">閉じる</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+(function () {
+  const lantern = document.getElementById('lantern');
+  const wash = document.getElementById('wash');
+  const powerBtn = document.getElementById('power');
+  const dialogBtn = document.getElementById('dialog');
+  const panel = document.getElementById('panel');
+  const hint = document.getElementById('hint');
+  const tempSlider = document.getElementById('temp');
+  const tempVal = document.getElementById('tempVal');
+  const briSlider = document.getElementById('bri');
+  const briVal = document.getElementById('briVal');
+  const cam = document.getElementById('cam');
+
+  // ── 発光パターン（観測値に基づく。単位ms） ──
+  // オス飛翔: 発光≈566ms（内部に≈140ms間隔の二山＝ちらつき）＋暗間隔≈624ms
+  // 未交尾メス（受精可能）: 短く単純な発光を約1秒間隔、ちらつき無し・弱め → オスを最も誘引
+  // 交尾済みメス: 発光が長く、明瞭にちらつく
+  const MALE_FLASH = 566, MALE_GAP = 624, MALE_TWIN = 140;
+  const state = {
+    mode: 'female',
+    on: false,
+    tempC: 22,
+    brightness: 1.0,
+    dialog: false,
+    t0: 0,
+  };
+
+  // なめらかな立ち上がり／減衰（ホタルは立ち上がりが速く減衰がやや遅い）
+  function smooth(x){ x = Math.max(0, Math.min(1, x)); return x*x*(3 - 2*x); }
+  // 単発の光パルス: 発光器点灯の包絡線。attack速め・decay遅め。
+  function pulse(t, start, attack, hold, decay, peak){
+    if (t < start) return 0;
+    const u = t - start;
+    if (u < attack) return peak * smooth(u/attack);
+    if (u < attack + hold) return peak;
+    if (u < attack + hold + decay) return peak * smooth(1 - (u - attack - hold)/decay);
+    return 0;
+  }
+
+  // 気温 → 暗間隔スケール（冷涼=間隔長い / 温暖=間隔短い）
+  // 15℃≈間隔1.0秒側、30℃≈0.5秒側 を暗間隔倍率で近似
+  function gapScale(tempC){
+    const f = (tempC - 15) / (30 - 15);      // 0..1
+    return 1.35 - 0.85 * f;                   // 1.35→0.50
+  }
+
+  // モードごとの1周期（発光＋暗間隔, ms）と、位相→明るさ(0..1)
+  function cycleMs(){
+    const g = gapScale(state.tempC);
+    if (state.mode === 'male')   return MALE_FLASH + MALE_GAP * g;
+    if (state.mode === 'mated')  return 780 + 620 * g;
+    return 250 + 900 * g;                      // female: 短い発光 + 約1秒間隔
+  }
+
+  function brightnessAt(t){
+    if (state.mode === 'male'){
+      // 566ms の発光内に 140ms 間隔の二山（ちらつき）を持つ。基底の広い山＋2つの鋭い山。
+      const base = pulse(t, 0, 90, 320, 156, 0.55);
+      const p1 = pulse(t, 90,  40, 30, 120, 1.0);
+      const p2 = pulse(t, 90 + MALE_TWIN, 40, 30, 150, 1.0);
+      return Math.max(base, p1, p2);
+    }
+    if (state.mode === 'mated'){
+      // 長めの発光に 4〜5 回のちらつき
+      const base = pulse(t, 0, 120, 520, 160, 0.5);
+      let m = base;
+      for (let i = 0; i < 5; i++){
+        m = Math.max(m, pulse(t, 90 + i*140, 34, 24, 90, 1.0));
+      }
+      return m;
+    }
+    // female（未交尾メス）: 単純で短い1発、ちらつき無し、やや弱め
+    return pulse(t, 0, 55, 70, 130, 0.9);
+  }
+
+  // ── 描画ループ ──
+  let raf = 0;
+  function frame(now){
+    if (!state.on){ return; }
+    const c = cycleMs();
+    const phase = ((now - state.t0) % c + c) % c;
+    let b = brightnessAt(phase) * state.brightness;
+
+    // 対話モードの応答フラッシュ（外部トリガ）を重畳
+    if (respActive){
+      const rt = now - respStart;
+      b = Math.max(b, pulse(rt, 0, 55, 70, 130, 0.9) * state.brightness);
+      if (rt > 260) respActive = false;
+    }
+    lantern.style.opacity = b.toFixed(3);
+    lantern.style.transform = 'scale(' + (0.9 + 0.14*b).toFixed(3) + ')';
+    wash.style.opacity = (b * 0.5).toFixed(3);
+    raf = requestAnimationFrame(frame);
+  }
+
+  function start(){
+    state.on = true;
+    state.t0 = performance.now();
+    powerBtn.textContent = '停止';
+    powerBtn.classList.add('on');
+    acquireWakeLock();
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(frame);
+  }
+  function stop(){
+    state.on = false;
+    cancelAnimationFrame(raf);
+    lantern.style.opacity = 0; wash.style.opacity = 0;
+    powerBtn.textContent = '開始';
+    powerBtn.classList.remove('on');
+    if (state.dialog) toggleDialog(false);
+    releaseWakeLock();
+  }
+
+  powerBtn.addEventListener('click', () => state.on ? stop() : start());
+
+  // モード切替
+  document.querySelectorAll('.modebtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.modebtn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.mode = btn.dataset.mode;
+      if (state.on) state.t0 = performance.now();
+    });
+  });
+
+  // 気温スライダー
+  function fmtTemp(){
+    // 表示用: 未交尾メス基準の実効間隔（発光250ms + 暗間隔）で「約○秒」を出す
+    const c = (250 + 900 * gapScale(state.tempC)) / 1000;
+    tempVal.textContent = state.tempC.toFixed(state.tempC % 1 ? 1 : 0) + '℃ ・ 約' + c.toFixed(1) + '秒';
+  }
+  tempSlider.addEventListener('input', e => { state.tempC = parseFloat(e.target.value); fmtTemp(); });
+  fmtTemp();
+
+  // 明るさスライダー
+  briSlider.addEventListener('input', e => {
+    state.brightness = parseInt(e.target.value,10)/100;
+    briVal.textContent = e.target.value + '%';
+  });
+
+  // タップでUIの表示/非表示（ボタン以外）
+  document.getElementById('stage').addEventListener('click', () => {
+    panel.classList.toggle('hidden');
+    document.getElementById('info-fab').style.opacity = panel.classList.contains('hidden') ? '0.25' : '1';
+  });
+  setTimeout(() => { hint.style.opacity = '0'; }, 4000);
+
+  // オーバーレイ
+  const startOverlay = document.getElementById('startOverlay');
+  document.getElementById('startBtn').addEventListener('click', () => {
+    startOverlay.classList.remove('show');
+    start();                    // ユーザ操作からWakeLock/自動再生を確立
+  });
+  const infoOverlay = document.getElementById('infoOverlay');
+  document.getElementById('info-fab').addEventListener('click', () => infoOverlay.classList.add('show'));
+  document.getElementById('infoClose').addEventListener('click', () => infoOverlay.classList.remove('show'));
+
+  // ── Wake Lock（画面点灯維持） ──
+  let wakeLock = null;
+  async function acquireWakeLock(){
+    try {
+      if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+    } catch(e){ /* 未対応時は自動ロック「なし」設定を案内済み */ }
+  }
+  function releaseWakeLock(){ try { wakeLock && wakeLock.release(); } catch(e){} wakeLock = null; }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && state.on) acquireWakeLock();
+  });
+
+  // ── 対話（応答）モード：カメラで光点を検知し、応答遅延ののち光り返す ──
+  let stream = null, detectRaf = 0;
+  let respActive = false, respStart = 0, lastResp = 0;
+  const RESPONSE_DELAY = 600;   // オスの合図に対するメスの応答遅延の近似(ms)
+  const REFRACTORY = 2200;      // 連続応答の抑制(ms)
+  const dctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
+  let baseline = 0;
+
+  async function toggleDialog(force){
+    const next = (force === undefined) ? !state.dialog : force;
+    if (next === state.dialog) return;
+    if (next){
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' }, audio: false
+        });
+        cam.srcObject = stream; await cam.play();
+        state.dialog = true; dialogBtn.classList.add('active');
+        baseline = 0;
+        if (!state.on) start();
+        detectLoop();
+      } catch(e){
+        alert('カメラを開始できませんでした。対話モードはHTTPS環境・カメラ許可が必要です。');
+      }
+    } else {
+      state.dialog = false; dialogBtn.classList.remove('active');
+      cancelAnimationFrame(detectRaf);
+      if (stream){ stream.getTracks().forEach(t => t.stop()); stream = null; }
+    }
+  }
+  dialogBtn.addEventListener('click', () => toggleDialog());
+
+  function detectLoop(){
+    if (!state.dialog){ return; }
+    const w = 48, h = 36;
+    if (cam.videoWidth){
+      dctx.canvas.width = w; dctx.canvas.height = h;
+      dctx.drawImage(cam, 0, 0, w, h);
+      const data = dctx.getImageData(0, 0, w, h).data;
+      // 最も明るい画素の輝度（緑成分を重視＝ホタルの黄緑光に感度）
+      let maxL = 0;
+      for (let i = 0; i < data.length; i += 4){
+        const l = 0.2*data[i] + 0.7*data[i+1] + 0.1*data[i+2];
+        if (l > maxL) maxL = l;
+      }
+      // 移動平均で環境光ベースラインを推定し、急な明部の立ち上がりを検知
+      baseline = baseline === 0 ? maxL : baseline * 0.92 + maxL * 0.08;
+      const now = performance.now();
+      if (maxL > baseline + 45 && maxL > 90 && now - lastResp > REFRACTORY){
+        lastResp = now;
+        setTimeout(() => { respActive = true; respStart = performance.now(); }, RESPONSE_DELAY);
+      }
+    }
+    detectRaf = requestAnimationFrame(detectLoop);
+  }
+
+  // ダブルタップズーム抑止
+  let lastTouch = 0;
+  document.addEventListener('touchend', e => {
+    const n = Date.now();
+    if (n - lastTouch < 320) e.preventDefault();
+    lastTouch = n;
+  }, { passive: false });
+})();
+</script>
+</body>
+</html>
