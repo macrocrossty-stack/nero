@@ -1,0 +1,14 @@
+{
+  "name": "ロボットこうじょう",
+  "short_name": "ロボット",
+  "description": "4歳から遊べるタイピングゲーム。キーを押してロボットを組み立てよう!",
+  "start_url": "./robot-typing-game-v2.html",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#1b2a4a",
+  "theme_color": "#aee7ff",
+  "icons": [
+    { "src": "robot-icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "robot-icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
