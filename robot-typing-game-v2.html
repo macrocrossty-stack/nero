@@ -517,6 +517,10 @@ function ensureAudio() {
     try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
   }
   if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  // タッチ/キー操作のたびに、固まった読み上げエンジンを起こす
+  if ('speechSynthesis' in window) {
+    try { if (speechSynthesis.paused) speechSynthesis.resume(); } catch (e) {}
+  }
 }
 function tone(freq, start, dur, type, vol) {
   if (!audioCtx || muted) return;
@@ -540,15 +544,46 @@ function soundFanfare() {
   [523, 659, 784, 1047].forEach((f, i) => tone(f * 2, i * 0.15 + 0.05, 0.25, 'sine', 0.08));
 }
 
+/* --- 読み上げ (iPad/Safariの詰まり対策込み) --- */
+let voiceJa = null;
+function pickVoice() {
+  try {
+    const vs = speechSynthesis.getVoices();
+    voiceJa = vs.find(v => v.lang && v.lang.replace('_', '-').startsWith('ja')) || null;
+  } catch (e) {}
+}
+if ('speechSynthesis' in window) {
+  pickVoice();
+  speechSynthesis.onvoiceschanged = pickVoice;
+}
+
+let sayTimer = null;
 function say(text) {
   if (muted || !('speechSynthesis' in window)) return;
-  speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'ja-JP';
-  u.rate = 0.9;
-  u.pitch = 1.2;
-  speechSynthesis.speak(u);
+  const synth = speechSynthesis;
+  // iOSはcancel直後のspeakでキューが詰まることがあるため、少し待ってから話す
+  try { synth.cancel(); } catch (e) {}
+  clearTimeout(sayTimer);
+  sayTimer = setTimeout(() => {
+    try {
+      if (synth.paused) synth.resume();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'ja-JP';
+      if (voiceJa) u.voice = voiceJa;
+      u.rate = 0.9;
+      u.pitch = 1.2;
+      say._current = u;  // 発話中のGCで無音になるiOSバグへの対策
+      synth.speak(u);
+    } catch (e) {}
+  }, 80);
 }
+
+/* 画面復帰時にpausedのまま固まる対策 */
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && 'speechSynthesis' in window) {
+    try { if (speechSynthesis.paused) speechSynthesis.resume(); } catch (e) {}
+  }
+});
 
 /* ================= ロボットの設計図 =================
    あたま5 × からだ5 × 目3 × くち3 × アンテナ3 × いろ12 = 8100 パターン */
