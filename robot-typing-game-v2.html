@@ -372,39 +372,13 @@
     from { transform: translateX(-15vw); }
     to   { transform: translateX(115vw); }
   }
-  .town-ground {
-    position: absolute;
-    left: 0; right: 0; bottom: 0;
-    height: 84px;
-    background: linear-gradient(180deg, #86d97c, #5cbf6b);
-    border-top: 4px solid #4ca85b;
+  #townSvg {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    display: block;
   }
-  .town-road {
-    position: absolute;
-    left: 0; right: 0; bottom: 24px;
-    height: 26px;
-    background: #b8c4cc;
-    border-top: 3px dashed #fff;
-  }
-  .building {
-    position: absolute;
-    bottom: 78px;
-    animation: buildingPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-  @keyframes buildingPop {
-    from { transform: translateY(30px) scale(0.3); opacity: 0; }
-    to   { transform: translateY(0) scale(1); opacity: 1; }
-  }
-  .building svg { display: block; }
-  .b-label {
-    text-align: center;
-    font-size: clamp(10px, 1.6vw, 14px);
-    font-weight: bold;
-    color: #14532d;
-    text-shadow: 0 1px 0 #fff;
-  }
-  .wheel-spin { animation: wheelSpin 14s linear infinite; transform-origin: 50px 42px; }
-  @keyframes wheelSpin { to { transform: rotate(360deg); } }
   .smoke { animation: smokeUp 3s ease-out infinite; opacity: 0; }
   .smoke.s2 { animation-delay: 1.5s; }
   @keyframes smokeUp {
@@ -412,27 +386,16 @@
     100% { opacity: 0; transform: translateY(-26px) scale(1.4); }
   }
 
-  .walker {
-    position: absolute;
-    bottom: 6px;
-    left: 0;
-    cursor: pointer;
-    will-change: transform;
-  }
-  .walker svg {
-    display: block;
-    width: 100%;
-    height: auto;
-    animation: walkBob 0.5s ease-in-out infinite;
-  }
+  .iso-robot { cursor: pointer; will-change: transform; }
+  .iso-bob { animation: walkBob 0.55s ease-in-out infinite; }
   @keyframes walkBob {
     0%, 100% { transform: translateY(0) rotate(-1.5deg); }
-    50% { transform: translateY(-4px) rotate(1.5deg); }
+    50% { transform: translateY(-3px) rotate(1.5deg); }
   }
-  .walker.jump svg { animation: walkerJump 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .iso-robot.jump .iso-bob { animation: walkerJump 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
   @keyframes walkerJump {
     0%, 100% { transform: translateY(0); }
-    40% { transform: translateY(-38px) rotate(8deg); }
+    40% { transform: translateY(-30px) rotate(8deg); }
   }
   .town-empty {
     position: absolute;
@@ -846,103 +809,257 @@ function hideGallery() {
   document.getElementById('galleryOverlay').hidden = true;
 }
 
-/* ================= ロボットタウン ================= */
-const BUILDINGS = [
-  { need: 1, name: 'こうじょう', w: 110, svg: `
-    <svg width="110" height="90" viewBox="0 0 110 90">
-      <rect x="5" y="40" width="100" height="50" rx="4" fill="#8da3b8"/>
-      <path d="M5 40 L30 22 L30 40 L55 22 L55 40 L80 22 L80 40 L105 22 L105 40 Z" fill="#6b8299"/>
-      <rect x="14" y="52" width="16" height="14" rx="2" fill="#ffe9a8"/>
-      <rect x="47" y="52" width="16" height="14" rx="2" fill="#ffe9a8"/>
-      <rect x="80" y="52" width="16" height="14" rx="2" fill="#ffe9a8"/>
-      <rect x="40" y="70" width="30" height="20" rx="3" fill="#5a7086"/>
-      <rect x="88" y="4" width="12" height="26" fill="#6b8299"/>
-      <circle class="smoke" cx="94" cy="2" r="7" fill="#cfd8df"/>
-      <circle class="smoke s2" cx="94" cy="2" r="7" fill="#cfd8df"/>
-    </svg>` },
-  { need: 3, name: 'いえ', w: 70, svg: `
-    <svg width="70" height="70" viewBox="0 0 70 70">
-      <rect x="8" y="30" width="54" height="40" rx="3" fill="#ffd9a8"/>
-      <path d="M2 32 L35 6 L68 32 Z" fill="#e8734a"/>
-      <rect x="28" y="46" width="14" height="24" rx="2" fill="#9c5b32"/>
-      <rect x="12" y="38" width="12" height="10" rx="2" fill="#aee7ff"/>
-      <rect x="46" y="38" width="12" height="10" rx="2" fill="#aee7ff"/>
-    </svg>` },
-  { need: 6, name: 'こうえん', w: 90, svg: `
-    <svg width="90" height="80" viewBox="0 0 90 80">
-      <rect x="24" y="52" width="8" height="28" fill="#8a5a33"/>
-      <circle cx="28" cy="34" r="22" fill="#4ca85b"/>
-      <circle cx="16" cy="44" r="13" fill="#5cbf6b"/>
-      <circle cx="41" cy="44" r="13" fill="#5cbf6b"/>
-      <rect x="58" y="62" width="26" height="5" rx="2" fill="#b8763f"/>
-      <rect x="60" y="67" width="4" height="13" fill="#8a5a33"/>
-      <rect x="78" y="67" width="4" height="13" fill="#8a5a33"/>
-      <circle cx="66" cy="52" r="5" fill="#ff5d8f"/>
-      <circle cx="76" cy="55" r="4" fill="#ffd23f"/>
-    </svg>` },
-  { need: 10, name: 'おみせ', w: 80, svg: `
-    <svg width="80" height="70" viewBox="0 0 80 70">
-      <rect x="5" y="24" width="70" height="46" rx="3" fill="#fff1d6"/>
-      <path d="M3 24 L77 24 L77 34 L3 34 Z" fill="#fff"/>
-      <path d="M3 24 L12 10 L68 10 L77 24 Z" fill="#ff8c42"/>
-      <g fill="#ffb27d"><rect x="10" y="24" width="10" height="10"/><rect x="30" y="24" width="10" height="10"/><rect x="50" y="24" width="10" height="10"/></g>
-      <rect x="12" y="42" width="22" height="20" rx="2" fill="#aee7ff"/>
-      <rect x="46" y="42" width="18" height="28" rx="2" fill="#9c5b32"/>
-      <circle cx="60" cy="56" r="2" fill="#ffd23f"/>
-    </svg>` },
-  { need: 15, name: 'ビル', w: 64, svg: `
-    <svg width="64" height="110" viewBox="0 0 64 110">
-      <rect x="8" y="8" width="48" height="102" rx="4" fill="#7fb2d9"/>
-      <rect x="8" y="8" width="48" height="8" rx="4" fill="#5a8fb8"/>
-      <g fill="#e8f6ff">
-        <rect x="16" y="22" width="12" height="10" rx="1"/><rect x="36" y="22" width="12" height="10" rx="1"/>
-        <rect x="16" y="40" width="12" height="10" rx="1"/><rect x="36" y="40" width="12" height="10" rx="1"/>
-        <rect x="16" y="58" width="12" height="10" rx="1"/><rect x="36" y="58" width="12" height="10" rx="1"/>
-        <rect x="16" y="76" width="12" height="10" rx="1"/><rect x="36" y="76" width="12" height="10" rx="1"/>
-      </g>
-      <rect x="24" y="92" width="16" height="18" rx="2" fill="#456e8c"/>
-    </svg>` },
-  { need: 20, name: 'かんらんしゃ', w: 100, svg: `
-    <svg width="100" height="100" viewBox="0 0 100 100">
-      <g class="wheel-spin">
-        <circle cx="50" cy="42" r="34" fill="none" stroke="#e8734a" stroke-width="4"/>
-        <g stroke="#e8734a" stroke-width="3">
-          <line x1="50" y1="8" x2="50" y2="76"/><line x1="16" y1="42" x2="84" y2="42"/>
-          <line x1="26" y1="18" x2="74" y2="66"/><line x1="74" y1="18" x2="26" y2="66"/>
-        </g>
-        <g>
-          <circle cx="50" cy="8" r="6" fill="#ffd23f"/><circle cx="50" cy="76" r="6" fill="#ff5d8f"/>
-          <circle cx="16" cy="42" r="6" fill="#7fd97c"/><circle cx="84" cy="42" r="6" fill="#9f7bff"/>
-          <circle cx="26" cy="18" r="6" fill="#7ecbff"/><circle cx="74" cy="66" r="6" fill="#ffd23f"/>
-          <circle cx="74" cy="18" r="6" fill="#ff5d8f"/><circle cx="26" cy="66" r="6" fill="#7fd97c"/>
-        </g>
-      </g>
-      <path d="M50 42 L34 100 L42 100 L50 60 L58 100 L66 100 Z" fill="#c96a3f"/>
-    </svg>` },
-  { need: 30, name: 'ロケット', w: 70, svg: `
-    <svg width="70" height="110" viewBox="0 0 70 110">
-      <rect x="6" y="96" width="58" height="12" rx="3" fill="#8da3b8"/>
-      <path d="M35 4 C48 20 50 40 50 62 L20 62 C20 40 22 20 35 4 Z" fill="#e8ecf2"/>
-      <path d="M35 4 C42 14 46 26 47 38 L23 38 C24 26 28 14 35 4 Z" fill="#ff5d5d"/>
-      <circle cx="35" cy="48" r="8" fill="#aee7ff" stroke="#5a8fb8" stroke-width="3"/>
-      <path d="M20 62 L8 84 L20 78 Z" fill="#ff5d5d"/>
-      <path d="M50 62 L62 84 L50 78 Z" fill="#ff5d5d"/>
-      <path d="M27 62 L35 96 L43 62 Z" fill="#c9d4de"/>
-      <path d="M30 78 Q35 92 40 78 Q38 88 35 90 Q32 88 30 78 Z" fill="#ffb23f"/>
-    </svg>` }
+/* ================= ロボットタウン (クオータービュー) ================= */
+const ISO = 40;                                     // 1ユニットあたりのピクセル
+const TILES_MAX = 49;                               // 7x7 うずまき
+function tileCountFor(pop) { return pop <= 0 ? 0 : Math.min(TILES_MAX, 1 + Math.floor(pop / 3)); }
+
+function isoP(u, v, z) { return [(u - v) * ISO, (u + v) * ISO * 0.5 - z * ISO]; }
+function pg(pts, fill, cls) {
+  return `<polygon points="${pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')}" fill="${fill}"${cls ? ` class="${cls}"` : ''}/>`;
+}
+function shades(h, s, l) {
+  return {
+    top: `hsl(${h},${s}%,${Math.min(94, l + 12)}%)`,
+    left: `hsl(${h},${s}%,${l}%)`,
+    right: `hsl(${h},${s}%,${Math.max(8, l - 14)}%)`
+  };
+}
+function box(u, v, z0, w, d, h, c) {
+  return pg([isoP(u,v,z0+h), isoP(u+w,v,z0+h), isoP(u+w,v+d,z0+h), isoP(u,v+d,z0+h)], c.top)
+       + pg([isoP(u,v+d,z0+h), isoP(u+w,v+d,z0+h), isoP(u+w,v+d,z0), isoP(u,v+d,z0)], c.left)
+       + pg([isoP(u+w,v,z0+h), isoP(u+w,v+d,z0+h), isoP(u+w,v+d,z0), isoP(u+w,v,z0)], c.right);
+}
+function roofP(u, v, z0, w, d, h, c) {
+  const R1 = isoP(u, v + d/2, z0 + h), R2 = isoP(u + w, v + d/2, z0 + h);
+  const A = isoP(u,v,z0), B = isoP(u+w,v,z0), C = isoP(u+w,v+d,z0), D = isoP(u,v+d,z0);
+  return pg([A,B,R2,R1], c.top) + pg([D,C,R2,R1], c.left) + pg([B,C,R2], c.right);
+}
+function pyramid(u, v, z0, w, d, h, c) {
+  const apex = isoP(u + w/2, v + d/2, z0 + h);
+  return pg([isoP(u,v+d,z0), isoP(u+w,v+d,z0), apex], c.left)
+       + pg([isoP(u+w,v,z0), isoP(u+w,v+d,z0), apex], c.right);
+}
+function circleAt(u, v, z, r, fill, cls) {
+  const p = isoP(u, v, z);
+  return `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${r}" fill="${fill}"${cls ? ` class="${cls}"` : ''}/>`;
+}
+function ellipseAt(u, v, z, rx, ry, fill, extra) {
+  const p = isoP(u, v, z);
+  return `<ellipse cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" rx="${rx}" ry="${ry}" fill="${fill}"${extra || ''}/>`;
+}
+function frontQuad(u0, u1, vf, z0, z1, fill) {
+  return pg([isoP(u0,vf,z1), isoP(u1,vf,z1), isoP(u1,vf,z0), isoP(u0,vf,z0)], fill);
+}
+function isoTree(u, v, big) {
+  const s = big ? 1 : 0.75;
+  return box(u-0.06, v-0.06, 0, 0.12, 0.12, 0.5*s, shades(25, 50, 35))
+       + circleAt(u, v, 0.85*s, 13*s, '#4ca85b')
+       + circleAt(u-0.14, v+0.1, 0.6*s, 9*s, '#5cbf6b');
+}
+function spin(dur) {
+  return `<animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="${dur}s" repeatCount="indefinite"/>`;
+}
+
+/* --- たてもの 20しゅるい --- */
+const HOUSE_HUES = [12, 190, 45, 330, 105, 265];
+const B = {
+  factory(u, v) {
+    const top = isoP(u+1.5, v+0.82, 1.5);
+    return box(u+0.35, v+0.6, 0, 1.4, 1.0, 0.75, shades(210, 16, 62))
+      + frontQuad(u+0.55, u+0.85, v+1.6, 0.25, 0.55, '#ffe9a8')
+      + frontQuad(u+1.05, u+1.35, v+1.6, 0.25, 0.55, '#ffe9a8')
+      + box(u+1.38, v+0.7, 0.75, 0.24, 0.24, 0.75, shades(210, 16, 45))
+      + `<circle class="smoke" cx="${top[0]}" cy="${top[1]}" r="8" fill="#cfd8df"/>`
+      + `<circle class="smoke s2" cx="${top[0]}" cy="${top[1]}" r="8" fill="#cfd8df"/>`;
+  },
+  house(u, v, s) {
+    const hh = HOUSE_HUES[s % HOUSE_HUES.length];
+    return box(u+0.5, v+0.5, 0, 1.1, 1.1, 0.6, shades(40, 45, 82))
+      + roofP(u+0.4, v+0.4, 0.6, 1.3, 1.3, 0.5, shades(hh, 60, 50))
+      + frontQuad(u+0.85, u+1.15, v+1.6, 0, 0.42, '#8a5a33')
+      + frontQuad(u+0.58, u+0.78, v+1.6, 0.2, 0.42, '#c9ecff');
+  },
+  trees(u, v, s) {
+    return isoTree(u+0.7, v+0.8, true) + isoTree(u+1.35, v+1.25, false)
+      + (s % 2 ? isoTree(u+1.15, v+0.5, false) : circleAt(u+1.3, v+0.7, 0.06, 4, '#ff5d8f'));
+  },
+  shop(u, v, s) {
+    const hh = s % 2 ? 150 : 5;
+    return box(u+0.4, v+0.5, 0, 1.3, 1.1, 0.7, shades(38, 75, 86))
+      + box(u+0.35, v+1.55, 0.42, 1.4, 0.16, 0.12, shades(hh, 70, 55))
+      + frontQuad(u+0.85, u+1.2, v+1.6, 0, 0.4, '#8a5a33')
+      + frontQuad(u+0.5, u+0.78, v+1.6, 0.12, 0.38, '#c9ecff')
+      + box(u+0.6, v+0.55, 0.7, 0.9, 0.1, 0.22, shades(hh, 70, 60));
+  },
+  park(u, v) {
+    return ellipseAt(u+1.25, v+1.3, 0.02, 30, 15, '#7ecbff', ' stroke="#5aa8d8" stroke-width="2"')
+      + isoTree(u+0.6, v+0.7, true)
+      + circleAt(u+0.55, v+1.5, 0.05, 4, '#ff5d8f') + circleAt(u+0.75, v+1.6, 0.05, 4, '#ffd23f');
+  },
+  apartment(u, v, s) {
+    const hh = s % 2 ? 205 : 20;
+    let win = '';
+    for (let f = 0; f < 3; f++) for (let k = 0; k < 2; k++)
+      win += frontQuad(u+0.62+k*0.5, u+0.92+k*0.5, v+1.55, 0.3+f*0.55, 0.6+f*0.55, '#dff3ff');
+    return box(u+0.45, v+0.45, 0, 1.2, 1.1, 1.9, shades(hh, 28, 62)) + win
+      + box(u+0.4, v+0.4, 1.9, 1.3, 1.2, 0.09, shades(hh, 28, 48));
+  },
+  tower(u, v) {
+    const R = shades(5, 78, 55);
+    const p = isoP(u+1, v+1, 2.55);
+    return box(u+0.68, v+0.68, 0, 0.64, 0.64, 0.55, R)
+      + box(u+0.78, v+0.78, 0.55, 0.44, 0.44, 0.65, R)
+      + box(u+0.72, v+0.72, 1.2, 0.56, 0.56, 0.22, shades(0, 0, 92))
+      + box(u+0.86, v+0.86, 1.42, 0.28, 0.28, 0.75, R)
+      + pg([isoP(u+0.98, v+0.98, 2.17), isoP(u+1.02, v+1.02, 2.17), isoP(u+1, v+1, 2.55)], '#c33')
+      + `<circle class="antenna-light" cx="${p[0]}" cy="${p[1]}" r="4" fill="#ff5d8f"/>`;
+  },
+  conv(u, v) {
+    return box(u+0.45, v+0.55, 0, 1.25, 1.0, 0.58, shades(0, 0, 93))
+      + frontQuad(u+0.45, u+1.7, v+1.55, 0.44, 0.58, '#2e9e5b')
+      + pg([isoP(u+1.7,v+0.55,0.58), isoP(u+1.7,v+1.55,0.58), isoP(u+1.7,v+1.55,0.44), isoP(u+1.7,v+0.55,0.44)], '#22795a')
+      + frontQuad(u+0.95, u+1.3, v+1.55, 0, 0.4, '#8fd7f7')
+      + frontQuad(u+0.55, u+0.88, v+1.55, 0.08, 0.38, '#c9ecff');
+  },
+  castle(u, v) {
+    return box(u+0.45, v+0.45, 0, 1.3, 1.3, 0.45, shades(210, 10, 72))
+      + box(u+0.6, v+0.6, 0.45, 1.0, 1.0, 0.65, shades(45, 25, 93))
+      + roofP(u+0.52, v+0.52, 1.1, 1.16, 1.16, 0.4, shades(150, 40, 38))
+      + box(u+0.82, v+0.82, 1.5, 0.56, 0.56, 0.34, shades(45, 25, 93))
+      + roofP(u+0.76, v+0.76, 1.84, 0.68, 0.68, 0.3, shades(150, 40, 38))
+      + pg([isoP(u+1.1,v+1.1,2.14), isoP(u+1.1,v+1.1,2.5), isoP(u+1.28,v+1.1,2.42)], '#ffd23f');
+  },
+  fountain(u, v) {
+    return ellipseAt(u+1.2, v+1.2, 0.02, 32, 16, '#7ecbff', ' stroke="#8da3b8" stroke-width="4"')
+      + box(u+1.12, v+1.12, 0, 0.16, 0.16, 0.5, shades(210, 10, 75))
+      + circleAt(u+1.2, v+1.2, 0.75, 7, '#bfe8ff')
+      + circleAt(u+1.05, v+1.1, 0.55, 3, '#dff3ff') + circleAt(u+1.35, v+1.3, 0.55, 3, '#dff3ff');
+  },
+  school(u, v) {
+    const clock = isoP(u+1.05, v+1.6, 0.72);
+    return box(u+0.35, v+0.5, 0, 1.5, 1.1, 0.9, shades(28, 45, 80))
+      + box(u+0.3, v+0.45, 0.9, 1.6, 1.2, 0.08, shades(28, 45, 60))
+      + frontQuad(u+0.9, u+1.2, v+1.6, 0, 0.4, '#8a5a33')
+      + frontQuad(u+0.48, u+0.75, v+1.6, 0.42, 0.68, '#dff3ff')
+      + frontQuad(u+1.35, u+1.62, v+1.6, 0.42, 0.68, '#dff3ff')
+      + `<circle cx="${clock[0]}" cy="${clock[1]}" r="7" fill="#fff" stroke="#234" stroke-width="2"/>`
+      + `<line x1="${clock[0]}" y1="${clock[1]}" x2="${clock[0]}" y2="${clock[1]-5}" stroke="#234" stroke-width="1.5"/>`
+      + `<line x1="${clock[0]}" y1="${clock[1]}" x2="${clock[0]+3.5}" y2="${clock[1]}" stroke="#234" stroke-width="1.5"/>`;
+  },
+  windmill(u, v) {
+    const hub = isoP(u+1.05, v+1.42, 1.3);
+    const blade = `<rect x="-3" y="-30" width="6" height="30" rx="3" fill="#fff" stroke="#d9c9a8" stroke-width="1.5"/>`;
+    return box(u+0.7, v+0.7, 0, 0.72, 0.72, 1.15, shades(36, 42, 84))
+      + roofP(u+0.62, v+0.62, 1.15, 0.88, 0.88, 0.4, shades(5, 60, 50))
+      + frontQuad(u+0.92, u+1.18, v+1.42, 0, 0.35, '#8a5a33')
+      + `<g transform="translate(${hub[0]},${hub[1]})"><g>${spin(7)}`
+      + `<g>${blade}</g><g transform="rotate(90)">${blade}</g><g transform="rotate(180)">${blade}</g><g transform="rotate(270)">${blade}</g>`
+      + `</g><circle r="4" fill="#8a5a33"/></g>`;
+  },
+  hospital(u, v) {
+    return box(u+0.45, v+0.5, 0, 1.3, 1.1, 1.3, shades(0, 0, 94))
+      + box(u+0.4, v+0.45, 1.3, 1.4, 1.2, 0.08, shades(200, 25, 70))
+      + frontQuad(u+0.95, u+1.25, v+1.6, 0.65, 1.05, '#fff')
+      + frontQuad(u+1.02, u+1.18, v+1.6, 0.7, 1.0, '#ff5d5d')
+      + frontQuad(u+0.95, u+1.25, v+1.6, 0.8, 0.9, '#ff5d5d')
+      + frontQuad(u+0.55, u+0.85, v+1.6, 0.1, 0.42, '#c9ecff')
+      + frontQuad(u+0.95, u+1.25, v+1.6, 0, 0.42, '#8fd7f7');
+  },
+  mountain(u, v) {
+    return pyramid(u+0.25, v+0.25, 0, 1.5, 1.5, 1.6, shades(120, 22, 38))
+      + pyramid(u+0.7, v+0.7, 0.97, 0.6, 0.6, 0.63, shades(0, 0, 92))
+      + isoTree(u+0.35, v+1.65, false);
+  },
+  shrine(u, v) {
+    const R = shades(4, 75, 48);
+    return box(u+0.55, v+1.1, 0, 0.18, 0.18, 0.95, R)
+      + box(u+1.45, v+1.1, 0, 0.18, 0.18, 0.95, R)
+      + box(u+0.35, v+1.08, 0.95, 1.5, 0.22, 0.14, shades(4, 75, 38))
+      + box(u+0.5, v+1.1, 0.72, 1.18, 0.18, 0.1, R)
+      + isoTree(u+1.7, v+0.5, false);
+  },
+  ferris(u, v) {
+    const c = isoP(u+1, v+1.1, 1.15);
+    let wheel = `<circle r="36" fill="none" stroke="#e8734a" stroke-width="4"/>`;
+    for (let a = 0; a < 8; a++) {
+      const rad = a * Math.PI / 4;
+      const cabCols = ['#ffd23f', '#ff5d8f', '#7fd97c', '#9f7bff', '#7ecbff', '#ffb27d', '#ff5d5d', '#5cbf6b'];
+      wheel += `<line x1="0" y1="0" x2="${(Math.cos(rad)*36).toFixed(1)}" y2="${(Math.sin(rad)*36).toFixed(1)}" stroke="#e8734a" stroke-width="2.5"/>`;
+      wheel += `<circle cx="${(Math.cos(rad)*36).toFixed(1)}" cy="${(Math.sin(rad)*36).toFixed(1)}" r="6" fill="${cabCols[a]}"/>`;
+    }
+    return pg([isoP(u+0.75,v+1.3,0), isoP(u+1.02,v+1.12,1.15), isoP(u+1.25,v+1.3,0)], '#c96a3f')
+      + `<g transform="translate(${c[0]},${c[1]})"><g>${spin(14)}${wheel}</g><circle r="5" fill="#a8542f"/></g>`;
+  },
+  stadium(u, v) {
+    return ellipseAt(u+1.2, v+1.2, 0.3, 44, 22, 'hsl(210,15%,72%)')
+      + ellipseAt(u+1.2, v+1.2, 0.32, 34, 16, '#5cbf6b')
+      + ellipseAt(u+1.2, v+1.2, 0.33, 20, 9, '#86d97c')
+      + `<g>${circleAt(u+0.35, v+1.15, 0.75, 3, '#ff5d8f')}${circleAt(u+2.05, v+1.25, 0.75, 3, '#ffd23f')}</g>`;
+  },
+  skytree(u, v) {
+    const S = shades(200, 35, 82);
+    const p = isoP(u+1, v+1, 3.1);
+    return box(u+0.78, v+0.78, 0, 0.44, 0.44, 1.4, S)
+      + box(u+0.7, v+0.7, 1.4, 0.6, 0.6, 0.2, shades(200, 35, 65))
+      + box(u+0.84, v+0.84, 1.6, 0.32, 0.32, 0.8, S)
+      + box(u+0.8, v+0.8, 2.4, 0.4, 0.4, 0.16, shades(200, 35, 65))
+      + pg([isoP(u+0.97,v+0.97,2.56), isoP(u+1.03,v+1.03,2.56), isoP(u+1,v+1,3.1)], '#8da3b8')
+      + `<circle class="antenna-light" cx="${p[0]}" cy="${p[1]}" r="3.5" fill="#ff5d8f"/>`;
+  },
+  rocket(u, v) {
+    return box(u+0.55, v+0.55, 0, 0.95, 0.95, 0.14, shades(210, 12, 62))
+      + box(u+0.82, v+0.82, 0.14, 0.4, 0.4, 0.95, shades(0, 0, 91))
+      + pyramid(u+0.78, v+0.78, 1.09, 0.48, 0.48, 0.55, shades(0, 70, 58))
+      + pg([isoP(u+0.82,v+1.24,0.14), isoP(u+0.7,v+1.36,0.14), isoP(u+0.82,v+1.24,0.5)], 'hsl(0,70%,50%)')
+      + pg([isoP(u+1.24,v+0.82,0.14), isoP(u+1.36,v+0.7,0.14), isoP(u+1.24,v+0.82,0.5)], 'hsl(0,70%,42%)')
+      + frontQuad(u+0.93, u+1.11, v+1.22, 0.6, 0.78, '#aee7ff');
+  },
+  lake(u, v) {
+    return ellipseAt(u+1.2, v+1.2, 0.02, 40, 20, '#7ecbff', ' stroke="#5aa8d8" stroke-width="2"')
+      + ellipseAt(u+1.05, v+1.1, 0.03, 10, 5, '#a5dcff')
+      + isoTree(u+0.4, v+0.55, false);
+  }
+};
+
+/* マスに割り当てるたてものの順番 (それ以降はループ+色違い) */
+const TOWN_SEQ = [
+  ['factory', 0], ['house', 0], ['trees', 0], ['shop', 0], ['park', 0],
+  ['house', 1], ['apartment', 0], ['tower', 0], ['conv', 0], ['house', 2],
+  ['castle', 0], ['fountain', 0], ['trees', 1], ['school', 0], ['house', 3],
+  ['windmill', 0], ['hospital', 0], ['mountain', 0], ['shop', 1], ['shrine', 0],
+  ['ferris', 0], ['house', 4], ['stadium', 0], ['apartment', 1], ['skytree', 0],
+  ['park', 0], ['house', 5], ['rocket', 0], ['lake', 0], ['trees', 0]
 ];
-const BUILDING_SLOTS = [2, 16, 30, 44, 58, 72, 85];
+function buildingForTile(k) {
+  if (k < TOWN_SEQ.length) return TOWN_SEQ[k];
+  const [name] = TOWN_SEQ[(k * 7 + 3) % TOWN_SEQ.length];
+  return [name, k];
+}
+
+/* うずまき状のマス座標 */
+function spiralCoords(n) {
+  const coords = [[0, 0]];
+  const dirs = [[1, 0], [0, 1], [-1, 0], [0, -1]];
+  let x = 0, y = 0, len = 1, dirIdx = 0;
+  while (coords.length < n) {
+    for (let rep = 0; rep < 2 && coords.length < n; rep++) {
+      const [dx, dy] = dirs[dirIdx % 4];
+      for (let i = 0; i < len && coords.length < n; i++) {
+        x += dx; y += dy;
+        coords.push([x, y]);
+      }
+      dirIdx++;
+    }
+    len++;
+  }
+  return coords;
+}
 
 let townAnim = null;
 let walkers = [];
 
 function townOpen() { return !document.getElementById('townOverlay').hidden; }
-
-function nextUnlock(pop) {
-  for (const b of BUILDINGS) if (pop < b.need) return b;
-  return null;
-}
-function unlockedCount(pop) { return BUILDINGS.filter(b => pop <= 0 ? false : b.need <= pop).length; }
 
 function showTown() {
   const scene = document.getElementById('townScene');
@@ -950,64 +1067,103 @@ function showTown() {
   const pop = collection.length;
   document.getElementById('townPop').textContent = pop;
 
-  const nxt = nextUnlock(pop);
-  document.getElementById('townHint').textContent = nxt
-    ? `あと ${nxt.need - pop} たいで ${nxt.name}が たつよ!`
-    : 'まちは さいだいきゅう! 🎉';
+  const tiles = tileCountFor(pop);
+  const hint = document.getElementById('townHint');
+  if (tiles >= TILES_MAX) {
+    hint.textContent = 'まちは さいだいきゅう! 🎉';
+  } else {
+    hint.textContent = `あと ${tiles * 3 - pop} たいで まちが ひろがる!`;
+  }
 
   scene.insertAdjacentHTML('beforeend', '<div class="town-sun">☀️</div>');
-  [[8, 12, 0], [40, 6, -14], [70, 16, -26]].forEach(([l, t, d]) => {
+  [[8, 6, 0], [40, 3, -14], [70, 10, -26]].forEach(([l, t, d]) => {
     scene.insertAdjacentHTML('beforeend',
       `<div class="town-cloud" style="left:${l}%;top:${t}%;animation-delay:${d}s">☁️</div>`);
-  });
-  scene.insertAdjacentHTML('beforeend', '<div class="town-ground"></div><div class="town-road"></div>');
-
-  BUILDINGS.forEach((b, i) => {
-    if (pop >= b.need) {
-      const el = document.createElement('div');
-      el.className = 'building';
-      el.style.left = BUILDING_SLOTS[i] + '%';
-      el.style.animationDelay = (i * 0.08) + 's';
-      el.innerHTML = b.svg + `<div class="b-label">${b.name}</div>`;
-      scene.appendChild(el);
-    }
   });
 
   walkers = [];
   if (pop === 0) {
     scene.insertAdjacentHTML('beforeend',
       '<div class="town-empty">まだ だれも いないよ。<br>ロボットを つくって まちに よぼう!</div>');
-  } else {
-    const residents = collection.slice(-24);
-    const sceneW = scene.clientWidth || window.innerWidth;
-    residents.forEach((spec, i) => {
-      const el = document.createElement('div');
-      el.className = 'walker';
-      const w = 48 + Math.random() * 30;
-      el.style.width = w + 'px';
-      el.style.bottom = (4 + Math.random() * 42) + 'px';
-      el.style.zIndex = String(10 + Math.round(48 - (4 + Math.random() * 42)));
-      el.appendChild(miniRobotSvg(spec));
-      el.querySelector('svg').style.animationDelay = (Math.random() * 0.5) + 's';
-      el.addEventListener('pointerdown', (e) => {
-        e.stopPropagation();
-        ensureAudio();
-        soundBeep();
-        el.classList.remove('jump');
-        void el.offsetWidth;
-        el.classList.add('jump');
-      });
-      scene.appendChild(el);
-      walkers.push({
-        el, w,
-        x: Math.random() * Math.max(1, sceneW - w),
-        dir: Math.random() > 0.5 ? 1 : -1,
-        speed: 18 + Math.random() * 30,
-        pauseUntil: 0,
-        nextThink: performance.now() + 1000 + Math.random() * 3000
-      });
-    });
+    document.getElementById('townOverlay').hidden = false;
+    return;
   }
+
+  /* --- マスとたてもの --- */
+  const TSP = 2.06;                        // マスの間隔 (すきま付き)
+  const coords = spiralCoords(tiles);
+  const grounds = [];
+  const entities = [];
+  const grass = { top: '#7fd97c', left: '#8a5a33', right: '#6e4426' };
+
+  coords.forEach(([gx, gy], k) => {
+    const u = gx * TSP, v = gy * TSP;
+    grounds.push({ depth: u + v, svg:
+      box(u, v, -0.34, 2, 2, 0.34, grass)
+      + pg([isoP(u,v,0), isoP(u+2,v,0), isoP(u+2,v+2,0), isoP(u,v+2,0)], k % 2 ? '#86d97c' : '#7fd97c') });
+    const [name, seed] = buildingForTile(k);
+    entities.push({ depth: u + v + 2, svg: B[name](u, v, seed) });
+  });
+
+  /* --- じゅうみんロボット --- */
+  const residents = collection.slice(-30);
+  const robotMeta = [];
+  residents.forEach((spec, i) => {
+    const [gx, gy] = coords[i % tiles];
+    const tu = gx * TSP, tv = gy * TSP;
+    const ru = tu + 0.35 + Math.random() * 1.3;
+    const rv = tv + 0.5 + Math.random() * 1.2;
+    const inner = robotSvgMarkup(spec, true).replace('id="robotBody"', '');
+    const idx = robotMeta.length;
+    robotMeta.push({ tu, ru, rv, dir: Math.random() > 0.5 ? 1 : -1,
+      speed: 0.12 + Math.random() * 0.2, pauseUntil: 0,
+      nextThink: performance.now() + 1000 + Math.random() * 3000 });
+    entities.push({ depth: ru + rv, svg:
+      `<g class="iso-robot" data-ridx="${idx}"><g class="iso-bob" style="animation-delay:${(Math.random()*0.5).toFixed(2)}s">`
+      + `<g transform="scale(0.16) translate(-100,-236)">${inner}</g></g></g>` });
+  });
+
+  grounds.sort((a, b) => a.depth - b.depth);
+  entities.sort((a, b) => a.depth - b.depth);
+
+  /* --- viewBoxをまちの大きさに合わせる --- */
+  let minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+  coords.forEach(([gx, gy]) => {
+    const u = gx * TSP, v = gy * TSP;
+    [isoP(u,v,0), isoP(u+2,v,0), isoP(u+2,v+2,0), isoP(u,v+2,0)].forEach(p => {
+      minX = Math.min(minX, p[0]); maxX = Math.max(maxX, p[0]);
+      minY = Math.min(minY, p[1]); maxY = Math.max(maxY, p[1]);
+    });
+  });
+  const pad = 40, top = 3.2 * ISO;
+  const vb = `${(minX - pad).toFixed(0)} ${(minY - top).toFixed(0)} ${(maxX - minX + pad * 2).toFixed(0)} ${(maxY - minY + top + pad + 20).toFixed(0)}`;
+
+  scene.insertAdjacentHTML('beforeend',
+    `<svg id="townSvg" viewBox="${vb}" preserveAspectRatio="xMidYMid meet">`
+    + `<g>${grounds.map(g => g.svg).join('')}</g>`
+    + `<g>${entities.map(e => e.svg).join('')}</g></svg>`);
+
+  /* ロボットのタップと徘徊 */
+  const gEls = scene.querySelectorAll('.iso-robot');
+  gEls.forEach(g => {
+    const meta = robotMeta[Number(g.dataset.ridx)];
+    meta.el = g;
+    const set = () => {
+      const p = isoP(meta.ru, meta.rv, 0);
+      g.setAttribute('transform', `translate(${p[0].toFixed(1)} ${p[1].toFixed(1)}) scale(${meta.dir},1)`);
+    };
+    meta.apply = set;
+    set();
+    g.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      ensureAudio();
+      soundBeep();
+      g.classList.remove('jump');
+      void g.getBBox();
+      g.classList.add('jump');
+    });
+  });
+  walkers = robotMeta;
 
   document.getElementById('townOverlay').hidden = false;
   let last = performance.now();
@@ -1015,25 +1171,18 @@ function showTown() {
     if (!townOpen()) { townAnim = null; return; }
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
-    const sceneW = scene.clientWidth || window.innerWidth;
     walkers.forEach(wk => {
+      if (!wk.el) return;
       if (now >= wk.nextThink) {
         wk.nextThink = now + 1500 + Math.random() * 4000;
-        if (Math.random() < 0.35) {
-          wk.pauseUntil = now + 800 + Math.random() * 2000;
-        } else {
-          wk.dir = Math.random() > 0.5 ? 1 : -1;
-          wk.speed = 18 + Math.random() * 30;
-        }
+        if (Math.random() < 0.4) wk.pauseUntil = now + 800 + Math.random() * 2000;
+        else { wk.dir = Math.random() > 0.5 ? 1 : -1; wk.speed = 0.12 + Math.random() * 0.2; }
       }
-      if (now < wk.pauseUntil) {
-        wk.el.style.transform = `translateX(${wk.x}px) scaleX(${wk.dir})`;
-        return;
-      }
-      wk.x += wk.speed * dt * wk.dir;
-      if (wk.x < 0) { wk.x = 0; wk.dir = 1; }
-      if (wk.x > sceneW - wk.w) { wk.x = Math.max(0, sceneW - wk.w); wk.dir = -1; }
-      wk.el.style.transform = `translateX(${wk.x}px) scaleX(${wk.dir})`;
+      if (now < wk.pauseUntil) { wk.apply(); return; }
+      wk.ru += wk.speed * dt * wk.dir;
+      if (wk.ru < wk.tu + 0.3) { wk.ru = wk.tu + 0.3; wk.dir = 1; }
+      if (wk.ru > wk.tu + 1.7) { wk.ru = wk.tu + 1.7; wk.dir = -1; }
+      wk.apply();
     });
     townAnim = requestAnimationFrame(step);
   };
@@ -1114,11 +1263,11 @@ function completeRobot() {
   updateCount();
 
   const isNew = !collection.some(s => specKey(s) === specKey(currentSpec));
-  const prevUnlocked = unlockedCount(collection.length);
+  const prevTiles = tileCountFor(collection.length);
   collection.push(currentSpec);
   if (collection.length > 500) collection = collection.slice(-500);
   localStorage.setItem('robotCollection2', JSON.stringify(collection));
-  const gotBuilding = unlockedCount(collection.length) > prevUnlocked;
+  const gotBuilding = tileCountFor(collection.length) > prevTiles;
 
   document.getElementById('targetChar').textContent = '🎉';
   document.getElementById('targetLabel').textContent = 'ロボット かんせい!';
@@ -1129,8 +1278,8 @@ function completeRobot() {
   soundFanfare();
   confetti();
   if (gotBuilding) {
-    showPraise('🏗 まちに あたらしい たてもの!', 'new-building');
-    say('ロボット かんせい! まちに あたらしい たてものが できたよ!');
+    showPraise('🏗 まちが ひろがったよ!', 'new-building');
+    say('ロボット かんせい! まちが ひろがったよ!');
   } else if (isNew) {
     showPraise('✨あたらしい ロボット!✨', 'new-robot');
     say('あたらしい ロボット かんせい! すごい!');
