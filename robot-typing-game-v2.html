@@ -43,12 +43,12 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
-    padding: max(10px, env(safe-area-inset-top)) 18px 6px;
+    gap: 6px;
+    padding: max(10px, env(safe-area-inset-top)) 14px 6px;
     flex: 0 0 auto;
   }
   header h1 {
-    font-size: clamp(16px, 3vw, 28px);
+    font-size: clamp(15px, 2.6vw, 26px);
     color: #1a6fa8;
     text-shadow: 0 2px 0 #fff;
     white-space: nowrap;
@@ -56,21 +56,21 @@
   .robot-count {
     background: var(--card);
     border-radius: 999px;
-    padding: 6px 14px;
-    font-size: clamp(13px, 2.2vw, 20px);
+    padding: 6px 12px;
+    font-size: clamp(12px, 2vw, 18px);
     font-weight: bold;
     box-shadow: 0 3px 0 rgba(0,0,0,0.08);
     white-space: nowrap;
   }
   .robot-count span { color: var(--accent); font-size: 1.3em; }
   .hdr-btn {
-    font-size: clamp(16px, 2.5vw, 24px);
+    font-size: clamp(14px, 2.2vw, 22px);
     font-family: inherit;
     font-weight: bold;
     background: var(--card);
     border: none;
     border-radius: 999px;
-    padding: 6px 14px;
+    padding: 6px 12px;
     cursor: pointer;
     box-shadow: 0 3px 0 rgba(0,0,0,0.08);
     color: #1a6fa8;
@@ -185,8 +185,10 @@
     pointer-events: none;
     animation: floatUp 1s ease-out forwards;
     white-space: nowrap;
+    z-index: 3;
   }
   .praise.new-robot { color: #7c3aed; font-size: clamp(24px, 4.2vw, 46px); }
+  .praise.new-building { color: #059669; font-size: clamp(22px, 4vw, 42px); top: 45%; }
   @keyframes floatUp {
     0%   { opacity: 0; transform: translate(-50%, 20px) scale(0.5); }
     30%  { opacity: 1; transform: translate(-50%, 0) scale(1.15); }
@@ -290,7 +292,7 @@
     background: #eaf6ff;
   }
   .gallery-head h3 { font-size: clamp(18px, 3vw, 26px); color: #1a6fa8; }
-  #closeGallery {
+  .close-btn {
     font-size: clamp(20px, 3vw, 28px);
     background: #ff5d8f;
     color: #fff;
@@ -299,6 +301,7 @@
     width: 1.8em; height: 1.8em;
     cursor: pointer;
     line-height: 1;
+    flex: 0 0 auto;
   }
   .gallery-grid {
     overflow-y: auto;
@@ -316,6 +319,135 @@
     color: #789;
   }
 
+  /* ===== ロボットタウン ===== */
+  #townOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(180deg, #7ecbff 0%, #c9ecff 55%, #e8f9ff 100%);
+  }
+  #townOverlay[hidden] { display: none; }
+  .town-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: max(10px, env(safe-area-inset-top)) 16px 8px;
+  }
+  .town-head h3 {
+    font-size: clamp(17px, 3vw, 28px);
+    color: #14532d;
+    text-shadow: 0 2px 0 #fff;
+  }
+  #townHint {
+    background: rgba(255,255,255,0.85);
+    border-radius: 999px;
+    padding: 4px 14px;
+    font-size: clamp(12px, 2vw, 18px);
+    font-weight: bold;
+    color: #b45309;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #townScene {
+    position: relative;
+    flex: 1 1 auto;
+    overflow: hidden;
+  }
+  .town-sun {
+    position: absolute;
+    top: 4%; right: 6%;
+    font-size: clamp(30px, 5vw, 56px);
+  }
+  .town-cloud {
+    position: absolute;
+    font-size: clamp(24px, 4vw, 44px);
+    opacity: 0.9;
+    animation: cloudDrift 40s linear infinite;
+  }
+  @keyframes cloudDrift {
+    from { transform: translateX(-15vw); }
+    to   { transform: translateX(115vw); }
+  }
+  .town-ground {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 84px;
+    background: linear-gradient(180deg, #86d97c, #5cbf6b);
+    border-top: 4px solid #4ca85b;
+  }
+  .town-road {
+    position: absolute;
+    left: 0; right: 0; bottom: 24px;
+    height: 26px;
+    background: #b8c4cc;
+    border-top: 3px dashed #fff;
+  }
+  .building {
+    position: absolute;
+    bottom: 78px;
+    animation: buildingPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes buildingPop {
+    from { transform: translateY(30px) scale(0.3); opacity: 0; }
+    to   { transform: translateY(0) scale(1); opacity: 1; }
+  }
+  .building svg { display: block; }
+  .b-label {
+    text-align: center;
+    font-size: clamp(10px, 1.6vw, 14px);
+    font-weight: bold;
+    color: #14532d;
+    text-shadow: 0 1px 0 #fff;
+  }
+  .wheel-spin { animation: wheelSpin 14s linear infinite; transform-origin: 50px 42px; }
+  @keyframes wheelSpin { to { transform: rotate(360deg); } }
+  .smoke { animation: smokeUp 3s ease-out infinite; opacity: 0; }
+  .smoke.s2 { animation-delay: 1.5s; }
+  @keyframes smokeUp {
+    0% { opacity: 0.7; transform: translateY(0) scale(0.6); }
+    100% { opacity: 0; transform: translateY(-26px) scale(1.4); }
+  }
+
+  .walker {
+    position: absolute;
+    bottom: 6px;
+    left: 0;
+    cursor: pointer;
+    will-change: transform;
+  }
+  .walker svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    animation: walkBob 0.5s ease-in-out infinite;
+  }
+  @keyframes walkBob {
+    0%, 100% { transform: translateY(0) rotate(-1.5deg); }
+    50% { transform: translateY(-4px) rotate(1.5deg); }
+  }
+  .walker.jump svg { animation: walkerJump 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  @keyframes walkerJump {
+    0%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-38px) rotate(8deg); }
+  }
+  .town-empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(15px, 2.5vw, 24px);
+    font-weight: bold;
+    color: #14532d;
+    text-shadow: 0 2px 0 #fff;
+    text-align: center;
+    padding: 0 6vw;
+  }
+
   .confetti {
     position: fixed;
     top: -20px;
@@ -330,6 +462,7 @@
     .target-card { padding: 1vh 8vw 1.5vh; }
     #targetChar { font-size: clamp(64px, 18vw, 120px); }
     .stage { height: clamp(180px, 32vh, 320px); }
+    header h1 { display: none; }
   }
 </style>
 </head>
@@ -344,6 +477,7 @@
 <header>
   <h1>🤖 ロボットこうじょう</h1>
   <div class="robot-count">つくった: <span id="count">0</span> たい</div>
+  <button class="hdr-btn" id="townBtn">🏙 まち</button>
   <button class="hdr-btn" id="galleryBtn">📖 ずかん</button>
   <button class="hdr-btn" id="muteBtn" title="おとの ON/OFF">🔊</button>
 </header>
@@ -365,10 +499,19 @@
   <div class="gallery-panel">
     <div class="gallery-head">
       <h3>📖 ロボットずかん (<span id="galleryCount">0</span> たい)</h3>
-      <button id="closeGallery">✕</button>
+      <button class="close-btn" id="closeGallery">✕</button>
     </div>
     <div class="gallery-grid" id="galleryGrid"></div>
   </div>
+</div>
+
+<div id="townOverlay" hidden>
+  <div class="town-head">
+    <h3>🏙 ロボットタウン (じんこう <span id="townPop">0</span> たい)</h3>
+    <div id="townHint"></div>
+    <button class="close-btn" id="closeTown">✕</button>
+  </div>
+  <div id="townScene"></div>
 </div>
 
 <script>
@@ -428,6 +571,7 @@ function tone(freq, start, dur, type, vol) {
 }
 function soundPop()     { tone(520, 0, 0.12); tone(780, 0.08, 0.15); }
 function soundWrong()   { tone(180, 0, 0.2, 'sine', 0.1); }
+function soundBeep()    { tone(880 + Math.random() * 440, 0, 0.1, 'square', 0.12); tone(660, 0.1, 0.12, 'square', 0.1); }
 function soundFanfare() {
   [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.15, 0.3, 'triangle', 0.2));
   [523, 659, 784, 1047].forEach((f, i) => tone(f * 2, i * 0.15 + 0.05, 0.25, 'sine', 0.08));
@@ -444,24 +588,27 @@ function say(text) {
 }
 
 /* ================= ロボットの設計図 =================
-   body(3) × eye(3) × mouth(3) × ant(3) × いろ(12) = 972 パターン */
+   あたま5 × からだ5 × 目3 × くち3 × アンテナ3 × いろ12 = 8100 パターン */
 function randomSpec() {
   return {
     h: HUES[Math.floor(Math.random() * HUES.length)],
-    body: Math.floor(Math.random() * 3),
+    body: Math.floor(Math.random() * 5),
+    head: Math.floor(Math.random() * 5),
     eye: Math.floor(Math.random() * 3),
     mouth: Math.floor(Math.random() * 3),
     ant: Math.floor(Math.random() * 3)
   };
 }
-function specKey(s) { return [s.h, s.body, s.eye, s.mouth, s.ant].join('-'); }
+function specKey(s) { return [s.h, s.body, s.head || 0, s.eye, s.mouth, s.ant].join('-'); }
 
 function robotSvgMarkup(spec, withAll) {
   const body = `hsl(${spec.h}, 70%, 55%)`;
   const dark = `hsl(${spec.h}, 70%, 38%)`;
   const lite = `hsl(${(spec.h + 40) % 360}, 80%, 65%)`;
   const cls = withAll ? 'part shown' : 'part';
+  const headType = spec.head || 0;
 
+  /* --- からだ (5しゅるい) --- */
   let torso;
   let armL = 34, armR = 146;
   if (spec.body === 0) {
@@ -475,25 +622,74 @@ function robotSvgMarkup(spec, withAll) {
              <circle cx="86" cy="188" r="6" fill="#ffd23f"/>
              <circle cx="114" cy="188" r="6" fill="#ff5d8f"/>`;
     armL = 36; armR = 144;
-  } else {
+  } else if (spec.body === 2) {
     torso = `<rect x="68" y="112" width="64" height="92" rx="12" fill="${body}"/>
              <rect x="80" y="126" width="40" height="26" rx="6" fill="${lite}"/>
              <circle cx="100" cy="170" r="6" fill="#ffd23f"/>
              <circle cx="100" cy="186" r="6" fill="#ff5d8f"/>`;
     armL = 46; armR = 134;
-  }
-
-  let eyes;
-  if (spec.eye === 0) {
-    eyes = `<circle cx="82" cy="52" r="9" fill="#fff"/><circle cx="118" cy="52" r="9" fill="#fff"/>
-            <circle cx="84" cy="54" r="4.5" fill="#234"/><circle cx="116" cy="54" r="4.5" fill="#234"/>`;
-  } else if (spec.eye === 1) {
-    eyes = `<rect x="72" y="45" width="18" height="14" rx="4" fill="#9ef"/><rect x="110" y="45" width="18" height="14" rx="4" fill="#9ef"/>`;
+  } else if (spec.body === 3) {
+    torso = `<path d="M62 204 L62 148 A38 38 0 0 1 138 148 L138 204 Z" fill="${body}"/>
+             <rect x="78" y="150" width="44" height="26" rx="6" fill="${lite}"/>
+             <rect x="70" y="182" width="60" height="6" rx="3" fill="${dark}"/>
+             <circle cx="88" cy="196" r="6" fill="#ffd23f"/>
+             <circle cx="112" cy="196" r="6" fill="#ff5d8f"/>`;
+    armL = 38; armR = 142;
   } else {
-    eyes = `<circle cx="82" cy="52" r="8" fill="#ffd23f"/><circle cx="118" cy="52" r="8" fill="#ffd23f"/>
-            <circle cx="82" cy="52" r="3" fill="#234"/><circle cx="118" cy="52" r="3" fill="#234"/>`;
+    torso = `<path d="M72 118 L128 118 L144 204 L56 204 Z" fill="${body}"/>
+             <rect x="82" y="132" width="36" height="26" rx="6" fill="${lite}"/>
+             <circle cx="88" cy="184" r="6" fill="#ffd23f"/>
+             <circle cx="112" cy="184" r="6" fill="#ff5d8f"/>`;
+    armL = 46; armR = 134;
   }
 
+  /* --- あたま (5しゅるい) --- */
+  let headShape;
+  let eyeT = '', mouthT = '', antDy = 0, ownEyes = false;
+  if (headType === 0) {
+    headShape = `<rect x="60" y="28" width="80" height="66" rx="18" fill="${body}"/>`;
+  } else if (headType === 1) {
+    headShape = `<path d="M55 94 A45 45 0 0 1 145 94 Z" fill="${body}"/>
+                 <path d="M55 94 A45 45 0 0 1 66 65 L134 65 A45 45 0 0 1 145 94 Z" fill="${body}"/>
+                 <rect x="58" y="88" width="84" height="6" rx="3" fill="${dark}"/>`;
+    eyeT = 'translate(0,12)'; mouthT = 'translate(0,8)'; antDy = 21;
+  } else if (headType === 2) {
+    headShape = `<rect x="62" y="42" width="76" height="52" rx="12" fill="${body}"/>`;
+    const lensColors = ['#9ef', '#ffd23f', '#fff'];
+    headShape += `<circle cx="82" cy="60" r="14" fill="${dark}"/>
+                  <circle cx="118" cy="60" r="14" fill="${dark}"/>
+                  <circle cx="82" cy="60" r="8" fill="${lensColors[spec.eye]}"/>
+                  <circle cx="118" cy="60" r="8" fill="${lensColors[spec.eye]}"/>
+                  <circle cx="85" cy="57" r="2.5" fill="#fff"/>
+                  <circle cx="121" cy="57" r="2.5" fill="#fff"/>`;
+    ownEyes = true; mouthT = 'translate(0,10)'; antDy = 14;
+  } else if (headType === 3) {
+    headShape = `<rect x="66" y="26" width="68" height="68" rx="10" fill="${body}"/>
+                 <ellipse cx="100" cy="27" rx="34" ry="8" fill="${lite}"/>`;
+    eyeT = 'translate(0,2)'; mouthT = 'translate(0,2)'; antDy = -10;
+  } else {
+    headShape = `<ellipse cx="100" cy="76" rx="50" ry="20" fill="${body}"/>
+                 <circle cx="100" cy="56" r="18" fill="${lite}"/>
+                 <ellipse cx="100" cy="76" rx="50" ry="20" fill="none" stroke="${dark}" stroke-width="3"/>`;
+    eyeT = 'translate(44.9,25.4) scale(0.55)'; mouthT = 'translate(0,8)'; antDy = 10;
+  }
+
+  /* --- 目 (3しゅるい) --- */
+  let eyes = '';
+  if (!ownEyes) {
+    if (spec.eye === 0) {
+      eyes = `<circle cx="82" cy="52" r="9" fill="#fff"/><circle cx="118" cy="52" r="9" fill="#fff"/>
+              <circle cx="84" cy="54" r="4.5" fill="#234"/><circle cx="116" cy="54" r="4.5" fill="#234"/>`;
+    } else if (spec.eye === 1) {
+      eyes = `<rect x="72" y="45" width="18" height="14" rx="4" fill="#9ef"/><rect x="110" y="45" width="18" height="14" rx="4" fill="#9ef"/>`;
+    } else {
+      eyes = `<circle cx="82" cy="52" r="8" fill="#ffd23f"/><circle cx="118" cy="52" r="8" fill="#ffd23f"/>
+              <circle cx="82" cy="52" r="3" fill="#234"/><circle cx="118" cy="52" r="3" fill="#234"/>`;
+    }
+    eyes = `<g transform="${eyeT}">${eyes}</g>`;
+  }
+
+  /* --- くち (3しゅるい) --- */
   let mouth;
   if (spec.mouth === 0) {
     mouth = `<rect x="82" y="72" width="36" height="10" rx="5" fill="#234"/>
@@ -507,7 +703,9 @@ function robotSvgMarkup(spec, withAll) {
              <rect x="84" y="76" width="32" height="3.5" rx="1.5" fill="#234"/>
              <rect x="84" y="82" width="32" height="3.5" rx="1.5" fill="#234"/>`;
   }
+  mouth = `<g transform="${mouthT}">${mouth}</g>`;
 
+  /* --- アンテナ (3しゅるい) --- */
   let antenna;
   if (spec.ant === 0) {
     antenna = `<rect x="97" y="8" width="6" height="22" fill="${dark}"/>
@@ -522,6 +720,7 @@ function robotSvgMarkup(spec, withAll) {
                <path d="M82 16 Q100 -4 118 16 Z" fill="${lite}"/>
                <circle class="antenna-light" cx="100" cy="10" r="4" fill="#ff5d8f"/>`;
   }
+  antenna = `<g transform="translate(0,${antDy})">${antenna}</g>`;
 
   return `
   <g id="robotBody">
@@ -540,12 +739,20 @@ function robotSvgMarkup(spec, withAll) {
     </g>
     <g class="${cls}" data-part="3">
       <rect x="88" y="90" width="24" height="30" fill="${dark}"/>
-      <rect x="60" y="28" width="80" height="66" rx="18" fill="${body}"/>
+      ${headShape}
       ${eyes}
       ${mouth}
     </g>
     <g class="${cls}" data-part="4">${antenna}</g>
   </g>`;
+}
+
+function miniRobotSvg(spec) {
+  const holder = document.createElement('div');
+  holder.innerHTML = `<svg viewBox="0 0 200 240">${robotSvgMarkup(spec, true)}</svg>`;
+  const g = holder.querySelector('#robotBody');
+  if (g) g.removeAttribute('id');
+  return holder.firstElementChild;
 }
 
 function buildRobot() {
@@ -630,19 +837,214 @@ function showGallery() {
   if (collection.length === 0) {
     grid.innerHTML = '<div class="gallery-empty">まだ ロボットが いないよ。<br>キーを おして つくってみよう!</div>';
   } else {
-    collection.forEach(spec => {
-      const holder = document.createElement('div');
-      holder.innerHTML = `<svg viewBox="0 0 200 240">${robotSvgMarkup(spec, true)}</svg>`;
-      const g = holder.querySelector('#robotBody');
-      if (g) g.removeAttribute('id');
-      grid.appendChild(holder.firstElementChild);
-    });
+    collection.forEach(spec => grid.appendChild(miniRobotSvg(spec)));
   }
   document.getElementById('galleryOverlay').hidden = false;
 }
 
 function hideGallery() {
   document.getElementById('galleryOverlay').hidden = true;
+}
+
+/* ================= ロボットタウン ================= */
+const BUILDINGS = [
+  { need: 1, name: 'こうじょう', w: 110, svg: `
+    <svg width="110" height="90" viewBox="0 0 110 90">
+      <rect x="5" y="40" width="100" height="50" rx="4" fill="#8da3b8"/>
+      <path d="M5 40 L30 22 L30 40 L55 22 L55 40 L80 22 L80 40 L105 22 L105 40 Z" fill="#6b8299"/>
+      <rect x="14" y="52" width="16" height="14" rx="2" fill="#ffe9a8"/>
+      <rect x="47" y="52" width="16" height="14" rx="2" fill="#ffe9a8"/>
+      <rect x="80" y="52" width="16" height="14" rx="2" fill="#ffe9a8"/>
+      <rect x="40" y="70" width="30" height="20" rx="3" fill="#5a7086"/>
+      <rect x="88" y="4" width="12" height="26" fill="#6b8299"/>
+      <circle class="smoke" cx="94" cy="2" r="7" fill="#cfd8df"/>
+      <circle class="smoke s2" cx="94" cy="2" r="7" fill="#cfd8df"/>
+    </svg>` },
+  { need: 3, name: 'いえ', w: 70, svg: `
+    <svg width="70" height="70" viewBox="0 0 70 70">
+      <rect x="8" y="30" width="54" height="40" rx="3" fill="#ffd9a8"/>
+      <path d="M2 32 L35 6 L68 32 Z" fill="#e8734a"/>
+      <rect x="28" y="46" width="14" height="24" rx="2" fill="#9c5b32"/>
+      <rect x="12" y="38" width="12" height="10" rx="2" fill="#aee7ff"/>
+      <rect x="46" y="38" width="12" height="10" rx="2" fill="#aee7ff"/>
+    </svg>` },
+  { need: 6, name: 'こうえん', w: 90, svg: `
+    <svg width="90" height="80" viewBox="0 0 90 80">
+      <rect x="24" y="52" width="8" height="28" fill="#8a5a33"/>
+      <circle cx="28" cy="34" r="22" fill="#4ca85b"/>
+      <circle cx="16" cy="44" r="13" fill="#5cbf6b"/>
+      <circle cx="41" cy="44" r="13" fill="#5cbf6b"/>
+      <rect x="58" y="62" width="26" height="5" rx="2" fill="#b8763f"/>
+      <rect x="60" y="67" width="4" height="13" fill="#8a5a33"/>
+      <rect x="78" y="67" width="4" height="13" fill="#8a5a33"/>
+      <circle cx="66" cy="52" r="5" fill="#ff5d8f"/>
+      <circle cx="76" cy="55" r="4" fill="#ffd23f"/>
+    </svg>` },
+  { need: 10, name: 'おみせ', w: 80, svg: `
+    <svg width="80" height="70" viewBox="0 0 80 70">
+      <rect x="5" y="24" width="70" height="46" rx="3" fill="#fff1d6"/>
+      <path d="M3 24 L77 24 L77 34 L3 34 Z" fill="#fff"/>
+      <path d="M3 24 L12 10 L68 10 L77 24 Z" fill="#ff8c42"/>
+      <g fill="#ffb27d"><rect x="10" y="24" width="10" height="10"/><rect x="30" y="24" width="10" height="10"/><rect x="50" y="24" width="10" height="10"/></g>
+      <rect x="12" y="42" width="22" height="20" rx="2" fill="#aee7ff"/>
+      <rect x="46" y="42" width="18" height="28" rx="2" fill="#9c5b32"/>
+      <circle cx="60" cy="56" r="2" fill="#ffd23f"/>
+    </svg>` },
+  { need: 15, name: 'ビル', w: 64, svg: `
+    <svg width="64" height="110" viewBox="0 0 64 110">
+      <rect x="8" y="8" width="48" height="102" rx="4" fill="#7fb2d9"/>
+      <rect x="8" y="8" width="48" height="8" rx="4" fill="#5a8fb8"/>
+      <g fill="#e8f6ff">
+        <rect x="16" y="22" width="12" height="10" rx="1"/><rect x="36" y="22" width="12" height="10" rx="1"/>
+        <rect x="16" y="40" width="12" height="10" rx="1"/><rect x="36" y="40" width="12" height="10" rx="1"/>
+        <rect x="16" y="58" width="12" height="10" rx="1"/><rect x="36" y="58" width="12" height="10" rx="1"/>
+        <rect x="16" y="76" width="12" height="10" rx="1"/><rect x="36" y="76" width="12" height="10" rx="1"/>
+      </g>
+      <rect x="24" y="92" width="16" height="18" rx="2" fill="#456e8c"/>
+    </svg>` },
+  { need: 20, name: 'かんらんしゃ', w: 100, svg: `
+    <svg width="100" height="100" viewBox="0 0 100 100">
+      <g class="wheel-spin">
+        <circle cx="50" cy="42" r="34" fill="none" stroke="#e8734a" stroke-width="4"/>
+        <g stroke="#e8734a" stroke-width="3">
+          <line x1="50" y1="8" x2="50" y2="76"/><line x1="16" y1="42" x2="84" y2="42"/>
+          <line x1="26" y1="18" x2="74" y2="66"/><line x1="74" y1="18" x2="26" y2="66"/>
+        </g>
+        <g>
+          <circle cx="50" cy="8" r="6" fill="#ffd23f"/><circle cx="50" cy="76" r="6" fill="#ff5d8f"/>
+          <circle cx="16" cy="42" r="6" fill="#7fd97c"/><circle cx="84" cy="42" r="6" fill="#9f7bff"/>
+          <circle cx="26" cy="18" r="6" fill="#7ecbff"/><circle cx="74" cy="66" r="6" fill="#ffd23f"/>
+          <circle cx="74" cy="18" r="6" fill="#ff5d8f"/><circle cx="26" cy="66" r="6" fill="#7fd97c"/>
+        </g>
+      </g>
+      <path d="M50 42 L34 100 L42 100 L50 60 L58 100 L66 100 Z" fill="#c96a3f"/>
+    </svg>` },
+  { need: 30, name: 'ロケット', w: 70, svg: `
+    <svg width="70" height="110" viewBox="0 0 70 110">
+      <rect x="6" y="96" width="58" height="12" rx="3" fill="#8da3b8"/>
+      <path d="M35 4 C48 20 50 40 50 62 L20 62 C20 40 22 20 35 4 Z" fill="#e8ecf2"/>
+      <path d="M35 4 C42 14 46 26 47 38 L23 38 C24 26 28 14 35 4 Z" fill="#ff5d5d"/>
+      <circle cx="35" cy="48" r="8" fill="#aee7ff" stroke="#5a8fb8" stroke-width="3"/>
+      <path d="M20 62 L8 84 L20 78 Z" fill="#ff5d5d"/>
+      <path d="M50 62 L62 84 L50 78 Z" fill="#ff5d5d"/>
+      <path d="M27 62 L35 96 L43 62 Z" fill="#c9d4de"/>
+      <path d="M30 78 Q35 92 40 78 Q38 88 35 90 Q32 88 30 78 Z" fill="#ffb23f"/>
+    </svg>` }
+];
+const BUILDING_SLOTS = [2, 16, 30, 44, 58, 72, 85];
+
+let townAnim = null;
+let walkers = [];
+
+function townOpen() { return !document.getElementById('townOverlay').hidden; }
+
+function nextUnlock(pop) {
+  for (const b of BUILDINGS) if (pop < b.need) return b;
+  return null;
+}
+function unlockedCount(pop) { return BUILDINGS.filter(b => pop <= 0 ? false : b.need <= pop).length; }
+
+function showTown() {
+  const scene = document.getElementById('townScene');
+  scene.innerHTML = '';
+  const pop = collection.length;
+  document.getElementById('townPop').textContent = pop;
+
+  const nxt = nextUnlock(pop);
+  document.getElementById('townHint').textContent = nxt
+    ? `あと ${nxt.need - pop} たいで ${nxt.name}が たつよ!`
+    : 'まちは さいだいきゅう! 🎉';
+
+  scene.insertAdjacentHTML('beforeend', '<div class="town-sun">☀️</div>');
+  [[8, 12, 0], [40, 6, -14], [70, 16, -26]].forEach(([l, t, d]) => {
+    scene.insertAdjacentHTML('beforeend',
+      `<div class="town-cloud" style="left:${l}%;top:${t}%;animation-delay:${d}s">☁️</div>`);
+  });
+  scene.insertAdjacentHTML('beforeend', '<div class="town-ground"></div><div class="town-road"></div>');
+
+  BUILDINGS.forEach((b, i) => {
+    if (pop >= b.need) {
+      const el = document.createElement('div');
+      el.className = 'building';
+      el.style.left = BUILDING_SLOTS[i] + '%';
+      el.style.animationDelay = (i * 0.08) + 's';
+      el.innerHTML = b.svg + `<div class="b-label">${b.name}</div>`;
+      scene.appendChild(el);
+    }
+  });
+
+  walkers = [];
+  if (pop === 0) {
+    scene.insertAdjacentHTML('beforeend',
+      '<div class="town-empty">まだ だれも いないよ。<br>ロボットを つくって まちに よぼう!</div>');
+  } else {
+    const residents = collection.slice(-24);
+    const sceneW = scene.clientWidth || window.innerWidth;
+    residents.forEach((spec, i) => {
+      const el = document.createElement('div');
+      el.className = 'walker';
+      const w = 48 + Math.random() * 30;
+      el.style.width = w + 'px';
+      el.style.bottom = (4 + Math.random() * 42) + 'px';
+      el.style.zIndex = String(10 + Math.round(48 - (4 + Math.random() * 42)));
+      el.appendChild(miniRobotSvg(spec));
+      el.querySelector('svg').style.animationDelay = (Math.random() * 0.5) + 's';
+      el.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        ensureAudio();
+        soundBeep();
+        el.classList.remove('jump');
+        void el.offsetWidth;
+        el.classList.add('jump');
+      });
+      scene.appendChild(el);
+      walkers.push({
+        el, w,
+        x: Math.random() * Math.max(1, sceneW - w),
+        dir: Math.random() > 0.5 ? 1 : -1,
+        speed: 18 + Math.random() * 30,
+        pauseUntil: 0,
+        nextThink: performance.now() + 1000 + Math.random() * 3000
+      });
+    });
+  }
+
+  document.getElementById('townOverlay').hidden = false;
+  let last = performance.now();
+  const step = (now) => {
+    if (!townOpen()) { townAnim = null; return; }
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    const sceneW = scene.clientWidth || window.innerWidth;
+    walkers.forEach(wk => {
+      if (now >= wk.nextThink) {
+        wk.nextThink = now + 1500 + Math.random() * 4000;
+        if (Math.random() < 0.35) {
+          wk.pauseUntil = now + 800 + Math.random() * 2000;
+        } else {
+          wk.dir = Math.random() > 0.5 ? 1 : -1;
+          wk.speed = 18 + Math.random() * 30;
+        }
+      }
+      if (now < wk.pauseUntil) {
+        wk.el.style.transform = `translateX(${wk.x}px) scaleX(${wk.dir})`;
+        return;
+      }
+      wk.x += wk.speed * dt * wk.dir;
+      if (wk.x < 0) { wk.x = 0; wk.dir = 1; }
+      if (wk.x > sceneW - wk.w) { wk.x = Math.max(0, sceneW - wk.w); wk.dir = -1; }
+      wk.el.style.transform = `translateX(${wk.x}px) scaleX(${wk.dir})`;
+    });
+    townAnim = requestAnimationFrame(step);
+  };
+  if (townAnim) cancelAnimationFrame(townAnim);
+  townAnim = requestAnimationFrame(step);
+}
+
+function hideTown() {
+  document.getElementById('townOverlay').hidden = true;
+  if (townAnim) { cancelAnimationFrame(townAnim); townAnim = null; }
+  walkers = [];
 }
 
 /* ================= ゲーム進行 ================= */
@@ -676,6 +1078,7 @@ function flashKey(ch, cls) {
 function handleInput(ch) {
   ensureAudio();
   if (galleryOpen()) { hideGallery(); return; }
+  if (townOpen()) return;
   if (state === 'start') { startGame(); return; }
   if (state !== 'playing') return;
   if (!CHARS.includes(ch)) return;
@@ -711,9 +1114,11 @@ function completeRobot() {
   updateCount();
 
   const isNew = !collection.some(s => specKey(s) === specKey(currentSpec));
+  const prevUnlocked = unlockedCount(collection.length);
   collection.push(currentSpec);
   if (collection.length > 500) collection = collection.slice(-500);
   localStorage.setItem('robotCollection2', JSON.stringify(collection));
+  const gotBuilding = unlockedCount(collection.length) > prevUnlocked;
 
   document.getElementById('targetChar').textContent = '🎉';
   document.getElementById('targetLabel').textContent = 'ロボット かんせい!';
@@ -723,7 +1128,10 @@ function completeRobot() {
   stage.classList.add('dance');
   soundFanfare();
   confetti();
-  if (isNew) {
+  if (gotBuilding) {
+    showPraise('🏗 まちに あたらしい たてもの!', 'new-building');
+    say('ロボット かんせい! まちに あたらしい たてものが できたよ!');
+  } else if (isNew) {
     showPraise('✨あたらしい ロボット!✨', 'new-robot');
     say('あたらしい ロボット かんせい! すごい!');
   } else {
@@ -747,6 +1155,7 @@ document.addEventListener('keydown', (e) => {
   if (e.repeat || e.ctrlKey || e.altKey || e.metaKey) return;
   ensureAudio();
   if (galleryOpen()) { e.preventDefault(); hideGallery(); return; }
+  if (townOpen()) { e.preventDefault(); hideTown(); return; }
   if (state === 'start') { e.preventDefault(); startGame(); return; }
   const ch = e.key.length === 1 ? e.key.toUpperCase() : null;
   if (ch && CHARS.includes(ch)) {
@@ -771,12 +1180,21 @@ document.getElementById('muteBtn').addEventListener('click', (e) => {
 document.getElementById('galleryBtn').addEventListener('click', (e) => {
   e.stopPropagation();
   ensureAudio();
+  hideTown();
   showGallery();
 });
 document.getElementById('closeGallery').addEventListener('click', hideGallery);
 document.getElementById('galleryOverlay').addEventListener('pointerdown', (e) => {
   if (e.target.id === 'galleryOverlay') hideGallery();
 });
+
+document.getElementById('townBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  ensureAudio();
+  hideGallery();
+  showTown();
+});
+document.getElementById('closeTown').addEventListener('click', hideTown);
 
 /* iPadのピンチズーム・ダブルタップズームを止める */
 document.addEventListener('gesturestart', (e) => e.preventDefault());
@@ -801,9 +1219,9 @@ buildKeyboard();
 buildLights();
 updateCount();
 document.getElementById('muteBtn').textContent = muted ? '🔇' : '🔊';
-document.getElementById('startRobot').innerHTML =
-  robotSvgMarkup({ h: 200, body: 0, eye: 0, mouth: 0, ant: 0 }, true);
-document.querySelector('#startRobot #robotBody').removeAttribute('id');
+document.getElementById('startRobot').appendChild(
+  miniRobotSvg({ h: 200, body: 0, head: 0, eye: 0, mouth: 0, ant: 0 }).firstElementChild || document.createElementNS('http://www.w3.org/2000/svg','g')
+);
 addStars();
 </script>
 </body>
