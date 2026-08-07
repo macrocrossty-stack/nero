@@ -705,57 +705,56 @@ function specKey(s) { return [s.h, s.h2 !== undefined ? s.h2 : '', s.body, s.hea
 /* --- がったいロボ専用: 勇者スタイル描画 --- */
 function heroRobotMarkup(spec) {
   const C1 = `hsl(${spec.h}, 72%, 50%)`;
-  const C1d = `hsl(${spec.h}, 72%, 36%)`;
+  const C1d = `hsl(${spec.h}, 72%, 34%)`;
   const h2v = spec.h2 !== undefined ? spec.h2 : spec.h;
   const C2 = `hsl(${h2v}, 70%, 48%)`;
   const W = '#f2f5f8', N = '#1d2a44', G = '#ffd23f', Gd = '#e8a800', R = '#ff4d4d';
   const sup = spec.fusion === 2;
   const P = (pts, fill, extra) => `<polygon points="${pts}" fill="${fill}" stroke-linejoin="round" ${extra || ''}/>`;
   const gold = `stroke="${Gd}" stroke-width="2.5"`;
+  const O = `stroke="${N}" stroke-width="2"`;
 
   let s = '<g id="robotBody"><g class="part shown">';
 
   /* 背中のウィング */
   if (sup) {
-    s += P('60,88 -2,30 24,128 62,134', G, gold) + P('140,88 202,30 176,128 138,134', G, gold);
+    s += P('62,70 -4,14 20,116 64,120', G, gold) + P('138,70 204,14 180,116 136,120', G, gold);
   } else {
-    s += P('60,92 10,50 28,124 62,130', G, gold) + P('140,92 190,50 172,124 138,130', G, gold);
+    s += P('62,74 8,30 26,112 64,118', G, gold) + P('138,74 192,30 174,112 136,118', G, gold);
   }
   /* 肩キャノン (超がったい) */
   if (sup) {
-    s += `<rect x="16" y="30" width="20" height="50" rx="5" fill="${N}"/>
-          <rect x="164" y="30" width="20" height="50" rx="5" fill="${N}"/>
-          <rect x="16" y="30" width="20" height="8" rx="4" fill="${W}"/>
-          <rect x="164" y="30" width="20" height="8" rx="4" fill="${W}"/>
-          <rect x="16" y="42" width="20" height="7" fill="${G}"/>
-          <rect x="164" y="42" width="20" height="7" fill="${G}"/>`;
+    s += `<rect x="18" y="12" width="20" height="52" rx="5" fill="${N}"/>
+          <rect x="162" y="12" width="20" height="52" rx="5" fill="${N}"/>
+          <rect x="18" y="12" width="20" height="8" rx="4" fill="${W}"/>
+          <rect x="162" y="12" width="20" height="8" rx="4" fill="${W}"/>
+          <rect x="18" y="25" width="20" height="7" fill="${G}"/>
+          <rect x="162" y="25" width="20" height="7" fill="${G}"/>`;
   }
   /* うで */
-  s += `<rect x="26" y="106" width="18" height="30" rx="5" fill="${N}"/>
-        <rect x="156" y="106" width="18" height="30" rx="5" fill="${N}"/>`;
-  s += P('16,132 50,132 48,174 20,174', W, `stroke="#c9d4de" stroke-width="2"`)
-     + P('150,132 184,132 180,174 152,174', W, `stroke="#c9d4de" stroke-width="2"`);
-  s += `<rect x="17" y="138" width="32" height="10" fill="${C2}"/>
-        <rect x="151" y="138" width="32" height="10" fill="${C2}"/>
-        <rect x="21" y="172" width="26" height="18" rx="6" fill="${N}"/>
-        <rect x="153" y="172" width="26" height="18" rx="6" fill="${N}"/>`;
-  /* あし */
-  s += `<rect x="72" y="150" width="22" height="34" rx="5" fill="${N}"/>
-        <rect x="106" y="150" width="22" height="34" rx="5" fill="${N}"/>`;
-  s += P('64,180 96,180 98,224 58,224', C2) + P('104,180 136,180 142,224 102,224', C2);
-  s += P('78,180 92,180 90,214 78,214', W) + P('108,180 122,180 122,214 110,214', W);
-  s += `<rect x="68" y="176" width="26" height="8" rx="3" fill="${G}"/>
-        <rect x="106" y="176" width="26" height="8" rx="3" fill="${G}"/>`;
-  s += P('54,222 100,222 102,238 50,238', W, `stroke="#c9d4de" stroke-width="2"`)
-     + P('100,222 146,222 150,238 98,238', W, `stroke="#c9d4de" stroke-width="2"`);
+  s += `<rect x="28" y="96" width="16" height="30" rx="5" fill="${N}"/>
+        <rect x="156" y="96" width="16" height="30" rx="5" fill="${N}"/>`;
+  s += P('14,120 48,120 46,166 18,166', W, O) + P('152,120 186,120 182,166 154,166', W, O);
+  s += `<rect x="15" y="127" width="32" height="10" fill="${C2}"/>
+        <rect x="153" y="127" width="32" height="10" fill="${C2}"/>
+        <rect x="19" y="164" width="24" height="20" rx="6" fill="${N}"/>
+        <rect x="157" y="164" width="24" height="20" rx="6" fill="${N}"/>`;
+  /* あし (脚長に) */
+  s += `<rect x="73" y="134" width="21" height="44" rx="5" fill="${N}"/>
+        <rect x="106" y="134" width="21" height="44" rx="5" fill="${N}"/>`;
+  s += P('64,172 96,172 98,220 58,220', C2, O) + P('104,172 136,172 142,220 102,220', C2, O);
+  s += P('78,172 92,172 90,208 78,208', W) + P('108,172 122,172 122,208 110,208', W);
+  s += `<rect x="68" y="168" width="26" height="8" rx="3" fill="${G}"/>
+        <rect x="106" y="168" width="26" height="8" rx="3" fill="${G}"/>`;
+  s += P('52,218 100,218 102,236 48,236', W, O) + P('100,218 148,218 152,236 98,236', W, O);
   /* こし */
-  s += `<rect x="68" y="130" width="64" height="16" rx="3" fill="${N}"/>`;
-  s += P('68,134 86,140 80,158 62,150', C1) + P('132,134 114,140 120,158 138,150', C1);
-  s += `<rect x="91" y="131" width="18" height="14" rx="3" fill="${G}"/>`;
+  s += `<rect x="70" y="114" width="60" height="20" rx="3" fill="${N}"/>`;
+  s += P('68,118 88,124 82,148 60,140', C1, O) + P('132,118 112,124 118,148 140,140', C1, O);
+  s += `<rect x="92" y="117" width="16" height="14" rx="3" fill="${G}"/>`;
   /* むね */
-  s += P('60,80 140,80 136,138 64,138', N);
-  s += P('62,82 97,82 97,120 72,126 60,106', C1) + P('138,82 103,82 103,120 128,126 140,106', C1);
-  s += P('96,90 62,86 74,102 96,104', G, gold) + P('104,90 138,86 126,102 104,104', G, gold);
+  s += P('62,56 138,56 134,120 66,120', N);
+  s += P('64,58 97,58 97,100 72,106 62,88', C1, O) + P('136,58 103,58 103,100 128,106 138,88', C1, O);
+  s += P('96,60 66,57 75,70 96,71', G, gold) + P('104,60 134,57 125,70 104,71', G, gold);
   const star = (cx, cy, r) => {
     const pts = [];
     for (let i = 0; i < 10; i++) {
@@ -765,30 +764,30 @@ function heroRobotMarkup(spec) {
     }
     return pts.join(' ');
   };
-  s += `<circle cx="100" cy="114" r="${sup ? 17 : 14}" fill="${N}" stroke="${Gd}" stroke-width="2.5"/>`;
-  s += P(star(100, 114, sup ? 14 : 11), G, gold);
-  if (sup) s += P('100,84 93,92 100,100 107,92', R, gold);
-  /* かた */
-  s += P('8,72 58,66 58,112 16,118', C1, `stroke="${C1d}" stroke-width="2.5"`)
-     + P('192,72 142,66 142,112 184,118', C1, `stroke="${C1d}" stroke-width="2.5"`);
-  s += `<rect x="14" y="88" width="40" height="8" fill="${G}"/>
-        <rect x="146" y="88" width="40" height="8" fill="${G}"/>
-        <circle class="antenna-light" cx="20" cy="78" r="4" fill="${R}"/>
-        <circle class="antenna-light" cx="180" cy="78" r="4" fill="${R}"/>`;
-  /* あたま */
-  s += `<rect x="90" y="70" width="20" height="12" fill="${N}"/>`;
-  s += P('66,28 134,28 140,52 128,68 72,68 60,52', C1, `stroke="${C1d}" stroke-width="2"`);
-  s += `<rect x="58" y="46" width="9" height="16" rx="2" fill="${G}"/>
-        <rect x="133" y="46" width="9" height="16" rx="2" fill="${G}"/>`;
-  s += P('78,44 122,44 118,68 106,78 94,78 82,68', W, `stroke="#c9d4de" stroke-width="2"`);
-  s += P('80,54 94,50 94,59 82,61', '#35c6ff') + P('106,50 120,54 118,61 106,59', '#35c6ff');
-  s += `<rect x="92" y="68" width="16" height="3.5" rx="1.5" fill="${N}"/>`;
+  s += `<circle cx="100" cy="96" r="${sup ? 16 : 13}" fill="${N}" stroke="${Gd}" stroke-width="2.5"/>`;
+  s += P(star(100, 96, sup ? 13 : 10.5), G, gold);
+  if (sup) s += P('100,62 94,69 100,76 106,69', R, gold);
+  /* かた (張り出し大きく) */
+  s += P('6,52 60,48 60,98 14,104', C1, `stroke="${C1d}" stroke-width="2.5"`)
+     + P('194,52 140,48 140,98 186,104', C1, `stroke="${C1d}" stroke-width="2.5"`);
+  s += `<rect x="12" y="72" width="44" height="8" fill="${G}"/>
+        <rect x="144" y="72" width="44" height="8" fill="${G}"/>
+        <circle class="antenna-light" cx="18" cy="60" r="4" fill="${R}"/>
+        <circle class="antenna-light" cx="182" cy="60" r="4" fill="${R}"/>`;
+  /* あたま (小さく高く = 等身アップ) */
+  s += `<rect x="92" y="46" width="16" height="14" fill="${N}"/>`;
+  s += P('78,14 122,14 126,34 118,50 82,50 74,34', C1, `stroke="${C1d}" stroke-width="2"`);
+  s += `<rect x="70" y="29" width="8" height="14" rx="2" fill="${G}"/>
+        <rect x="122" y="29" width="8" height="14" rx="2" fill="${G}"/>`;
+  s += P('84,28 116,28 113,48 104,56 96,56 87,48', W, `stroke="#c9d4de" stroke-width="2"`);
+  s += P('86,36 97,33 97,41 88,43', '#35c6ff') + P('103,33 114,36 112,43 103,41', '#35c6ff');
+  s += `<rect x="94" y="47" width="12" height="3" rx="1.5" fill="${N}"/>`;
   /* Vフィン */
   if (sup) {
-    s += P('100,36 54,-2 72,0 98,22', G, gold) + P('100,36 146,-2 128,0 102,22', G, gold);
+    s += P('100,20 58,-8 74,-6 98,8', G, gold) + P('100,20 142,-8 126,-6 102,8', G, gold);
   }
-  s += P('100,34 64,6 80,8 98,26', G, gold) + P('100,34 136,6 120,8 102,26', G, gold);
-  s += P('100,18 94,28 100,38 106,28', R, gold);
+  s += P('100,18 68,-4 82,-2 98,10', G, gold) + P('100,18 132,-4 118,-2 102,10', G, gold);
+  s += P('100,3 95,11 100,19 105,11', R, gold);
 
   s += '</g></g>';
   return s;
