@@ -318,6 +318,99 @@
     font-size: clamp(15px, 2.5vw, 22px);
     color: #789;
   }
+  .g-cell { position: relative; border-radius: 12px; cursor: pointer; }
+  .g-cell.sel {
+    outline: 4px solid #ffd23f;
+    background: #fff7dd;
+    animation: charPulse 0.8s ease-in-out infinite;
+  }
+  .fuse-hint {
+    padding: 0 20px 10px;
+    font-weight: bold;
+    color: #b45309;
+    font-size: clamp(13px, 2.2vw, 18px);
+  }
+
+  /* ===== がったい ===== */
+  #fusionOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    background: radial-gradient(circle at 50% 38%, #2c4a7c, #101b33 75%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2.5vh;
+    padding-bottom: 24vh;
+  }
+  #fusionOverlay[hidden] { display: none; }
+  .fusion-label {
+    color: #ffd23f;
+    font-size: clamp(18px, 3.5vw, 34px);
+    font-weight: bold;
+    text-shadow: 0 2px 0 rgba(0,0,0,0.4);
+    text-align: center;
+  }
+  .fusion-stage {
+    position: relative;
+    width: min(92vw, 720px);
+    height: 34vh;
+  }
+  .f-bot {
+    position: absolute;
+    top: 50%;
+    width: clamp(80px, 16vw, 160px);
+    transform: translateY(-50%);
+    transition: left 0.8s cubic-bezier(0.5, -0.2, 0.5, 1.2),
+                transform 0.8s cubic-bezier(0.5, -0.2, 0.5, 1.2),
+                opacity 0.4s;
+  }
+  .f-bot svg { width: 100%; height: auto; filter: drop-shadow(0 0 10px rgba(174,231,255,0.35)); }
+  .f-bot.charge svg { filter: drop-shadow(0 0 22px #ffd23f); }
+  .f-result {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -52%) scale(0);
+    width: clamp(150px, 28vw, 280px);
+  }
+  .f-result svg { width: 100%; height: auto; filter: drop-shadow(0 0 24px rgba(255,210,63,0.6)); }
+  .f-result.shown { animation: fusePop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+  @keyframes fusePop {
+    to { transform: translate(-50%, -52%) scale(1); }
+  }
+  .fusion-code { display: flex; gap: 10px; }
+  .f-ch {
+    width: clamp(38px, 7vw, 64px);
+    height: clamp(46px, 8vw, 76px);
+    border-radius: 10px;
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    font-weight: bold;
+    font-size: clamp(24px, 5vw, 44px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid rgba(255,255,255,0.25);
+  }
+  .f-ch.done { background: #2e9e5b; border-color: #7fd97c; }
+  .f-ch.cur { border-color: #ffd23f; animation: charPulse 0.8s ease-in-out infinite; }
+  .fusion-flash {
+    position: fixed;
+    inset: 0;
+    background: #fff;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 35;
+  }
+  .fusion-flash.go { animation: flashAnim 0.6s ease-out; }
+  @keyframes flashAnim {
+    0% { opacity: 0; }
+    20% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  .kb { position: relative; z-index: 40; }
 
   /* ===== ロボットタウン ===== */
   #townOverlay {
@@ -462,11 +555,21 @@
   <div class="gallery-panel">
     <div class="gallery-head">
       <h3>📖 ロボットずかん (<span id="galleryCount">0</span> たい)</h3>
+      <button class="hdr-btn" id="fuseBtn">⚡がったい</button>
+      <button class="hdr-btn" id="superFuseBtn" hidden>🌟ちょうがったい</button>
       <button class="close-btn" id="closeGallery">✕</button>
     </div>
+    <div class="fuse-hint" id="fuseHint" hidden></div>
     <div class="gallery-grid" id="galleryGrid"></div>
   </div>
 </div>
+
+<div id="fusionOverlay" hidden>
+  <div class="fusion-label" id="fusionLabel"></div>
+  <div class="fusion-stage" id="fusionStage"></div>
+  <div class="fusion-code" id="fusionCode"></div>
+</div>
+<div class="fusion-flash" id="fusionFlash"></div>
 
 <div id="townOverlay" hidden>
   <div class="town-head">
@@ -597,12 +700,16 @@ function randomSpec() {
     ant: Math.floor(Math.random() * 3)
   };
 }
-function specKey(s) { return [s.h, s.body, s.head || 0, s.eye, s.mouth, s.ant].join('-'); }
+function specKey(s) { return [s.h, s.h2 !== undefined ? s.h2 : '', s.body, s.head || 0, s.eye, s.mouth, s.ant, s.fusion || 0].join('-'); }
 
 function robotSvgMarkup(spec, withAll) {
+  const h2v = spec.h2 !== undefined ? spec.h2 : spec.h;   // がったいロボは2色め
   const body = `hsl(${spec.h}, 70%, 55%)`;
   const dark = `hsl(${spec.h}, 70%, 38%)`;
   const lite = `hsl(${(spec.h + 40) % 360}, 80%, 65%)`;
+  const body2 = `hsl(${h2v}, 70%, 55%)`;
+  const dark2 = `hsl(${h2v}, 70%, 38%)`;
+  const lite2 = `hsl(${(h2v + 40) % 360}, 80%, 65%)`;
   const cls = withAll ? 'part shown' : 'part';
   const headType = spec.head || 0;
 
@@ -610,32 +717,32 @@ function robotSvgMarkup(spec, withAll) {
   let torso;
   let armL = 34, armR = 146;
   if (spec.body === 0) {
-    torso = `<rect x="58" y="118" width="84" height="84" rx="16" fill="${body}"/>
-             <rect x="74" y="136" width="52" height="34" rx="8" fill="${lite}"/>
+    torso = `<rect x="58" y="118" width="84" height="84" rx="16" fill="${body2}"/>
+             <rect x="74" y="136" width="52" height="34" rx="8" fill="${lite2}"/>
              <circle cx="88" cy="184" r="7" fill="#ffd23f"/>
              <circle cx="112" cy="184" r="7" fill="#ff5d8f"/>`;
   } else if (spec.body === 1) {
-    torso = `<circle cx="100" cy="162" r="45" fill="${body}"/>
-             <circle cx="100" cy="152" r="20" fill="${lite}"/>
+    torso = `<circle cx="100" cy="162" r="45" fill="${body2}"/>
+             <circle cx="100" cy="152" r="20" fill="${lite2}"/>
              <circle cx="86" cy="188" r="6" fill="#ffd23f"/>
              <circle cx="114" cy="188" r="6" fill="#ff5d8f"/>`;
     armL = 36; armR = 144;
   } else if (spec.body === 2) {
-    torso = `<rect x="68" y="112" width="64" height="92" rx="12" fill="${body}"/>
-             <rect x="80" y="126" width="40" height="26" rx="6" fill="${lite}"/>
+    torso = `<rect x="68" y="112" width="64" height="92" rx="12" fill="${body2}"/>
+             <rect x="80" y="126" width="40" height="26" rx="6" fill="${lite2}"/>
              <circle cx="100" cy="170" r="6" fill="#ffd23f"/>
              <circle cx="100" cy="186" r="6" fill="#ff5d8f"/>`;
     armL = 46; armR = 134;
   } else if (spec.body === 3) {
-    torso = `<path d="M62 204 L62 148 A38 38 0 0 1 138 148 L138 204 Z" fill="${body}"/>
-             <rect x="78" y="150" width="44" height="26" rx="6" fill="${lite}"/>
-             <rect x="70" y="182" width="60" height="6" rx="3" fill="${dark}"/>
+    torso = `<path d="M62 204 L62 148 A38 38 0 0 1 138 148 L138 204 Z" fill="${body2}"/>
+             <rect x="78" y="150" width="44" height="26" rx="6" fill="${lite2}"/>
+             <rect x="70" y="182" width="60" height="6" rx="3" fill="${dark2}"/>
              <circle cx="88" cy="196" r="6" fill="#ffd23f"/>
              <circle cx="112" cy="196" r="6" fill="#ff5d8f"/>`;
     armL = 38; armR = 142;
   } else {
-    torso = `<path d="M72 118 L128 118 L144 204 L56 204 Z" fill="${body}"/>
-             <rect x="82" y="132" width="36" height="26" rx="6" fill="${lite}"/>
+    torso = `<path d="M72 118 L128 118 L144 204 L56 204 Z" fill="${body2}"/>
+             <rect x="82" y="132" width="36" height="26" rx="6" fill="${lite2}"/>
              <circle cx="88" cy="184" r="6" fill="#ffd23f"/>
              <circle cx="112" cy="184" r="6" fill="#ff5d8f"/>`;
     armL = 46; armR = 134;
@@ -720,14 +827,41 @@ function robotSvgMarkup(spec, withAll) {
   }
   antenna = `<g transform="translate(0,${antDy})">${antenna}</g>`;
 
+  /* --- がったいロボの装飾 --- */
+  let wings = '', fusionExtras = '';
+  if (spec.fusion) {
+    wings = `<g class="${cls}">
+      <polygon points="60,130 8,78 22,148 58,156" fill="#ffd23f" stroke="#e8a800" stroke-width="3" stroke-linejoin="round"/>
+      <polygon points="140,130 192,78 178,148 142,156" fill="#ffd23f" stroke="#e8a800" stroke-width="3" stroke-linejoin="round"/></g>`;
+    const star = (cx, cy, r) => {
+      const pts = [];
+      for (let i = 0; i < 10; i++) {
+        const rr = i % 2 ? r * 0.45 : r;
+        const a = -Math.PI / 2 + i * Math.PI / 5;
+        pts.push(`${(cx + Math.cos(a) * rr).toFixed(1)},${(cy + Math.sin(a) * rr).toFixed(1)}`);
+      }
+      return `<polygon points="${pts.join(' ')}" fill="#ffd23f" stroke="#e8a800" stroke-width="2.5" stroke-linejoin="round"/>`;
+    };
+    fusionExtras = `<g class="${cls}">` + star(100, 152, spec.fusion === 2 ? 18 : 13);
+    if (spec.fusion === 2) {
+      fusionExtras += `
+      <rect x="26" y="112" width="34" height="20" rx="7" fill="${dark}"/>
+      <rect x="140" y="112" width="34" height="20" rx="7" fill="${dark}"/>
+      <polygon points="100,42 74,8 92,34" fill="#ffd23f" stroke="#e8a800" stroke-width="2.5" stroke-linejoin="round"/>
+      <polygon points="100,42 126,8 108,34" fill="#ffd23f" stroke="#e8a800" stroke-width="2.5" stroke-linejoin="round"/>`;
+    }
+    fusionExtras += '</g>';
+  }
+
   return `
   <g id="robotBody">
     <g class="${cls}" data-part="0">
-      <rect x="72" y="196" width="20" height="30" rx="6" fill="${dark}"/>
-      <rect x="108" y="196" width="20" height="30" rx="6" fill="${dark}"/>
-      <rect x="62" y="222" width="36" height="14" rx="7" fill="${body}"/>
-      <rect x="102" y="222" width="36" height="14" rx="7" fill="${body}"/>
+      <rect x="72" y="196" width="20" height="30" rx="6" fill="${dark2}"/>
+      <rect x="108" y="196" width="20" height="30" rx="6" fill="${dark2}"/>
+      <rect x="62" y="222" width="36" height="14" rx="7" fill="${body2}"/>
+      <rect x="102" y="222" width="36" height="14" rx="7" fill="${body2}"/>
     </g>
+    ${wings}
     <g class="${cls}" data-part="1">${torso}</g>
     <g class="${cls}" data-part="2">
       <rect x="${armL}" y="126" width="20" height="52" rx="10" fill="${dark}"/>
@@ -742,6 +876,7 @@ function robotSvgMarkup(spec, withAll) {
       ${mouth}
     </g>
     <g class="${cls}" data-part="4">${antenna}</g>
+    ${fusionExtras}
   </g>`;
 }
 
@@ -835,13 +970,33 @@ function showGallery() {
   if (collection.length === 0) {
     grid.innerHTML = '<div class="gallery-empty">まだ ロボットが いないよ。<br>キーを おして つくってみよう!</div>';
   } else {
-    collection.forEach(spec => grid.appendChild(miniRobotSvg(spec)));
+    collection.forEach((spec, idx) => {
+      const cell = document.createElement('div');
+      cell.className = 'g-cell';
+      cell.dataset.idx = idx;
+      cell.appendChild(miniRobotSvg(spec));
+      cell.addEventListener('pointerdown', (e) => {
+        if (!selectMode) return;
+        e.stopPropagation();
+        const i = Number(cell.dataset.idx);
+        const p = selectedIdx.indexOf(i);
+        if (p >= 0) { selectedIdx.splice(p, 1); cell.classList.remove('sel'); }
+        else if (selectedIdx.length < selectMode) { selectedIdx.push(i); cell.classList.add('sel'); soundPop(); }
+        updateFuseHint();
+        if (selectedIdx.length === selectMode) startFusion(selectedIdx, selectMode === 5);
+      });
+      grid.appendChild(cell);
+    });
   }
+  document.getElementById('superFuseBtn').hidden = gattaiCount < 10;
   document.getElementById('galleryOverlay').hidden = false;
 }
 
 function hideGallery() {
   document.getElementById('galleryOverlay').hidden = true;
+  selectMode = 0;
+  selectedIdx = [];
+  document.getElementById('fuseHint').hidden = true;
 }
 
 /* ================= ロボットタウン (クオータービュー) ================= */
@@ -1102,12 +1257,13 @@ function showTown() {
   const pop = collection.length;
   document.getElementById('townPop').textContent = pop;
 
-  const tiles = tileCountFor(pop);
+  // 街の広さは「今までに作った総数」基準 (がったいで人口が減っても街は縮まない)
+  const tiles = tileCountFor(Math.max(robotCount, pop));
   const hint = document.getElementById('townHint');
   if (tiles >= TILES_MAX) {
     hint.textContent = 'まちは さいだいきゅう! 🎉';
   } else {
-    hint.textContent = `あと ${tiles * 3 - pop} たいで まちが ひろがる!`;
+    hint.textContent = `あと ${tiles * 3 - Math.max(robotCount, pop)} たいで まちが ひろがる!`;
   }
 
   scene.insertAdjacentHTML('beforeend', '<div class="town-sun">☀️</div>');
@@ -1149,13 +1305,14 @@ function showTown() {
     const ru = tu + 0.35 + Math.random() * 1.3;
     const rv = tv + 0.5 + Math.random() * 1.2;
     const inner = robotSvgMarkup(spec, true).replace('id="robotBody"', '');
+    const mult = spec.fusion === 2 ? 2.1 : spec.fusion ? 1.5 : 1;
     const idx = robotMeta.length;
     robotMeta.push({ tu, ru, rv, dir: Math.random() > 0.5 ? 1 : -1,
       speed: 0.12 + Math.random() * 0.2, pauseUntil: 0,
       nextThink: performance.now() + 1000 + Math.random() * 3000 });
     entities.push({ depth: ru + rv, svg:
       `<g class="iso-robot" data-ridx="${idx}"><g class="iso-bob" style="animation-delay:${(Math.random()*0.5).toFixed(2)}s">`
-      + `<g transform="scale(0.16) translate(-100,-236)">${inner}</g></g></g>` });
+      + `<g transform="scale(${(0.16 * mult).toFixed(3)}) translate(-100,-236)">${inner}</g></g></g>` });
   });
 
   grounds.sort((a, b) => a.depth - b.depth);
@@ -1231,6 +1388,166 @@ function hideTown() {
   walkers = [];
 }
 
+/* ================= がったい ================= */
+let gattaiCount = Number(localStorage.getItem('gattaiCount') || 0);
+let selectMode = 0;          // 0=通常 / 2=がったい選択中 / 5=ちょうがったい選択中
+let selectedIdx = [];
+let fusion = null;           // {parents, code, pos, super, resolved}
+
+function fusionOpen() { return !document.getElementById('fusionOverlay').hidden; }
+
+function beginSelect(n) {
+  ensureAudio();
+  const hint = document.getElementById('fuseHint');
+  hint.hidden = false;
+  if (collection.length < n) {
+    hint.textContent = `ロボットが ${n}たい いないと ${n === 5 ? 'ちょう' : ''}がったい できないよ!`;
+    selectMode = 0;
+    return;
+  }
+  selectMode = n;
+  selectedIdx = [];
+  document.querySelectorAll('.g-cell.sel').forEach(c => c.classList.remove('sel'));
+  updateFuseHint();
+  say(`がったいする ロボットを ${n}たい えらんでね`);
+}
+
+function updateFuseHint() {
+  if (!selectMode) return;
+  document.getElementById('fuseHint').textContent =
+    `${selectMode === 5 ? '🌟ちょうがったい' : '⚡がったい'}する ロボットを ${selectMode}たい タッチ! (いま ${selectedIdx.length}たい)`;
+}
+
+function makeFusionSpec(parents, isSuper) {
+  const a = parents[0], b = parents[1] || parents[0];
+  return {
+    h: a.h,
+    h2: b.h,
+    head: a.head || 0,
+    body: b.body,
+    eye: b.eye,
+    mouth: a.mouth,
+    ant: a.ant,
+    fusion: isSuper ? 2 : 1
+  };
+}
+
+function startFusion(indices, isSuper) {
+  selectMode = 0;
+  const parents = indices.map(i => collection[i]);
+  hideGallery();
+  const code = [];
+  for (let i = 0; i < 5; i++) code.push(CHARS[Math.floor(Math.random() * CHARS.length)]);
+  fusion = { parents, code, pos: 0, super: isSuper, resolved: false };
+
+  const stage = document.getElementById('fusionStage');
+  stage.innerHTML = '';
+  parents.forEach((sp, i) => {
+    const d = document.createElement('div');
+    d.className = 'f-bot';
+    const n = parents.length;
+    d.style.left = (n === 2 ? (i === 0 ? 6 : 74) : 2 + i * 19.5) + '%';
+    d.appendChild(miniRobotSvg(sp));
+    stage.appendChild(d);
+  });
+
+  document.getElementById('fusionLabel').textContent =
+    isSuper ? '🌟ちょうがったいコードを うちこめ!' : '⚡がったいコードを うちこめ!';
+  renderFusionCode();
+  document.getElementById('fusionOverlay').hidden = false;
+  document.querySelectorAll('.key').forEach(k => k.classList.toggle('target', k.dataset.key === code[0]));
+  say(isSuper ? 'ちょうがったいコードを うちこめ!' : 'がったいコードを うちこめ!');
+}
+
+function renderFusionCode() {
+  const el = document.getElementById('fusionCode');
+  el.innerHTML = '';
+  fusion.code.forEach((c, i) => {
+    const d = document.createElement('div');
+    d.className = 'f-ch' + (i < fusion.pos ? ' done' : i === fusion.pos ? ' cur' : '');
+    d.textContent = c;
+    el.appendChild(d);
+  });
+}
+
+function fusionInput(ch) {
+  if (!fusion || fusion.resolved) return;
+  if (ch === fusion.code[fusion.pos]) {
+    fusion.pos++;
+    soundPop();
+    renderFusionCode();
+    document.querySelectorAll('.f-bot').forEach(b => {
+      b.classList.remove('charge');
+      void b.offsetWidth;
+      b.classList.add('charge');
+    });
+    if (fusion.pos >= fusion.code.length) {
+      finishFusion();
+    } else {
+      const next = fusion.code[fusion.pos];
+      document.querySelectorAll('.key').forEach(k => k.classList.toggle('target', k.dataset.key === next));
+      say(CHAR_NAMES[next] || next);
+    }
+  } else {
+    soundWrong();
+  }
+}
+
+function finishFusion() {
+  fusion.resolved = true;
+  document.querySelectorAll('.key').forEach(k => k.classList.remove('target'));
+  document.getElementById('fusionLabel').textContent = 'がったい かいし!!';
+
+  document.querySelectorAll('.f-bot').forEach(b => {
+    b.style.left = '50%';
+    b.style.transform = 'translate(-50%, -50%) scale(0.25) rotate(720deg)';
+    setTimeout(() => { b.style.opacity = '0'; }, 620);
+  });
+  const flash = document.getElementById('fusionFlash');
+  setTimeout(() => {
+    flash.classList.remove('go');
+    void flash.offsetWidth;
+    flash.classList.add('go');
+  }, 650);
+
+  setTimeout(() => {
+    const spec = makeFusionSpec(fusion.parents, fusion.super);
+    const parentSet = new Set(fusion.parents);
+    collection = collection.filter(s => !parentSet.has(s));
+    collection.push(spec);
+    localStorage.setItem('robotCollection2', JSON.stringify(collection));
+    gattaiCount++;
+    localStorage.setItem('gattaiCount', String(gattaiCount));
+
+    const stage = document.getElementById('fusionStage');
+    stage.innerHTML = '';
+    const res = document.createElement('div');
+    res.className = 'f-result';
+    res.appendChild(miniRobotSvg(spec));
+    stage.appendChild(res);
+    void res.offsetWidth;
+    res.classList.add('shown');
+    document.getElementById('fusionCode').innerHTML = '';
+    document.getElementById('fusionLabel').textContent =
+      fusion.super ? '🌟ちょうがったい せいこう!!' : '⚡がったい せいこう!!';
+    soundFanfare();
+    confetti();
+    say(fusion.super ? 'ちょうがったい! かっこいい!' : 'がったーい! かっこいい!');
+    if (!fusion.super && gattaiCount === 10) {
+      setTimeout(() => say('ちょうがったいが つかえるように なったよ!'), 3000);
+    }
+  }, 900);
+
+  setTimeout(() => {
+    document.getElementById('fusionOverlay').hidden = true;
+    fusion = null;
+    // メインゲームのキーボードハイライトを復元
+    document.querySelectorAll('.key').forEach(k => {
+      k.classList.toggle('target', state === 'playing' && k.dataset.key === target);
+    });
+  }, 4500);
+}
+
 /* ================= ゲーム進行 ================= */
 function nextTarget() {
   let next;
@@ -1261,7 +1578,8 @@ function flashKey(ch, cls) {
 
 function handleInput(ch) {
   ensureAudio();
-  if (galleryOpen()) { hideGallery(); return; }
+  if (fusionOpen()) { fusionInput(ch); return; }
+  if (galleryOpen()) { if (!selectMode) hideGallery(); return; }
   if (townOpen()) return;
   if (state === 'start') { startGame(); return; }
   if (state !== 'playing') return;
@@ -1298,11 +1616,11 @@ function completeRobot() {
   updateCount();
 
   const isNew = !collection.some(s => specKey(s) === specKey(currentSpec));
-  const prevTiles = tileCountFor(collection.length);
+  const prevTiles = tileCountFor(robotCount - 1);
   collection.push(currentSpec);
   if (collection.length > 500) collection = collection.slice(-500);
   localStorage.setItem('robotCollection2', JSON.stringify(collection));
-  const gotBuilding = tileCountFor(collection.length) > prevTiles;
+  const gotBuilding = tileCountFor(robotCount) > prevTiles;
 
   document.getElementById('targetChar').textContent = '🎉';
   document.getElementById('targetLabel').textContent = 'ロボット かんせい!';
@@ -1338,6 +1656,12 @@ function startGame() {
 document.addEventListener('keydown', (e) => {
   if (e.repeat || e.ctrlKey || e.altKey || e.metaKey) return;
   ensureAudio();
+  if (fusionOpen()) {
+    e.preventDefault();
+    const ch = e.key.length === 1 ? e.key.toUpperCase() : null;
+    if (ch && CHARS.includes(ch)) fusionInput(ch);
+    return;
+  }
   if (galleryOpen()) { e.preventDefault(); hideGallery(); return; }
   if (townOpen()) { e.preventDefault(); hideTown(); return; }
   if (state === 'start') { e.preventDefault(); startGame(); return; }
@@ -1368,6 +1692,8 @@ document.getElementById('galleryBtn').addEventListener('click', (e) => {
   showGallery();
 });
 document.getElementById('closeGallery').addEventListener('click', hideGallery);
+document.getElementById('fuseBtn').addEventListener('click', (e) => { e.stopPropagation(); beginSelect(2); });
+document.getElementById('superFuseBtn').addEventListener('click', (e) => { e.stopPropagation(); beginSelect(5); });
 document.getElementById('galleryOverlay').addEventListener('pointerdown', (e) => {
   if (e.target.id === 'galleryOverlay') hideGallery();
 });
