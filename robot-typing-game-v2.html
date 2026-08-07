@@ -779,40 +779,41 @@ function heroRobotMarkup(spec) {
   } else {
     s += `<circle cx="100" cy="104" r="7.5" fill="${B}" stroke="${Gd}" stroke-width="2"/>`;
   }
-  /* くび・あたま */
-  s += `<rect x="92" y="42" width="16" height="14" fill="${N}"/>`;
-  s += P('80,16 120,16 124,34 116,48 84,48 76,34', C1, `stroke="${C1d}" stroke-width="2"`);
+  /* あたま (えりに沈み込ませ、ヘルメットを深く) */
+  s += P('76,22 124,22 128,42 122,58 78,58 72,42', C1, `stroke="${C1d}" stroke-width="2"`);
   /* よこの個性パーツ */
   if (sides === 0) {
-    both('71,27 78,27 78,41 71,41', G);
+    both('69,33 76,33 76,47 69,47', G);
   } else if (sides === 1) {
-    s += `<circle cx="74" cy="33" r="7" fill="${G}" stroke="${Gd}" stroke-width="2"/>
-          <circle cx="126" cy="33" r="7" fill="${G}" stroke="${Gd}" stroke-width="2"/>
-          <circle cx="74" cy="33" r="3" fill="${N}"/><circle cx="126" cy="33" r="3" fill="${N}"/>`;
+    s += `<circle cx="72" cy="39" r="7" fill="${G}" stroke="${Gd}" stroke-width="2"/>
+          <circle cx="128" cy="39" r="7" fill="${G}" stroke="${Gd}" stroke-width="2"/>
+          <circle cx="72" cy="39" r="3" fill="${N}"/><circle cx="128" cy="39" r="3" fill="${N}"/>`;
   } else {
-    both('60,24 76,28 74,34 58,32', W, `stroke="#c9d4de" stroke-width="1.5"`);
-    both('62,33 76,36 74,42 60,41', W, `stroke="#c9d4de" stroke-width="1.5"`);
-    both('64,42 76,44 74,50 63,49', W, `stroke="#c9d4de" stroke-width="1.5"`);
+    both('58,30 74,34 72,40 56,38', W, `stroke="#c9d4de" stroke-width="1.5"`);
+    both('60,39 74,42 72,48 58,47', W, `stroke="#c9d4de" stroke-width="1.5"`);
+    both('62,48 74,50 72,56 61,55', W, `stroke="#c9d4de" stroke-width="1.5"`);
   }
-  /* かお */
-  s += P('85,28 115,28 112,46 104,54 96,54 88,46', W, `stroke="#c9d4de" stroke-width="2"`);
-  s += P('87,35 97,32 97,39 89,41', B) + P('103,32 113,35 111,41 103,39', B);
-  s += `<rect x="94" y="46" width="12" height="3" rx="1.5" fill="${N}"/>`;
+  /* かお (小さめ・スリット目) */
+  s += P('84,40 116,40 114,54 107,60 93,60 86,54', W, `stroke="#c9d4de" stroke-width="2"`);
+  s += `<rect x="83" y="36" width="34" height="5" rx="2" fill="${G}" stroke="${Gd}" stroke-width="1.5"/>`;
+  s += P('87,44 97,43.5 97,47.5 87,48.5', B) + P('103,43.5 113,44 113,48.5 103,47.5', B);
+  s += `<rect x="94" y="52" width="12" height="3" rx="1.5" fill="${N}"/>
+        <rect x="99.2" y="55.5" width="1.6" height="4.5" fill="#c9d4de"/>`;
   /* クレスト (頭の個性) */
   if (sup) {
-    both('100,16 52,-10 68,-8 98,4', G, gold);
+    both('100,22 52,-4 68,-2 98,10', G, gold);
   }
   if (crest === 0) {
-    s += P('94,14 100,-10 106,14', G, gold);
-    both('82,17 77,-3 93,13', G, gold);
-    s += `<rect x="82" y="11" width="36" height="8" rx="3" fill="${G}" stroke="${Gd}" stroke-width="2"/>`;
-    s += P('100,7 95,13 100,19 105,13', R, gold);
+    s += P('94,20 100,-4 106,20', G, gold);
+    both('82,23 77,3 93,19', G, gold);
+    s += `<rect x="82" y="17" width="36" height="8" rx="3" fill="${G}" stroke="${Gd}" stroke-width="2"/>`;
+    s += P('100,13 95,19 100,25 105,19', R, gold);
   } else if (crest === 1) {
-    both('100,16 68,-6 82,-4 98,8', G, gold);
-    s += P('100,1 95,9 100,17 105,9', R, gold);
+    both('100,22 68,0 82,2 98,14', G, gold);
+    s += P('100,7 95,15 100,23 105,15', R, gold);
   } else {
-    both('86,18 56,-8 72,-4 92,10', G, gold);
-    s += P('100,8 95,15 100,22 105,15', R, gold);
+    both('86,24 56,-2 72,2 92,16', G, gold);
+    s += P('100,14 95,21 100,28 105,21', R, gold);
   }
 
   s += '</g></g>';
