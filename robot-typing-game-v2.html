@@ -708,86 +708,113 @@ function heroRobotMarkup(spec) {
   const C1d = `hsl(${spec.h}, 72%, 34%)`;
   const h2v = spec.h2 !== undefined ? spec.h2 : spec.h;
   const C2 = `hsl(${h2v}, 70%, 48%)`;
-  const W = '#f2f5f8', N = '#1d2a44', G = '#ffd23f', Gd = '#e8a800', R = '#ff4d4d';
+  const C2d = `hsl(${h2v}, 70%, 32%)`;
+  const W = '#f2f5f8', N = '#1d2a44', G = '#ffd23f', Gd = '#e8a800', R = '#ff4d4d', B = '#35c6ff';
   const sup = spec.fusion === 2;
+  /* 親ロボの特徴から個性を決める */
+  const crest = sup ? 0 : (spec.ant || 0) % 3;   // 0=クラウン 1=Vフィン 2=後ろ流しフィン
+  const sides = (spec.head || 0) % 3;            // 0=金ベント 1=イヤーポッド 2=白いたてがみ
+  const feetC = ((spec.body || 0) % 2) ? C2d : N;
+  const gemT = (spec.eye || 0) % 3;              // メダル 0=金星 1=赤ジェム 2=青ジェム
   const P = (pts, fill, extra) => `<polygon points="${pts}" fill="${fill}" stroke-linejoin="round" ${extra || ''}/>`;
+  const M = (pts) => pts.split(' ').map(p => { const [x, y] = p.split(','); return `${200 - Number(x)},${y}`; }).join(' ');
   const gold = `stroke="${Gd}" stroke-width="2.5"`;
   const O = `stroke="${N}" stroke-width="2"`;
 
   let s = '<g id="robotBody"><g class="part shown">';
+  const both = (pts, fill, extra) => { s += P(pts, fill, extra) + P(M(pts), fill, extra); };
 
-  /* 背中のウィング */
+  /* 背中のウィング (上へ跳ね上げ) */
   if (sup) {
-    s += P('62,70 -4,14 20,116 64,120', G, gold) + P('138,70 204,14 180,116 136,120', G, gold);
+    both('62,64 -8,2 16,66 34,112 64,116', G, gold);
   } else {
-    s += P('62,74 8,30 26,112 64,118', G, gold) + P('138,74 192,30 174,112 136,118', G, gold);
+    both('62,66 4,12 24,70 38,110 64,114', G, gold);
   }
   /* 肩キャノン (超がったい) */
   if (sup) {
-    s += `<rect x="18" y="12" width="20" height="52" rx="5" fill="${N}"/>
-          <rect x="162" y="12" width="20" height="52" rx="5" fill="${N}"/>
-          <rect x="18" y="12" width="20" height="8" rx="4" fill="${W}"/>
-          <rect x="162" y="12" width="20" height="8" rx="4" fill="${W}"/>
-          <rect x="18" y="25" width="20" height="7" fill="${G}"/>
-          <rect x="162" y="25" width="20" height="7" fill="${G}"/>`;
+    both('14,6 34,6 34,58 14,58', N);
+    both('14,6 34,6 34,14 14,14', W);
+    both('14,20 34,20 34,27 14,27', G);
   }
-  /* うで */
-  s += `<rect x="28" y="96" width="16" height="30" rx="5" fill="${N}"/>
-        <rect x="156" y="96" width="16" height="30" rx="5" fill="${N}"/>`;
-  s += P('14,120 48,120 46,166 18,166', W, O) + P('152,120 186,120 182,166 154,166', W, O);
-  s += `<rect x="15" y="127" width="32" height="10" fill="${C2}"/>
-        <rect x="153" y="127" width="32" height="10" fill="${C2}"/>
-        <rect x="19" y="164" width="24" height="20" rx="6" fill="${N}"/>
-        <rect x="157" y="164" width="24" height="20" rx="6" fill="${N}"/>`;
-  /* あし (脚長に) */
-  s += `<rect x="73" y="134" width="21" height="44" rx="5" fill="${N}"/>
-        <rect x="106" y="134" width="21" height="44" rx="5" fill="${N}"/>`;
-  s += P('64,172 96,172 98,220 58,220', C2, O) + P('104,172 136,172 142,220 102,220', C2, O);
-  s += P('78,172 92,172 90,208 78,208', W) + P('108,172 122,172 122,208 110,208', W);
-  s += `<rect x="68" y="168" width="26" height="8" rx="3" fill="${G}"/>
-        <rect x="106" y="168" width="26" height="8" rx="3" fill="${G}"/>`;
-  s += P('52,218 100,218 102,236 48,236', W, O) + P('100,218 148,218 152,236 98,236', W, O);
-  /* こし */
-  s += `<rect x="70" y="114" width="60" height="20" rx="3" fill="${N}"/>`;
-  s += P('68,118 88,124 82,148 60,140', C1, O) + P('132,118 112,124 118,148 140,140', C1, O);
-  s += `<rect x="92" y="117" width="16" height="14" rx="3" fill="${G}"/>`;
-  /* むね */
-  s += P('62,56 138,56 134,120 66,120', N);
-  s += P('64,58 97,58 97,100 72,106 62,88', C1, O) + P('136,58 103,58 103,100 128,106 138,88', C1, O);
-  s += P('96,60 66,57 75,70 96,71', G, gold) + P('104,60 134,57 125,70 104,71', G, gold);
-  const star = (cx, cy, r) => {
+  /* うで (外へ張り出す) */
+  s += `<rect x="30" y="94" width="14" height="26" rx="5" fill="${N}"/>
+        <rect x="156" y="94" width="14" height="26" rx="5" fill="${N}"/>`;
+  both('8,116 44,112 42,160 14,164', W, O);
+  both('9,124 43,120 43,132 9,136', C2);
+  both('14,160 40,157 38,181 16,184', N);
+  /* あし (Aスタンス) */
+  both('74,130 94,132 90,174 68,170', N);
+  both('62,172 92,176 90,214 56,210', C2, O);
+  both('74,178 88,180 86,208 72,206', W);
+  both('64,166 94,170 93,179 63,175', G);
+  both('40,208 92,212 94,232 34,230', feetC, O);
+  /* こし (細く) */
+  s += P('80,112 120,112 118,132 82,132', N);
+  both('66,114 86,120 78,142 60,134', C1, O);
+  s += `<rect x="92" y="114" width="16" height="14" rx="3" fill="${G}"/>`;
+  /* むね (逆三角形) */
+  s += P('60,54 140,54 126,114 74,114', N);
+  both('62,56 97,56 97,92 76,100 63,82', C1, O);
+  /* かた (後方へ流れる大型ブロック) */
+  both('2,36 58,58 56,102 8,100', C1, `stroke="${C1d}" stroke-width="2.5"`);
+  both('8,58 52,72 51,83 7,69', G);
+  s += `<circle class="antenna-light" cx="14" cy="48" r="4" fill="${R}"/>
+        <circle class="antenna-light" cx="186" cy="48" r="4" fill="${R}"/>`;
+  /* 胸の金の翼かざり (大きく2枚重ね) */
+  both('98,56 44,46 62,70 98,78', G, gold);
+  both('98,72 62,68 76,88 98,90', G, gold);
+  /* メダル */
+  s += `<rect x="96" y="86" width="8" height="10" fill="${Gd}"/>`;
+  s += `<circle cx="100" cy="104" r="${sup ? 15 : 12}" fill="${N}" stroke="${Gd}" stroke-width="3"/>`;
+  if (gemT === 0) {
     const pts = [];
     for (let i = 0; i < 10; i++) {
-      const rr = i % 2 ? r * 0.45 : r;
+      const rr = i % 2 ? (sup ? 12 : 9.5) * 0.45 : (sup ? 12 : 9.5);
       const a = -Math.PI / 2 + i * Math.PI / 5;
-      pts.push(`${(cx + Math.cos(a) * rr).toFixed(1)},${(cy + Math.sin(a) * rr).toFixed(1)}`);
+      pts.push(`${(100 + Math.cos(a) * rr).toFixed(1)},${(104 + Math.sin(a) * rr).toFixed(1)}`);
     }
-    return pts.join(' ');
-  };
-  s += `<circle cx="100" cy="96" r="${sup ? 16 : 13}" fill="${N}" stroke="${Gd}" stroke-width="2.5"/>`;
-  s += P(star(100, 96, sup ? 13 : 10.5), G, gold);
-  if (sup) s += P('100,62 94,69 100,76 106,69', R, gold);
-  /* かた (張り出し大きく) */
-  s += P('6,52 60,48 60,98 14,104', C1, `stroke="${C1d}" stroke-width="2.5"`)
-     + P('194,52 140,48 140,98 186,104', C1, `stroke="${C1d}" stroke-width="2.5"`);
-  s += `<rect x="12" y="72" width="44" height="8" fill="${G}"/>
-        <rect x="144" y="72" width="44" height="8" fill="${G}"/>
-        <circle class="antenna-light" cx="18" cy="60" r="4" fill="${R}"/>
-        <circle class="antenna-light" cx="182" cy="60" r="4" fill="${R}"/>`;
-  /* あたま (小さく高く = 等身アップ) */
-  s += `<rect x="92" y="46" width="16" height="14" fill="${N}"/>`;
-  s += P('78,14 122,14 126,34 118,50 82,50 74,34', C1, `stroke="${C1d}" stroke-width="2"`);
-  s += `<rect x="70" y="29" width="8" height="14" rx="2" fill="${G}"/>
-        <rect x="122" y="29" width="8" height="14" rx="2" fill="${G}"/>`;
-  s += P('84,28 116,28 113,48 104,56 96,56 87,48', W, `stroke="#c9d4de" stroke-width="2"`);
-  s += P('86,36 97,33 97,41 88,43', '#35c6ff') + P('103,33 114,36 112,43 103,41', '#35c6ff');
-  s += `<rect x="94" y="47" width="12" height="3" rx="1.5" fill="${N}"/>`;
-  /* Vフィン */
-  if (sup) {
-    s += P('100,20 58,-8 74,-6 98,8', G, gold) + P('100,20 142,-8 126,-6 102,8', G, gold);
+    s += P(pts.join(' '), G, gold);
+  } else if (gemT === 1) {
+    s += P('100,95 92,104 100,113 108,104', R, gold);
+  } else {
+    s += `<circle cx="100" cy="104" r="7.5" fill="${B}" stroke="${Gd}" stroke-width="2"/>`;
   }
-  s += P('100,18 68,-4 82,-2 98,10', G, gold) + P('100,18 132,-4 118,-2 102,10', G, gold);
-  s += P('100,3 95,11 100,19 105,11', R, gold);
+  /* あたま (えりに沈み込ませ、ヘルメットを深く) */
+  s += P('76,22 124,22 128,42 122,58 78,58 72,42', C1, `stroke="${C1d}" stroke-width="2"`);
+  /* よこの個性パーツ */
+  if (sides === 0) {
+    both('69,33 76,33 76,47 69,47', G);
+  } else if (sides === 1) {
+    s += `<circle cx="72" cy="39" r="7" fill="${G}" stroke="${Gd}" stroke-width="2"/>
+          <circle cx="128" cy="39" r="7" fill="${G}" stroke="${Gd}" stroke-width="2"/>
+          <circle cx="72" cy="39" r="3" fill="${N}"/><circle cx="128" cy="39" r="3" fill="${N}"/>`;
+  } else {
+    both('58,30 74,34 72,40 56,38', W, `stroke="#c9d4de" stroke-width="1.5"`);
+    both('60,39 74,42 72,48 58,47', W, `stroke="#c9d4de" stroke-width="1.5"`);
+    both('62,48 74,50 72,56 61,55', W, `stroke="#c9d4de" stroke-width="1.5"`);
+  }
+  /* かお (小さめ・スリット目) */
+  s += P('84,40 116,40 114,54 107,60 93,60 86,54', W, `stroke="#c9d4de" stroke-width="2"`);
+  s += `<rect x="83" y="36" width="34" height="5" rx="2" fill="${G}" stroke="${Gd}" stroke-width="1.5"/>`;
+  s += P('87,44 97,43.5 97,47.5 87,48.5', B) + P('103,43.5 113,44 113,48.5 103,47.5', B);
+  s += `<rect x="94" y="52" width="12" height="3" rx="1.5" fill="${N}"/>
+        <rect x="99.2" y="55.5" width="1.6" height="4.5" fill="#c9d4de"/>`;
+  /* クレスト (頭の個性) */
+  if (sup) {
+    both('100,22 52,-4 68,-2 98,10', G, gold);
+  }
+  if (crest === 0) {
+    s += P('94,20 100,-4 106,20', G, gold);
+    both('82,23 77,3 93,19', G, gold);
+    s += `<rect x="82" y="17" width="36" height="8" rx="3" fill="${G}" stroke="${Gd}" stroke-width="2"/>`;
+    s += P('100,13 95,19 100,25 105,19', R, gold);
+  } else if (crest === 1) {
+    both('100,22 68,0 82,2 98,14', G, gold);
+    s += P('100,7 95,15 100,23 105,15', R, gold);
+  } else {
+    both('86,24 56,-2 72,2 92,16', G, gold);
+    s += P('100,14 95,21 100,28 105,21', R, gold);
+  }
 
   s += '</g></g>';
   return s;
@@ -946,7 +973,7 @@ function robotSvgMarkup(spec, withAll) {
 
 function miniRobotSvg(spec) {
   const holder = document.createElement('div');
-  holder.innerHTML = `<svg viewBox="0 0 200 240">${robotSvgMarkup(spec, true)}</svg>`;
+  holder.innerHTML = `<svg viewBox="0 -16 200 256">${robotSvgMarkup(spec, true)}</svg>`;
   const g = holder.querySelector('#robotBody');
   if (g) g.removeAttribute('id');
   return holder.firstElementChild;
