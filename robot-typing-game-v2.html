@@ -304,7 +304,10 @@
     flex: 0 0 auto;
   }
   .gallery-grid {
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
+    touch-action: pan-y;
     -webkit-overflow-scrolling: touch;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(clamp(70px, 12vw, 110px), 1fr));
@@ -465,12 +468,14 @@
     from { transform: translateX(-15vw); }
     to   { transform: translateX(115vw); }
   }
+  #townScene { touch-action: none; }
   #townSvg {
     position: relative;
     z-index: 1;
     width: 100%;
     height: 100%;
     display: block;
+    transform-origin: 0 0;
   }
   .smoke { animation: smokeUp 3s ease-out infinite; opacity: 0; }
   .smoke.s2 { animation-delay: 1.5s; }
@@ -700,7 +705,7 @@ function randomSpec() {
     ant: Math.floor(Math.random() * 3)
   };
 }
-function specKey(s) { return [s.h, s.h2 !== undefined ? s.h2 : '', s.body, s.head || 0, s.eye, s.mouth, s.ant, s.fusion || 0].join('-'); }
+function specKey(s) { return [s.h, s.h2 !== undefined ? s.h2 : '', s.body, s.head || 0, s.eye, s.mouth, s.ant, s.fusion || 0, s.lv || 0].join('-'); }
 
 /* --- がったいロボ専用: ユーザー制作SVG (hero-robots-three-types-rebuild) 描画 --- */
 const HERO_DEFS="<linearGradient id=\"rb-gold\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop stop-color=\"#ffe66a\"/><stop offset=\".52\" stop-color=\"#ffd13c\"/><stop offset=\"1\" stop-color=\"#ffbd25\"/></linearGradient><linearGradient id=\"rb-white\" x1=\"0\" y1=\"0\" x2=\".8\" y2=\"1\"><stop stop-color=\"#fff\"/><stop offset=\"1\" stop-color=\"#e8eef7\"/></linearGradient><linearGradient id=\"rb-eye\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop stop-color=\"#55d8ff\"/><stop offset=\".45\" stop-color=\"#16b5f6\"/><stop offset=\"1\" stop-color=\"#078bdd\"/></linearGradient>";
@@ -970,6 +975,10 @@ function confetti() {
 }
 
 /* ================= ロボットずかん ================= */
+function setKbVisible(v) {
+  document.getElementById('kb').style.visibility = v ? '' : 'hidden';
+}
+
 function galleryOpen() { return !document.getElementById('galleryOverlay').hidden; }
 
 function showGallery() {
@@ -999,6 +1008,7 @@ function showGallery() {
   }
   document.getElementById('superFuseBtn').hidden = gattaiCount < 10;
   document.getElementById('galleryOverlay').hidden = false;
+  setKbVisible(false);
 }
 
 function hideGallery() {
@@ -1006,6 +1016,7 @@ function hideGallery() {
   selectMode = 0;
   selectedIdx = [];
   document.getElementById('fuseHint').hidden = true;
+  setKbVisible(true);
 }
 
 /* ================= ロボットタウン (クオータービュー) ================= */
@@ -1314,7 +1325,7 @@ function showTown() {
     const ru = tu + 0.35 + Math.random() * 1.3;
     const rv = tv + 0.5 + Math.random() * 1.2;
     const inner = robotSvgMarkup(spec, true).replace('id="robotBody"', '');
-    const mult = spec.fusion === 2 ? 2.1 : spec.fusion ? 1.5 : 1;
+    const mult = spec.fusion ? Math.min(6, 1.5 * Math.pow(1.4, lvOf(spec))) : 1;
     const idx = robotMeta.length;
     robotMeta.push({ tu, ru, rv, dir: Math.random() > 0.5 ? 1 : -1,
       speed: 0.12 + Math.random() * 0.2, pauseUntil: 0,
@@ -1367,6 +1378,9 @@ function showTown() {
   walkers = robotMeta;
 
   document.getElementById('townOverlay').hidden = false;
+  setKbVisible(false);
+  townView = { x: 0, y: 0, k: 1 };
+  applyTownView();
   let last = performance.now();
   const step = (now) => {
     if (!townOpen()) { townAnim = null; return; }
@@ -1395,7 +1409,58 @@ function hideTown() {
   document.getElementById('townOverlay').hidden = true;
   if (townAnim) { cancelAnimationFrame(townAnim); townAnim = null; }
   walkers = [];
+  setKbVisible(true);
 }
+
+/* --- まちのパン/ズーム --- */
+let townView = { x: 0, y: 0, k: 1 };
+function applyTownView() {
+  const svg = document.getElementById('townSvg');
+  if (svg) svg.style.transform = `translate(${townView.x}px, ${townView.y}px) scale(${townView.k})`;
+}
+function townZoomAt(mx, my, factor) {
+  const nk = Math.min(4, Math.max(0.5, townView.k * factor));
+  const f = nk / townView.k;
+  townView.x = mx - (mx - townView.x) * f;
+  townView.y = my - (my - townView.y) * f;
+  townView.k = nk;
+  applyTownView();
+}
+(function initTownGestures() {
+  const scene = document.getElementById('townScene');
+  const ptrs = new Map();
+  scene.addEventListener('pointerdown', (e) => {
+    if (scene.setPointerCapture) { try { scene.setPointerCapture(e.pointerId); } catch (err) {} }
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  });
+  scene.addEventListener('pointermove', (e) => {
+    if (!ptrs.has(e.pointerId)) return;
+    const p = ptrs.get(e.pointerId);
+    if (ptrs.size === 1) {
+      townView.x += e.clientX - p.x;
+      townView.y += e.clientY - p.y;
+      applyTownView();
+    } else if (ptrs.size === 2) {
+      const other = [...ptrs.entries()].find(([id]) => id !== e.pointerId)[1];
+      const d0 = Math.hypot(p.x - other.x, p.y - other.y);
+      const d1 = Math.hypot(e.clientX - other.x, e.clientY - other.y);
+      if (d0 > 4) {
+        const r = scene.getBoundingClientRect();
+        townZoomAt((e.clientX + other.x) / 2 - r.left, (e.clientY + other.y) / 2 - r.top, d1 / d0);
+      }
+    }
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  });
+  const end = (e) => ptrs.delete(e.pointerId);
+  scene.addEventListener('pointerup', end);
+  scene.addEventListener('pointercancel', end);
+  scene.addEventListener('wheel', (e) => {
+    if (!townOpen()) return;
+    e.preventDefault();
+    const r = scene.getBoundingClientRect();
+    townZoomAt(e.clientX - r.left, e.clientY - r.top, e.deltaY < 0 ? 1.15 : 1 / 1.15);
+  }, { passive: false });
+})();
 
 /* ================= がったい ================= */
 let gattaiCount = Number(localStorage.getItem('gattaiCount') || 0);
@@ -1427,8 +1492,16 @@ function updateFuseHint() {
     `${selectMode === 5 ? '🌟ちょうがったい' : '⚡がったい'}する ロボットを ${selectMode}たい タッチ! (いま ${selectedIdx.length}たい)`;
 }
 
+function lvOf(s) {
+  if (!s.fusion) return 0;
+  if (s.lv !== undefined) return s.lv;
+  return s.fusion === 2 ? 1 : 0;   // 旧データ互換
+}
+
 function makeFusionSpec(parents, isSuper) {
   const a = parents[0], b = parents[1] || parents[0];
+  const plv = Math.max(...parents.map(lvOf));
+  const hasSuper = parents.some(p => p.fusion === 2);
   return {
     h: a.h,
     h2: b.h,
@@ -1437,7 +1510,8 @@ function makeFusionSpec(parents, isSuper) {
     eye: b.eye,
     mouth: a.mouth,
     ant: a.ant,
-    fusion: isSuper ? 2 : 1
+    fusion: (isSuper || hasSuper) ? 2 : 1,          // 超合体の装備・見た目は引き継ぐ
+    lv: isSuper ? plv + 1 : plv                     // 通常合体では縮まない/超合体で+1
   };
 }
 
@@ -1532,6 +1606,8 @@ function finishFusion() {
     stage.innerHTML = '';
     const res = document.createElement('div');
     res.className = 'f-result';
+    const resScale = Math.min(1.6, 1 + lvOf(spec) * 0.15);
+    if (resScale > 1) res.style.width = `clamp(${150 * resScale}px, ${28 * resScale}vw, ${280 * resScale}px)`;
     res.appendChild(miniRobotSvg(spec));
     stage.appendChild(res);
     void res.offsetWidth;
