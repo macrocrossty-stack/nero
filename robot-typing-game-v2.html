@@ -627,7 +627,13 @@ function ensureAudio() {
   if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
   // タッチ/キー操作のたびに、固まった読み上げエンジンを起こす
   if ('speechSynthesis' in window) {
-    try { if (speechSynthesis.paused) speechSynthesis.resume(); } catch (e) {}
+    try {
+      if (speechSynthesis.paused) speechSynthesis.resume();
+      // 「しゃべりっぱなし」で固着していたら強制リセット (通常の読み上げは数秒以内)
+      if (speechSynthesis.speaking && lastSpeakStart && Date.now() - lastSpeakStart > 8000) {
+        resetSpeech();
+      }
+    } catch (e) {}
   }
 }
 function tone(freq, start, dur, type, vol) {
@@ -666,6 +672,18 @@ if ('speechSynthesis' in window) {
 }
 
 let sayTimer = null;
+let speakFailures = 0;    // 「speakしたのに声が出ない」連続回数
+let lastSpeakStart = 0;
+function resetSpeech() {
+  // 詰まったエンジンの復旧の儀式 (iOS/Safari)
+  try {
+    speechSynthesis.cancel();
+    speechSynthesis.pause();
+    speechSynthesis.resume();
+    speechSynthesis.cancel();
+  } catch (e) {}
+  pickVoice();
+}
 function say(text) {
   if (muted || !('speechSynthesis' in window)) return;
   const synth = speechSynthesis;
@@ -680,8 +698,20 @@ function say(text) {
       if (voiceJa) u.voice = voiceJa;
       u.rate = 0.9;
       u.pitch = 1.2;
+      let started = false;
+      u.onstart = () => { started = true; speakFailures = 0; lastSpeakStart = Date.now(); };
       say._current = u;  // 発話中のGCで無音になるiOSバグへの対策
       synth.speak(u);
+      // ワッチドッグ: 1.2秒たっても発話が始まらなければ失敗とみなす
+      setTimeout(() => {
+        if (!started && !muted) {
+          speakFailures++;
+          if (speakFailures >= 2) {
+            resetSpeech();
+            speakFailures = 0;
+          }
+        }
+      }, 1200);
     } catch (e) {}
   }, 80);
 }
