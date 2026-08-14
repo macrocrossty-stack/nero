@@ -629,8 +629,8 @@ function ensureAudio() {
   if ('speechSynthesis' in window) {
     try {
       if (speechSynthesis.paused) speechSynthesis.resume();
-      // 「しゃべりっぱなし」で固着していたら強制リセット (通常の読み上げは数秒以内)
-      if (speechSynthesis.speaking && lastSpeakStart && Date.now() - lastSpeakStart > 8000) {
+      // 「しゃべりっぱなし」で固着していたら強制リセット (お祝いの長文でも5秒程度)
+      if (speechSynthesis.speaking && lastSpeakStart && Date.now() - lastSpeakStart > 15000) {
         resetSpeech();
       }
     } catch (e) {}
@@ -658,21 +658,9 @@ function soundFanfare() {
   [523, 659, 784, 1047].forEach((f, i) => tone(f * 2, i * 0.15 + 0.05, 0.25, 'sine', 0.08));
 }
 
-/* --- 読み上げ (iPad/Safariの詰まり対策込み) --- */
-let voiceJa = null;
-function pickVoice() {
-  try {
-    const vs = speechSynthesis.getVoices();
-    voiceJa = vs.find(v => v.lang && v.lang.replace('_', '-').startsWith('ja')) || null;
-  } catch (e) {}
-}
-if ('speechSynthesis' in window) {
-  pickVoice();
-  speechSynthesis.onvoiceschanged = pickVoice;
-}
-
-let sayTimer = null;
-let speakFailures = 0;    // 「speakしたのに声が出ない」連続回数
+/* --- 読み上げ (声の自然さ優先 + 最小限の詰まり対策) --- */
+let sayTimer = null, watchTimer = null;
+let speakFailures = 0;    // 「speakしたのに本当に無音」の連続回数
 let lastSpeakStart = 0;
 function resetSpeech() {
   // 詰まったエンジンの復旧の儀式 (iOS/Safari)
@@ -682,38 +670,49 @@ function resetSpeech() {
     speechSynthesis.resume();
     speechSynthesis.cancel();
   } catch (e) {}
-  pickVoice();
 }
+
+function speakNow(text) {
+  const synth = speechSynthesis;
+  try {
+    if (synth.paused) synth.resume();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ja-JP';          // 声は端末の既定にまかせる (指定すると簡易音声になり機械的になる)
+    u.rate = 0.9;
+    u.pitch = 1.2;
+    let alive = false;
+    const ok = () => { alive = true; speakFailures = 0; };
+    u.onstart = () => { ok(); lastSpeakStart = Date.now(); };
+    u.onend = ok;              // onstartが来ない端末でも、鳴り終われば成功
+    say._current = u;          // 発話中のGCで無音になるiOSバグへの対策
+    synth.speak(u);
+
+    // ワッチドッグ: 「イベントも来ず、エンジンも完全に無反応」のときだけ失敗とみなす
+    clearTimeout(watchTimer);
+    watchTimer = setTimeout(() => {
+      if (muted || alive) return;
+      let idle = false;
+      try { idle = !synth.speaking && !synth.pending; } catch (e) {}
+      if (!idle) return;       // 音は出ているので成功あつかい (発話を邪魔しない)
+      speakFailures++;
+      if (speakFailures >= 3) { resetSpeech(); speakFailures = 0; }
+    }, 2500);
+  } catch (e) {}
+}
+
 function say(text) {
   if (muted || !('speechSynthesis' in window)) return;
   const synth = speechSynthesis;
-  // iOSはcancel直後のspeakでキューが詰まることがあるため、少し待ってから話す
-  try { synth.cancel(); } catch (e) {}
+  let busy = false;
+  try { busy = synth.speaking || synth.pending; } catch (e) {}
   clearTimeout(sayTimer);
-  sayTimer = setTimeout(() => {
-    try {
-      if (synth.paused) synth.resume();
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = 'ja-JP';
-      if (voiceJa) u.voice = voiceJa;
-      u.rate = 0.9;
-      u.pitch = 1.2;
-      let started = false;
-      u.onstart = () => { started = true; speakFailures = 0; lastSpeakStart = Date.now(); };
-      say._current = u;  // 発話中のGCで無音になるiOSバグへの対策
-      synth.speak(u);
-      // ワッチドッグ: 1.2秒たっても発話が始まらなければ失敗とみなす
-      setTimeout(() => {
-        if (!started && !muted) {
-          speakFailures++;
-          if (speakFailures >= 2) {
-            resetSpeech();
-            speakFailures = 0;
-          }
-        }
-      }, 1200);
-    } catch (e) {}
-  }, 80);
+  if (!busy) {
+    speakNow(text);            // 何も鳴っていなければ即しゃべる (元どおりの反応の良さ)
+    return;
+  }
+  // 前の発話を止めた直後のspeakはiOSでキューが詰まるので、少しだけ待つ
+  try { synth.cancel(); } catch (e) {}
+  sayTimer = setTimeout(() => speakNow(text), 60);
 }
 
 /* 画面復帰時にpausedのまま固まる対策 */
