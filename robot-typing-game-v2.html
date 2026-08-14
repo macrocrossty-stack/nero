@@ -691,9 +691,12 @@ function speakNow(text) {
   try {
     if (synth.paused) synth.resume();
     // 先頭に「間」を足して、出だしが食われても本文が欠けないようにする
-    const u = new SpeechSynthesisUtterance('、' + text);
+    // (句読点だと語頭にくっついて聞こえるので、読まれない全角スペースを使う)
+    const u = new SpeechSynthesisUtterance('　' + text);
     u.lang = 'ja-JP';          // 声は端末の既定にまかせる (指定すると簡易音声になり機械的になる)
-    u.rate = 0.72;             // 4歳が聞き取れる速さ
+    // ゆっくり過ぎると促音(っ)が伸びて「つ」と発音されてしまうため、
+    // 促音を含む言葉だけ標準に近い速さで読む
+    u.rate = /[っッ]/.test(text) ? 0.88 : 0.72;
     u.pitch = 1.2;
     let alive = false;
     const ok = () => { alive = true; speakFailures = 0; };
