@@ -625,6 +625,7 @@ function ensureAudio() {
     try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
   }
   if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  warmUpSpeech();   // 最初の操作で読み上げエンジンを温めておく (出だし欠け対策)
   // タッチ/キー操作のたびに、固まった読み上げエンジンを起こす
   if ('speechSynthesis' in window) {
     try {
@@ -672,13 +673,27 @@ function resetSpeech() {
   } catch (e) {}
 }
 
+/* iOSは発話の出だしが食われることがあるので、エンジンを先に温めておく */
+let speechWarmed = false;
+function warmUpSpeech() {
+  if (speechWarmed || !('speechSynthesis' in window)) return;
+  speechWarmed = true;
+  try {
+    const u = new SpeechSynthesisUtterance('　');
+    u.lang = 'ja-JP';
+    u.volume = 0;
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+
 function speakNow(text) {
   const synth = speechSynthesis;
   try {
     if (synth.paused) synth.resume();
-    const u = new SpeechSynthesisUtterance(text);
+    // 先頭に「間」を足して、出だしが食われても本文が欠けないようにする
+    const u = new SpeechSynthesisUtterance('、' + text);
     u.lang = 'ja-JP';          // 声は端末の既定にまかせる (指定すると簡易音声になり機械的になる)
-    u.rate = 0.9;
+    u.rate = 0.72;             // 4歳が聞き取れる速さ
     u.pitch = 1.2;
     let alive = false;
     const ok = () => { alive = true; speakFailures = 0; };
@@ -710,9 +725,9 @@ function say(text) {
     speakNow(text);            // 何も鳴っていなければ即しゃべる (元どおりの反応の良さ)
     return;
   }
-  // 前の発話を止めた直後のspeakはiOSでキューが詰まるので、少しだけ待つ
+  // 前の発話を止めた直後のspeakはiOSでキューが詰まる/出だしが欠けるので、少し待つ
   try { synth.cancel(); } catch (e) {}
-  sayTimer = setTimeout(() => speakNow(text), 60);
+  sayTimer = setTimeout(() => speakNow(text), 130);
 }
 
 /* 画面復帰時にpausedのまま固まる対策 */
