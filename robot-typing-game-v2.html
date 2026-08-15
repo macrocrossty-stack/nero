@@ -261,6 +261,15 @@
     animation: blinkLight 2s ease-in-out infinite;
   }
   #startRobot { width: clamp(130px, 20vw, 250px); }
+  /* どのビルドを見ているか確認するための小さな表示 */
+  #buildTag {
+    position: absolute;
+    right: 10px;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    color: rgba(255,255,255,0.45);
+    font-size: 12px;
+    letter-spacing: 0.05em;
+  }
 
   /* ===== ロボットずかん ===== */
   #galleryOverlay {
@@ -533,6 +542,7 @@
   <h2>🤖 ロボットこうじょう</h2>
   <svg id="startRobot" viewBox="0 0 200 240"></svg>
   <p>がめんタッチか どれかのキーを おしてスタート!</p>
+  <div id="buildTag">v33</div>
 </div>
 
 <header>
@@ -748,7 +758,18 @@ function heroRobotMarkup(spec) {
   const grad = (id, h) =>
     `<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">` +
     `<stop stop-color="hsl(${h},74%,56%)"/><stop offset="1" stop-color="hsl(${h},72%,42%)"/></linearGradient>`;
-  const fix = (t) => t.split('__C1__').join(`url(#${c1})`).split('__C2__').join(`url(#${c2})`);
+  // 金・白・目のグラデーションもロボットごとに固有IDにする
+  // (同じIDが文書内に複数あると、元のロボットが消えた瞬間に他の顔や金色が
+  //  描画されなくなるため)
+  const gid = `rbg-${uid}`, wid = `rbw-${uid}`, eid = `rbe-${uid}`;
+  const defs = HERO_DEFS
+    .split('id="rb-gold"').join(`id="${gid}"`)
+    .split('id="rb-white"').join(`id="${wid}"`)
+    .split('id="rb-eye"').join(`id="${eid}"`);
+  const fix = (t) => t.split('__C1__').join(`url(#${c1})`).split('__C2__').join(`url(#${c2})`)
+    .split('url(#rb-gold)').join(`url(#${gid})`)
+    .split('url(#rb-white)').join(`url(#${wid})`)
+    .split('url(#rb-eye)').join(`url(#${eid})`);
   const sup = spec.fusion === 2;
   const motif = (spec.mouth || 0) % 3;   // 親のくち由来: 0=ヒーロー 1=きょうりゅう 2=くるま
   const mo = motif === 1 ? HERO_TPL.dino : motif === 2 ? HERO_TPL.car : null;
@@ -759,7 +780,7 @@ function heroRobotMarkup(spec) {
   const gemT = (spec.eye || 0) % 3;
 
   let s = `<g id="robotBody"><g class="part shown">`;
-  s += `<defs>${HERO_DEFS}${grad(c1, spec.h)}${grad(c2, h2v)}</defs>`;
+  s += `<defs>${defs}${grad(c1, spec.h)}${grad(c2, h2v)}</defs>`;
   s += `<g transform="translate(23.4,-13.2) scale(0.333,0.305)">`;
   if (mo) s += fix(mo.back);
   if (sup) s += fix(HERO_TPL.sabers);
