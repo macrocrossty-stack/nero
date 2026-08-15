@@ -625,7 +625,6 @@ function ensureAudio() {
     try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
   }
   if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-  warmUpSpeech();   // 最初の操作で読み上げエンジンを温めておく (出だし欠け対策)
   // タッチ/キー操作のたびに、固まった読み上げエンジンを起こす
   if ('speechSynthesis' in window) {
     try {
@@ -673,30 +672,13 @@ function resetSpeech() {
   } catch (e) {}
 }
 
-/* iOSは発話の出だしが食われることがあるので、エンジンを先に温めておく */
-let speechWarmed = false;
-function warmUpSpeech() {
-  if (speechWarmed || !('speechSynthesis' in window)) return;
-  speechWarmed = true;
-  try {
-    const u = new SpeechSynthesisUtterance('　');
-    u.lang = 'ja-JP';
-    u.volume = 0;
-    speechSynthesis.speak(u);
-  } catch (e) {}
-}
-
 function speakNow(text) {
   const synth = speechSynthesis;
   try {
     if (synth.paused) synth.resume();
-    // 先頭に「間」を足して、出だしが食われても本文が欠けないようにする
-    // (句読点だと語頭にくっついて聞こえるので、読まれない全角スペースを使う)
-    const u = new SpeechSynthesisUtterance('　' + text);
+    const u = new SpeechSynthesisUtterance(text);
     u.lang = 'ja-JP';          // 声は端末の既定にまかせる (指定すると簡易音声になり機械的になる)
-    // ゆっくり過ぎると促音(っ)が伸びて「つ」と発音されてしまうため、
-    // 促音を含む言葉だけ標準に近い速さで読む
-    u.rate = /[っッ]/.test(text) ? 0.88 : 0.72;
+    u.rate = 0.9;
     u.pitch = 1.2;
     let alive = false;
     const ok = () => { alive = true; speakFailures = 0; };
@@ -728,9 +710,9 @@ function say(text) {
     speakNow(text);            // 何も鳴っていなければ即しゃべる (元どおりの反応の良さ)
     return;
   }
-  // 前の発話を止めた直後のspeakはiOSでキューが詰まる/出だしが欠けるので、少し待つ
+  // 前の発話を止めた直後のspeakはiOSでキューが詰まるので、少しだけ待つ
   try { synth.cancel(); } catch (e) {}
-  sayTimer = setTimeout(() => speakNow(text), 130);
+  sayTimer = setTimeout(() => speakNow(text), 60);
 }
 
 /* 画面復帰時にpausedのまま固まる対策 */
