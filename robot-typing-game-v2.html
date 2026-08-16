@@ -542,7 +542,7 @@
   <h2>🤖 ロボットこうじょう</h2>
   <svg id="startRobot" viewBox="0 0 200 240"></svg>
   <p>がめんタッチか どれかのキーを おしてスタート!</p>
-  <div id="buildTag">v33</div>
+  <div id="buildTag">v34</div>
 </div>
 
 <header>
@@ -720,9 +720,10 @@ function say(text) {
     speakNow(text);            // 何も鳴っていなければ即しゃべる (元どおりの反応の良さ)
     return;
   }
-  // 前の発話を止めた直後のspeakはiOSでキューが詰まるので、少しだけ待つ
+  // iOSは「タッチ/キー操作の処理の中から直接呼ばれたspeak」しか鳴らさないため、
+  // タイマーで遅らせず、中断した直後にその場で喋らせる
   try { synth.cancel(); } catch (e) {}
-  sayTimer = setTimeout(() => speakNow(text), 60);
+  speakNow(text);
 }
 
 /* 画面復帰時にpausedのまま固まる対策 */
