@@ -306,12 +306,11 @@ th.num { text-align: right; }
 /* ================= 設定 ================= */
 const SERVER = "Notion";
 const TOOL = "notion-query-data-sources";
-const DS_TX  = "collection://c9691ce6-8691-43a7-916b-8f977bc24af7"; // 収支レコード
-const DS_FIX = "collection://ed0e90bf-0692-45db-8ef1-5d256c7275e4"; // 固定費マスタ
-const TX_INPUT = { data: { mode: "sql", data_source_urls: [DS_TX],
-  query: 'SELECT "項目","金額","種別","カテゴリ","固定費","メモ","date:日付:start" AS d FROM "' + DS_TX + '" WHERE "date:日付:start" IS NOT NULL ORDER BY d DESC LIMIT 1000' } };
-const FIX_INPUT = { data: { mode: "sql", data_source_urls: [DS_FIX],
-  query: 'SELECT "項目","金額","カテゴリ","支払日","有効","メモ" FROM "' + DS_FIX + '" ORDER BY "支払日" ASC LIMIT 200' } };
+/* ビュー方式(プランのSQLクエリ上限の対象外)で読む */
+const TX_VIEW = "https://www.notion.so/234f5b9ec3e74664b12808aa9f874ff5?v=153c4714117141d29d0e033b26bc1864"; // 収支レコード Default view
+const FIX_VIEW = "https://www.notion.so/7908268c624f4d8194a9a8b4bb0624f5?v=b1376e9bfdbe4e889d2a992dc1520f2f"; // 固定費マスタ Default view
+const TX_INPUT = { data: { mode: "view", view_url: TX_VIEW, page_size: 100 } };
+const FIX_INPUT = { data: { mode: "view", view_url: FIX_VIEW, page_size: 100 } };
 
 /* カテゴリ→固定色 (くすみトーン・生成りサーフェス検証済み / 表示順 = この配列順で隣接ペア検証済み) */
 const CAT_ORDER = ["住居", "食費", "通信", "水道・光熱", "交際費", "日用品", "サブスク", "趣味・娯楽"];
@@ -349,8 +348,7 @@ const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&a
 function parsePayload(result) {
   let p = result && result.payload;
   if (typeof p === "string") { try { p = JSON.parse(p); } catch (e) { p = null; } }
-  if (p && Array.isArray(p.results)) return p.results;
-  return null;
+  return p && Array.isArray(p.results) ? p : null;
 }
 
 const AUTHZ = ["needs_reauth", "server_not_connected", "blocked_by_policy", "approval_required", "not_granted", "selection_required"];
@@ -369,8 +367,12 @@ function errCopy(err) {
     case "capability_removed":
     case "not_granted":
       return "このページは claude.ai 上で開くと、Notionの家計データを読み込んで表示します。";
-    case "tool_error":
-      return "Notionからの読み取りでエラーが返されました: " + (err.message || "");
+    case "tool_error": {
+      const m = String(err.message || "");
+      if (/usage limit/i.test(m))
+        return "Notionのクエリ回数の上限に達しました(プランの一時的な制限)。少し時間をおいて「更新」を押してください。それまでは前回取得したデータを表示しています。";
+      return "Notionからの読み取りでエラーが返されました: " + m.replace(/https?:\/\/\S+/g, "").slice(0, 160);
+    }
     default:
       return "データの取得に失敗しました。しばらくしてから「更新」を押してください。";
   }
@@ -378,13 +380,14 @@ function errCopy(err) {
 
 function handleEvent(key, ev, receivedAt) {
   if (ev.type === "data") {
-    const rows = parsePayload(ev.result);
-    if (rows) {
-      state[key] = rows;
+    const p = parsePayload(ev.result);
+    if (p) {
+      state[key] = p.results;
       const c = ev.result.cache;
       state[key + "At"] = c && c.storedAt ? c.storedAt : receivedAt;
       state[key + "Stale"] = !!(c && c.revalidating);
       delete state.errors[key];
+      if (p.has_more && p.next_cursor) fetchMore(key, p.next_cursor, 1);
     }
   } else {
     const err = ev.error || {};
@@ -392,6 +395,21 @@ function handleEvent(key, ev, receivedAt) {
     state.errors[key] = err;
   }
   render();
+}
+
+/* 100件を超える分をページ送りで追加取得 */
+function fetchMore(key, cursor, depth) {
+  const mcp = window.claude && window.claude.mcp;
+  if (!mcp || depth > 9) return;
+  const base = key === "tx" ? TX_INPUT : FIX_INPUT;
+  const input = { data: Object.assign({}, base.data, { start_cursor: cursor }) };
+  mcp.callTool(SERVER, TOOL, input, { cache: { staleTime: 120000, gcTime: 3600000 } }).then(res => {
+    const p = parsePayload(res);
+    if (!p) return;
+    state[key] = (state[key] || []).concat(p.results);
+    render();
+    if (p.has_more && p.next_cursor) fetchMore(key, p.next_cursor, depth + 1);
+  }).catch(() => {});
 }
 
 let unsubs = [];
@@ -426,8 +444,8 @@ function txParsed() {
     cat: r["カテゴリ"] || (r["種別"] === "収入" ? "その他収入" : "その他支出"),
     fixed: r["固定費"] === "__YES__",
     memo: r["メモ"] || "",
-    d: String(r.d || ""),
-    ym: String(r.d || "").slice(0, 7),
+    d: String(r["date:日付:start"] || ""),
+    ym: String(r["date:日付:start"] || "").slice(0, 7),
   }));
 }
 function monthRows(ym) { return txParsed().filter(r => r.ym === ym); }
@@ -686,7 +704,7 @@ function latestSalary() {
   const s = txParsed().filter(r => r.kind === "収入" && r.cat === "給与").sort((a, b) => b.d.localeCompare(a.d))[0];
   return s ? s.amount : 463179;
 }
-let assumeInit = false;
+let salaryApplied = false;
 function bd(l, v, total) {
   return '<div class="bd-row' + (total ? " total" : "") + '"><span class="bd-l">' + esc(l) + '</span><span class="bd-v">' + esc(v) + "</span></div>";
 }
@@ -695,10 +713,13 @@ function renderFree() {
   const bdBox = document.getElementById("free-breakdown");
   const incomeEl = document.getElementById("in-income");
   const savingEl = document.getElementById("in-saving");
-  if (!assumeInit && state.tx) {
-    incomeEl.value = store.get("kakeibo_income", latestSalary());
-    savingEl.value = store.get("kakeibo_saving", 92224);
-    assumeInit = true;
+  if (!incomeEl.value) incomeEl.value = store.get("kakeibo_income", 463179);
+  if (!savingEl.value) savingEl.value = store.get("kakeibo_saving", 92224);
+  if (!salaryApplied && state.tx) {
+    salaryApplied = true;
+    let hasCustom = false;
+    try { hasCustom = localStorage.getItem("kakeibo_income") != null; } catch (e) {}
+    if (!hasCustom) incomeEl.value = latestSalary();
   }
   const income = Number(incomeEl.value) || 0;
   const saving = Number(savingEl.value) || 0;
