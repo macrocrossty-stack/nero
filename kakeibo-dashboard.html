@@ -1,33 +1,33 @@
 <title>家計簿 — 収支ダッシュボード</title>
 <style>
 /* ============================================================
-   家計簿ダッシュボード — やわらかな光のライトテーマ(意図的な単一テーマ)
-   淡いグレー地 × 白カード × ソフトシャドウ × パステルアクセント
-   カテゴリ8色は白サーフェス上で検証済み (CVD分離パス / 淡色3種は
-   ラベル・金額の直接表示で補完)
+   家計簿ダッシュボード — くすみカラーのやわらかテーマ(意図的な単一テーマ)
+   生成りの麻布 × モカ × くすみブルー × 丸いカード
+   カテゴリ8色は生成りサーフェス #fdfcfa 上で検証済み
+   (CVD分離7.3=6-8帯のため、内訳リストのラベル・金額直接表示で補完)
    ============================================================ */
 :root {
   color-scheme: light;
-  --bg: #edf0f5;
-  --card: #ffffff;
-  --card-edge: #f1f4f8;
-  --shadow: 0 10px 28px rgba(146, 162, 188, 0.22), 0 2px 6px rgba(146, 162, 188, 0.10);
-  --shadow-sm: 0 4px 14px rgba(146, 162, 188, 0.20);
-  --ink: #3c4656;
-  --ink-2: #71809a;
-  --muted: #9aa7b8;
-  --accent: #4a7fc1;
-  --grid: #eceff4;
-  --baseline: #d7dde6;
-  --income: #2a78d6;
-  --expense: #eb6834;
-  --neg: #e34948;
+  --bg: #f2ede5;
+  --card: #fdfcfa;
+  --card-edge: #f1ece4;
+  --shadow: 0 10px 28px rgba(168, 148, 120, 0.20), 0 2px 6px rgba(168, 148, 120, 0.10);
+  --shadow-sm: 0 4px 14px rgba(168, 148, 120, 0.18);
+  --ink: #55483d;
+  --ink-2: #8a7a6a;
+  --muted: #b0a291;
+  --accent: #a98874;
+  --grid: #efe9e0;
+  --baseline: #ddd3c5;
+  --income: #4a76b0;
+  --expense: #c96a33;
+  --neg: #c84f4d;
   --serif: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
   --sans: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Noto Sans JP", "Segoe UI", sans-serif;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  background: linear-gradient(175deg, #f4f6fa 0%, #eaeef4 55%, #e6ebf2 100%);
+  background: linear-gradient(175deg, #f6f1ea 0%, #f0eae1 55%, #ece4d9 100%);
   color: var(--ink);
   font-family: var(--sans);
   font-weight: 400;
@@ -36,14 +36,14 @@ body {
 }
 .bg {
   position: fixed; inset: 0;
-  background: radial-gradient(ellipse 75% 50% at 50% -8%, rgba(255, 255, 255, 0.85) 0%, transparent 65%);
+  background: radial-gradient(ellipse 75% 50% at 50% -8%, rgba(255, 253, 250, 0.9) 0%, transparent 65%);
   pointer-events: none; z-index: 0;
 }
 .container { max-width: 860px; margin: 0 auto; padding: 28px 20px 60px; position: relative; z-index: 1; }
 
 /* ---- ヘッダー ---- */
 .header { text-align: center; padding: 10px 0 6px; }
-.title { font-family: var(--serif); font-size: 1.55rem; font-weight: 500; letter-spacing: 0.28em; color: #4a5a70; text-indent: 0.28em; }
+.title { font-family: var(--serif); font-size: 1.55rem; font-weight: 500; letter-spacing: 0.28em; color: #8a6f5c; text-indent: 0.28em; }
 .subtitle { font-size: 0.68rem; color: var(--muted); letter-spacing: 0.18em; margin-top: 7px; }
 .statusline { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 14px 0 4px; font-size: 0.68rem; color: var(--muted); min-height: 26px; }
 .refresh-btn {
@@ -104,7 +104,7 @@ body {
 .cat-row { display: grid; grid-template-columns: 11px auto 1fr auto; align-items: center; gap: 9px; font-size: 0.76rem; }
 .cat-chip { width: 11px; height: 11px; border-radius: 3px; }
 .cat-name { color: var(--ink); white-space: nowrap; }
-.cat-bar-track { display: block; height: 5px; border-radius: 3px; background: rgba(88, 110, 140, 0.10); overflow: hidden; }
+.cat-bar-track { display: block; height: 5px; border-radius: 3px; background: rgba(130, 108, 84, 0.10); overflow: hidden; }
 .cat-bar { display: block; height: 100%; border-radius: 3px; }
 .cat-amt { color: var(--ink-2); font-variant-numeric: tabular-nums; }
 
@@ -120,12 +120,12 @@ body {
 .tbl-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; font-size: 0.76rem; }
 th { text-align: left; font-weight: 400; font-size: 0.64rem; color: var(--muted); letter-spacing: 0.1em; padding: 4px 8px 8px; border-bottom: 1px solid var(--grid); }
-td { padding: 8px; border-bottom: 1px solid #f3f5f9; color: var(--ink); }
+td { padding: 8px; border-bottom: 1px solid #f5f0e8; color: var(--ink); }
 td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 th.num { text-align: right; }
-.pill { display: inline-flex; align-items: center; gap: 5px; font-size: 0.68rem; padding: 2px 9px; border-radius: 999px; background: rgba(88, 110, 140, 0.08); color: var(--ink-2); white-space: nowrap; }
+.pill { display: inline-flex; align-items: center; gap: 5px; font-size: 0.68rem; padding: 2px 9px; border-radius: 999px; background: rgba(130, 108, 84, 0.08); color: var(--ink-2); white-space: nowrap; }
 .pill .dot { width: 7px; height: 7px; border-radius: 50%; }
-.pill.on { background: rgba(42, 120, 214, 0.10); color: #2a6dbd; }
+.pill.on { background: rgba(169, 136, 116, 0.16); color: #93705a; }
 .pill.off { color: var(--muted); }
 
 /* ---- 空状態 ---- */
@@ -152,7 +152,7 @@ th.num { text-align: right; }
   border: 1px solid var(--card-edge); background: var(--card); color: var(--ink-2);
   box-shadow: var(--shadow-sm); font-family: var(--sans); letter-spacing: 0.04em; transition: all 0.2s;
 }
-.tab-btn.active { background: #3c4656; color: #fff; border-color: #3c4656; }
+.tab-btn.active { background: var(--accent); color: #fffdf8; border-color: var(--accent); }
 .tab-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .view { display: none; }
 .view.active { display: block; }
@@ -162,8 +162,8 @@ th.num { text-align: right; }
 .assume { flex: 1; min-width: 150px; }
 .assume label { display: block; font-size: 0.64rem; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 5px; }
 .num-input {
-  width: 100%; padding: 8px 10px; border-radius: 10px; border: 1px solid #dde3ec;
-  background: #f7f9fc; color: var(--ink); font-size: 0.9rem; font-family: var(--sans);
+  width: 100%; padding: 8px 10px; border-radius: 12px; border: 1px solid #e5dccf;
+  background: #faf7f2; color: var(--ink); font-size: 0.9rem; font-family: var(--sans);
   font-variant-numeric: tabular-nums; outline: none;
 }
 .num-input:focus { border-color: var(--accent); }
@@ -171,7 +171,7 @@ th.num { text-align: right; }
 .free-hero .fh-label { font-size: 0.66rem; color: var(--muted); letter-spacing: 0.16em; }
 .free-hero .fh-value { font-size: 2.1rem; font-weight: 700; margin-top: 4px; }
 .free-hero .fh-sub { font-size: 0.72rem; color: var(--ink-2); margin-top: 6px; line-height: 1.7; }
-.gauge-track { height: 14px; border-radius: 8px; background: rgba(88,110,140,0.10); overflow: hidden; margin: 10px 0 6px; }
+.gauge-track { height: 14px; border-radius: 8px; background: rgba(130,108,84,0.10); overflow: hidden; margin: 10px 0 6px; }
 .gauge-fill { display: block; height: 100%; border-radius: 8px; transition: width 0.4s; }
 .gauge-notes { display: flex; justify-content: space-between; font-size: 0.68rem; color: var(--muted); }
 .breakdown { display: flex; flex-direction: column; gap: 7px; margin-top: 12px; font-size: 0.78rem; }
@@ -184,9 +184,9 @@ th.num { text-align: right; }
 .loan-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; margin-top: 6px; }
 .loan-table th { font-weight: 400; font-size: 0.64rem; color: var(--muted); text-align: right; padding: 4px 8px 8px; border-bottom: 1px solid var(--grid); }
 .loan-table th:first-child { text-align: left; }
-.loan-table td { padding: 8px; text-align: right; font-variant-numeric: tabular-nums; border-bottom: 1px solid #f3f5f9; }
+.loan-table td { padding: 8px; text-align: right; font-variant-numeric: tabular-nums; border-bottom: 1px solid #f5f0e8; }
 .loan-table td:first-child { text-align: left; color: var(--ink-2); }
-.loan-table tr.current td { background: #f2f7fd; font-weight: 600; }
+.loan-table tr.current td { background: #f7f1e8; font-weight: 600; }
 .delta-up { color: var(--neg); font-size: 0.7rem; }
 .note { font-size: 0.68rem; color: var(--muted); line-height: 1.8; margin-top: 12px; }
 
@@ -313,15 +313,16 @@ const TX_INPUT = { data: { mode: "sql", data_source_urls: [DS_TX],
 const FIX_INPUT = { data: { mode: "sql", data_source_urls: [DS_FIX],
   query: 'SELECT "項目","金額","カテゴリ","支払日","有効","メモ" FROM "' + DS_FIX + '" ORDER BY "支払日" ASC LIMIT 200' } };
 
-/* カテゴリ→固定色 (ライト用検証済みパレット / 表示順 = この配列順で隣接ペア検証済み) */
+/* カテゴリ→固定色 (くすみトーン・生成りサーフェス検証済み / 表示順 = この配列順で隣接ペア検証済み) */
 const CAT_ORDER = ["住居", "食費", "通信", "水道・光熱", "交際費", "日用品", "サブスク", "趣味・娯楽"];
 const CAT_COLOR = {
-  "住居": "#2a78d6", "食費": "#eb6834", "通信": "#1baf7a", "水道・光熱": "#eda100",
-  "交際費": "#e87ba4", "日用品": "#008300", "サブスク": "#4a3aa7", "趣味・娯楽": "#e34948",
-  "保険": "#8494a8", "交通": "#a4b2c2", "医療・健康": "#6b7d92", "衣服・美容": "#b8c4d2",
-  "特別な出費": "#556a80", "その他支出": "#93a2b4"
+  "住居": "#4a76b0", "食費": "#c96a33", "通信": "#279d68", "水道・光熱": "#c08c1e",
+  "交際費": "#c96f95", "日用品": "#4e7d0e", "サブスク": "#7a63b8", "趣味・娯楽": "#c84f4d",
+  "ペット": "#8a6f5c",
+  "保険": "#a89a8a", "交通": "#c0b4a4", "医療・健康": "#8d7f6f", "衣服・美容": "#d1c6b8",
+  "特別な出費": "#6f6355", "その他支出": "#b3a795"
 };
-const OTHER_ORDER = ["保険", "交通", "医療・健康", "衣服・美容", "特別な出費", "その他支出"];
+const OTHER_ORDER = ["ペット", "保険", "交通", "医療・健康", "衣服・美容", "特別な出費", "その他支出"];
 
 /* ================= 状態 ================= */
 const state = {
@@ -515,7 +516,7 @@ function donutSegments(rows) {
   const segs = [];
   for (const c of CAT_ORDER) if (m.get(c)) segs.push({ cat: c, v: m.get(c), color: CAT_COLOR[c] });
   for (const c of OTHER_ORDER) if (m.get(c)) segs.push({ cat: c, v: m.get(c), color: CAT_COLOR[c] });
-  for (const [c, v] of m) if (!(c in CAT_COLOR) && v) segs.push({ cat: c, v, color: "#8a98ab" });
+  for (const [c, v] of m) if (!(c in CAT_COLOR) && v) segs.push({ cat: c, v, color: "#a89a8a" });
   return segs;
 }
 function arcPath(cx, cy, r0, r1, a0, a1) {
@@ -648,7 +649,7 @@ function renderRecent(rows) {
   const sorted = [...rows].sort((a, b) => b.d.localeCompare(a.d)).slice(0, 14);
   let html = '<table><thead><tr><th>日付</th><th>項目</th><th>カテゴリ</th><th class="num">金額</th></tr></thead><tbody>';
   for (const r of sorted) {
-    const color = CAT_COLOR[r.cat] || (r.kind === "収入" ? "var(--income)" : "#8a98ab");
+    const color = CAT_COLOR[r.cat] || (r.kind === "収入" ? "var(--income)" : "#a89a8a");
     const sign = r.kind === "収入" ? "+" : "−";
     html += "<tr><td>" + esc(r.d.slice(5).replace("-", "/")) + "</td>" +
       "<td>" + esc(r.item) + "</td>" +
@@ -708,7 +709,7 @@ function renderFree() {
   const left = budget - spent;
   const pct = budget > 0 ? Math.min(100, (spent / budget) * 100) : 100;
   const over = budget > 0 ? spent > budget : true;
-  const color = over ? "var(--neg)" : pct > 75 ? "#eda100" : "#1baf7a";
+  const color = over ? "var(--neg)" : pct > 75 ? "#c08c1e" : "#279d68";
   const now = new Date();
   const isCur = state.ym === currentYM();
   const parts = state.ym.split("-").map(Number);
