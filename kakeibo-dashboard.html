@@ -760,7 +760,7 @@ function renderFree() {
 });
 
 /* ================= ローン ================= */
-const LOAN_DEF = { bal: 38326898, rate: 1.17, end: "2052-10", pay: 127776 };
+const LOAN_DEF = { bal: 38236490, rate: 1.17, end: "2052-10", pay: 127776 }; // 2026-09時点
 let loanInit = false;
 function loanMonthsLeft(endYm) {
   const m = /^(\d{4})[-/](\d{1,2})$/.exec(String(endYm || "").trim());
