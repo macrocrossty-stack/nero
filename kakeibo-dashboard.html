@@ -145,6 +145,51 @@ th.num { text-align: right; }
 }
 #tooltip .tt-title { color: var(--ink-2); font-size: 0.66rem; letter-spacing: 0.08em; margin-bottom: 2px; }
 
+/* ---- タブ ---- */
+.tabs { display: flex; justify-content: center; gap: 8px; margin: 14px 0 4px; }
+.tab-btn {
+  font-size: 0.78rem; padding: 8px 18px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--card-edge); background: var(--card); color: var(--ink-2);
+  box-shadow: var(--shadow-sm); font-family: var(--sans); letter-spacing: 0.04em; transition: all 0.2s;
+}
+.tab-btn.active { background: #3c4656; color: #fff; border-color: #3c4656; }
+.tab-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.view { display: none; }
+.view.active { display: block; }
+
+/* ---- 自由枠 ---- */
+.assume-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 4px; }
+.assume { flex: 1; min-width: 150px; }
+.assume label { display: block; font-size: 0.64rem; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 5px; }
+.num-input {
+  width: 100%; padding: 8px 10px; border-radius: 10px; border: 1px solid #dde3ec;
+  background: #f7f9fc; color: var(--ink); font-size: 0.9rem; font-family: var(--sans);
+  font-variant-numeric: tabular-nums; outline: none;
+}
+.num-input:focus { border-color: var(--accent); }
+.free-hero { text-align: center; padding: 10px 0 14px; }
+.free-hero .fh-label { font-size: 0.66rem; color: var(--muted); letter-spacing: 0.16em; }
+.free-hero .fh-value { font-size: 2.1rem; font-weight: 700; margin-top: 4px; }
+.free-hero .fh-sub { font-size: 0.72rem; color: var(--ink-2); margin-top: 6px; line-height: 1.7; }
+.gauge-track { height: 14px; border-radius: 8px; background: rgba(88,110,140,0.10); overflow: hidden; margin: 10px 0 6px; }
+.gauge-fill { display: block; height: 100%; border-radius: 8px; transition: width 0.4s; }
+.gauge-notes { display: flex; justify-content: space-between; font-size: 0.68rem; color: var(--muted); }
+.breakdown { display: flex; flex-direction: column; gap: 7px; margin-top: 12px; font-size: 0.78rem; }
+.bd-row { display: flex; justify-content: space-between; }
+.bd-row .bd-l { color: var(--ink-2); }
+.bd-row .bd-v { font-variant-numeric: tabular-nums; }
+.bd-row.total { border-top: 1px solid var(--grid); padding-top: 7px; font-weight: 600; }
+
+/* ---- ローン ---- */
+.loan-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; margin-top: 6px; }
+.loan-table th { font-weight: 400; font-size: 0.64rem; color: var(--muted); text-align: right; padding: 4px 8px 8px; border-bottom: 1px solid var(--grid); }
+.loan-table th:first-child { text-align: left; }
+.loan-table td { padding: 8px; text-align: right; font-variant-numeric: tabular-nums; border-bottom: 1px solid #f3f5f9; }
+.loan-table td:first-child { text-align: left; color: var(--ink-2); }
+.loan-table tr.current td { background: #f2f7fd; font-weight: 600; }
+.delta-up { color: var(--neg); font-size: 0.7rem; }
+.note { font-size: 0.68rem; color: var(--muted); line-height: 1.8; margin-top: 12px; }
+
 @media (prefers-reduced-motion: no-preference) {
   .card, .stat { animation: rise 0.45s ease both; }
   @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -169,6 +214,13 @@ th.num { text-align: right; }
 
   <div id="notices"></div>
 
+  <nav class="tabs" aria-label="表示切り替え">
+    <button class="tab-btn active" data-view="view-month" type="button">📊 今月</button>
+    <button class="tab-btn" data-view="view-free" type="button">💸 自由枠</button>
+    <button class="tab-btn" data-view="view-loan" type="button">🏠 ローン</button>
+  </nav>
+
+  <div id="view-month" class="view active">
   <nav class="monthnav" aria-label="表示する月">
     <button class="nav-btn" id="prev-month" type="button" aria-label="前の月">‹</button>
     <div class="month-label" id="month-label">—</div>
@@ -207,6 +259,38 @@ th.num { text-align: right; }
       <div class="tbl-wrap" id="recent"></div>
     </div>
   </section>
+  </div><!-- /view-month -->
+
+  <div id="view-free" class="view">
+    <section class="card mb">
+      <div class="card-label">今月の自由になるお金</div>
+      <div id="free-hero" class="free-hero"></div>
+      <div class="assume-row">
+        <div class="assume"><label>収入見込み(手取り/月)</label><input class="num-input" id="in-income" type="number" inputmode="numeric"></div>
+        <div class="assume"><label>積立(繰上+投信など/月)</label><input class="num-input" id="in-saving" type="number" inputmode="numeric"></div>
+      </div>
+      <div id="free-breakdown" class="breakdown"></div>
+      <div class="note">自由枠 = 収入見込み − 固定費(マスタの有効合計・自動反映) − 積立。ゲージは表示中の月の変動費(固定費以外の支出)の消化状況です。</div>
+    </section>
+  </div>
+
+  <div id="view-loan" class="view">
+    <section class="card mb">
+      <div class="card-label">住宅ローン 金利シミュレーター</div>
+      <div class="assume-row">
+        <div class="assume"><label>ローン残高(円)</label><input class="num-input" id="ln-bal" type="number" inputmode="numeric"></div>
+        <div class="assume"><label>現在の金利(%)</label><input class="num-input" id="ln-rate" type="number" step="0.001"></div>
+        <div class="assume"><label>完済予定(YYYY-MM)</label><input class="num-input" id="ln-end" type="text"></div>
+        <div class="assume"><label>現在の毎月返済額(円)</label><input class="num-input" id="ln-pay" type="number" inputmode="numeric"></div>
+      </div>
+      <div id="loan-out"></div>
+      <div class="assume-row" style="margin-top:16px">
+        <div class="assume"><label>繰り上げ返済してみる(円)</label><input class="num-input" id="ln-prepay" type="number" inputmode="numeric" placeholder="例: 1000000"></div>
+      </div>
+      <div id="prepay-out"></div>
+      <div class="note">※ 概算です。実際の銀行の計算(5年ルール・125%ルール・元利均等の当初条件)とはズレます。「金利が上がったら」行は、いまの残高と残期間で返済額を再計算した理論値。返済額据え置きの間は、金利上昇分だけ元金の減りが遅くなります。初期値は2026年8月時点の残高証明より。</div>
+    </section>
+  </div>
 
   <footer class="footer">
     記録・編集はNotionで —
@@ -373,6 +457,7 @@ function render() {
   renderTrend();
   renderFixed();
   renderRecent(rows);
+  renderFree();
 }
 
 function renderNotices() {
@@ -591,10 +676,151 @@ document.addEventListener("pointermove", e => {
   }
 });
 
+/* ================= 自由枠 ================= */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : Number(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, String(v)); } catch (e) {} }
+};
+function latestSalary() {
+  const s = txParsed().filter(r => r.kind === "収入" && r.cat === "給与").sort((a, b) => b.d.localeCompare(a.d))[0];
+  return s ? s.amount : 463179;
+}
+let assumeInit = false;
+function bd(l, v, total) {
+  return '<div class="bd-row' + (total ? " total" : "") + '"><span class="bd-l">' + esc(l) + '</span><span class="bd-v">' + esc(v) + "</span></div>";
+}
+function renderFree() {
+  const heroBox = document.getElementById("free-hero");
+  const bdBox = document.getElementById("free-breakdown");
+  const incomeEl = document.getElementById("in-income");
+  const savingEl = document.getElementById("in-saving");
+  if (!assumeInit && state.tx) {
+    incomeEl.value = store.get("kakeibo_income", latestSalary());
+    savingEl.value = store.get("kakeibo_saving", 92224);
+    assumeInit = true;
+  }
+  const income = Number(incomeEl.value) || 0;
+  const saving = Number(savingEl.value) || 0;
+  const fixedTotal = (state.fix || []).filter(r => r["有効"] === "__YES__").reduce((a, r) => a + (Number(r["金額"]) || 0), 0);
+  const budget = income - fixedTotal - saving;
+  const rows = state.tx ? monthRows(state.ym) : [];
+  const spent = rows.filter(r => r.kind !== "収入" && !r.fixed).reduce((a, r) => a + r.amount, 0);
+  const left = budget - spent;
+  const pct = budget > 0 ? Math.min(100, (spent / budget) * 100) : 100;
+  const over = budget > 0 ? spent > budget : true;
+  const color = over ? "var(--neg)" : pct > 75 ? "#eda100" : "#1baf7a";
+  const now = new Date();
+  const isCur = state.ym === currentYM();
+  const parts = state.ym.split("-").map(Number);
+  const daysIn = new Date(parts[0], parts[1], 0).getDate();
+  const daysLeft = isCur ? Math.max(1, daysIn - now.getDate() + 1) : 0;
+  heroBox.innerHTML =
+    '<div class="fh-label">' + esc(state.ym.replace("-", "年").replace(/年0/, "年") + "月") + ' の自由枠 のこり</div>' +
+    '<div class="fh-value" style="color:' + (left >= 0 ? "var(--ink)" : "var(--neg)") + '">' + (left >= 0 ? "" : "−") + esc(yen(Math.abs(left))) + "</div>" +
+    '<div class="gauge-track"><span class="gauge-fill" style="width:' + pct.toFixed(1) + "%;background:" + color + '"></span></div>' +
+    '<div class="gauge-notes"><span>使った変動費 ' + esc(yen(spent)) + "</span><span>枠 " + esc(yen(Math.max(0, budget))) + "</span></div>" +
+    (isCur && left > 0 && daysLeft > 0
+      ? '<div class="fh-sub">残り' + daysLeft + "日 → 1日あたり " + esc(yen(left / daysLeft)) + " 使えます</div>"
+      : over ? '<div class="fh-sub" style="color:var(--neg)">この月は枠を超えています</div>' : "");
+  bdBox.innerHTML =
+    bd("収入見込み", "+" + yen(income)) +
+    bd("固定費(マスタ有効合計)", "−" + yen(fixedTotal)) +
+    bd("積立(資産形成)", "−" + yen(saving)) +
+    bd("自由枠", yen(Math.max(0, budget)), true) +
+    bd("使った変動費(" + state.ym.slice(5).replace(/^0/, "") + "月)", "−" + yen(spent)) +
+    bd("のこり", (left >= 0 ? "" : "−") + yen(Math.abs(left)), true);
+}
+["in-income", "in-saving"].forEach(id => {
+  document.getElementById(id).addEventListener("input", () => {
+    store.set(id === "in-income" ? "kakeibo_income" : "kakeibo_saving", Number(document.getElementById(id).value) || 0);
+    renderFree();
+  });
+});
+
+/* ================= ローン ================= */
+const LOAN_DEF = { bal: 38326898, rate: 1.17, end: "2052-10", pay: 127776 };
+let loanInit = false;
+function loanMonthsLeft(endYm) {
+  const m = /^(\d{4})[-/](\d{1,2})$/.exec(String(endYm || "").trim());
+  if (!m) return null;
+  const now = new Date();
+  return (Number(m[1]) - now.getFullYear()) * 12 + (Number(m[2]) - (now.getMonth() + 1));
+}
+function annuity(B, annualPct, n) {
+  const r = annualPct / 100 / 12;
+  if (n <= 0) return null;
+  if (r === 0) return B / n;
+  return B * r / (1 - Math.pow(1 + r, -n));
+}
+function monthsToRepay(B, annualPct, pay) {
+  const r = annualPct / 100 / 12;
+  if (pay <= B * r) return null;
+  if (r === 0) return Math.ceil(B / pay);
+  return Math.ceil(-Math.log(1 - B * r / pay) / Math.log(1 + r));
+}
+function renderLoan() {
+  if (!loanInit) {
+    document.getElementById("ln-bal").value = LOAN_DEF.bal;
+    document.getElementById("ln-rate").value = LOAN_DEF.rate;
+    document.getElementById("ln-end").value = LOAN_DEF.end;
+    document.getElementById("ln-pay").value = LOAN_DEF.pay;
+    loanInit = true;
+  }
+  const B = Number(document.getElementById("ln-bal").value) || 0;
+  const rate = Number(document.getElementById("ln-rate").value) || 0;
+  const n = loanMonthsLeft(document.getElementById("ln-end").value);
+  const pay = Number(document.getElementById("ln-pay").value) || 0;
+  const out = document.getElementById("loan-out");
+  if (!B || n == null || n <= 0) { out.innerHTML = '<div class="empty">残高と完済予定(YYYY-MM)を入れてください</div>'; return; }
+  const basePay = annuity(B, rate, n);
+  let html = '<div class="tbl-wrap"><table class="loan-table"><thead><tr><th>金利</th><th>利息/月</th><th>返済額据え置き時の元金充当</th><th>理論返済額(再計算)</th></tr></thead><tbody>';
+  [0, 0.5, 1.0, 2.0].forEach(d => {
+    const rr = rate + d;
+    const interest = B * rr / 100 / 12;
+    const principal = pay - interest;
+    const theo = annuity(B, rr, n);
+    html += "<tr" + (d === 0 ? ' class="current"' : "") + "><td>" + rr.toFixed(3) + "%" + (d ? " (+" + d.toFixed(1) + ")" : " 現在") + "</td>" +
+      "<td>" + esc(yen(interest)) + "</td>" +
+      "<td>" + (principal > 0 ? esc(yen(principal)) : '<span class="delta-up">未払利息が発生</span>') + "</td>" +
+      "<td>" + esc(yen(theo)) + (d ? ' <span class="delta-up">+' + esc(yen(theo - basePay)) + "</span>" : "") + "</td></tr>";
+  });
+  html += "</tbody></table></div>";
+  const n0 = monthsToRepay(B, rate, pay);
+  if (n0) {
+    html += '<div class="stat-sub" style="margin-top:10px">残り約' + Math.floor(n / 12) + "年" + (n % 12) + "ヶ月 · 現行の返済額を続けた場合の総利息(概算) " + esc(yen(Math.max(0, pay * n0 - B))) + "</div>";
+  }
+  out.innerHTML = html;
+  renderPrepay(B, rate, pay);
+}
+function renderPrepay(B, rate, pay) {
+  const X = Number(document.getElementById("ln-prepay").value) || 0;
+  const out = document.getElementById("prepay-out");
+  if (!X || X <= 0 || X >= B) { out.innerHTML = ""; return; }
+  const n0 = monthsToRepay(B, rate, pay);
+  const n1 = monthsToRepay(B - X, rate, pay);
+  if (!n0 || !n1) { out.innerHTML = '<div class="empty">この条件では計算できません</div>'; return; }
+  const saved = (pay * n0 - B) - (pay * n1 - (B - X));
+  const cut = n0 - n1;
+  out.innerHTML = '<div class="stat-sub" style="margin-top:6px">' + esc(yen(X)) + " を期間短縮型で繰り上げ返済すると: 完済が約 <b>" +
+    Math.floor(cut / 12) + "年" + (cut % 12) + "ヶ月</b> 早まり、利息を約 <b>" + esc(yen(saved)) + "</b> 節約できます(概算)</div>";
+}
+["ln-bal", "ln-rate", "ln-end", "ln-pay", "ln-prepay"].forEach(id => {
+  document.getElementById(id).addEventListener("input", () => renderLoan());
+});
+
+/* ================= タブ ================= */
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b === btn));
+    document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === btn.dataset.view));
+  });
+});
+
 /* ================= ナビ ================= */
 document.getElementById("prev-month").addEventListener("click", () => { state.ym = ymAdd(state.ym, -1); render(); });
 document.getElementById("next-month").addEventListener("click", () => { state.ym = ymAdd(state.ym, 1); render(); });
 
 render();
+renderLoan();
 startWatches();
 </script>
