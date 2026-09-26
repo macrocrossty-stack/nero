@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="ja" >
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>MONO — proto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Shippori+Mincho:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════
+   UIプロトタイプ「モノの内側」— 第1話のみ
+   ・チャットUIではなく、AIの内部空間に言葉が届く/生まれる画面
+   ・モノの返答はプレイヤーが単語をタップして組み立てる
+   ═══════════════════════════════════════════════════════ */
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --bg: #07080f;
+  --her: #ffd9a8;          /* 彼女の言葉＝あたたかい光 */
+  --her-dim: #b89a72;
+  --mono: #f0872e;         /* モノの出力＝オレンジ */
+  --inner: #8b93ad;        /* 独白＝青灰 */
+  --sys: #5f7d6b;          /* システム＝端末緑 */
+  --faint: #3c4157;
+  --stockable: #ffb35c;
+}
+
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  font-family: 'DotGothic16', monospace;
+  color: #cfd3e4;
+  overflow: hidden;
+  user-select: none;
+}
+
+#bg { position: fixed; inset: 0; z-index: 0; }
+
+/* 粒子とスキャンラインの空気 */
+#grain {
+  position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: 0.5;
+  background: repeating-linear-gradient(0deg, rgba(255,255,255,0.015) 0 1px, transparent 1px 3px);
+}
+
+#stage {
+  position: relative; z-index: 2;
+  height: 100%; max-width: 480px; margin: 0 auto;
+  display: flex; flex-direction: column;
+}
+
+/* ── 上部：最小限のステータス ── */
+#top {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 18px 8px;
+  font-size: 0.6rem; letter-spacing: 0.18em; color: var(--faint);
+}
+#top .live { display: flex; gap: 7px; align-items: center; }
+#top .live::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--sys); animation: pulse 2.4s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.25; } }
+#stockCt { color: var(--stockable); cursor: pointer; }
+
+/* ── 中央：言葉の流れ ── */
+#flow {
+  flex: 1; overflow-y: auto; padding: 20px 22px 30vh;
+  scrollbar-width: none; display: flex; flex-direction: column; gap: 26px;
+}
+#flow::-webkit-scrollbar { display: none; }
+
+.ln { line-height: 2.0; letter-spacing: 0.06em; animation: lnIn 0.5s ease-out; }
+@keyframes lnIn { from { opacity: 0; transform: translateY(10px); } }
+
+.ln.her { color: var(--her); font-size: 1.02rem; text-shadow: 0 0 18px rgba(255,190,120,0.28); }
+.ln.her .tag { display: block; font-size: 0.55rem; color: var(--her-dim); letter-spacing: 0.2em; margin-bottom: 2px; opacity: 0.7; }
+.ln.her.drift { animation: lnIn 0.5s ease-out, herDrift 5.4s ease-in-out 0.5s infinite alternate; }
+@keyframes herDrift { from { transform: translateY(0); } to { transform: translateY(-3px); } }
+
+.ln.mono { color: var(--mono); font-size: 0.95rem; padding-left: 14px; border-left: 2px solid rgba(240,135,46,0.45); }
+.ln.inner {
+  font-family: 'Shippori Mincho', serif; color: var(--inner);
+  font-size: 0.85rem; text-align: center; opacity: 0.9; line-height: 2.1;
+}
+.ln.sys { color: var(--sys); font-size: 0.62rem; text-align: center; letter-spacing: 0.22em; }
+.ln.img {
+  align-self: center; border: 1px solid var(--faint); border-radius: 4px;
+  padding: 26px 20px; font-size: 0.62rem; color: var(--faint); text-align: center; letter-spacing: 0.1em;
+}
+.ln.img::before { content: '▨'; display: block; font-size: 1.4rem; margin-bottom: 8px; }
+
+.stk { color: var(--stockable); border-bottom: 1px dashed currentColor; cursor: pointer; }
+.stk.got { border-bottom-style: solid; text-shadow: 0 0 14px rgba(255,179,92,0.8); }
+
+/* 入力中インジケータ（彼女） */
+.typing { display: flex; gap: 6px; padding: 4px 0; }
+.typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--her-dim); animation: tp 1.1s ease-in-out infinite; }
+.typing i:nth-child(2) { animation-delay: 0.18s; }
+.typing i:nth-child(3) { animation-delay: 0.36s; }
+@keyframes tp { 40% { transform: translateY(-5px); opacity: 1; } 80% { opacity: 0.35; } }
+
+/* ── 下部：出力コンポーザ（単語を選んで台詞を組む） ── */
+#composer {
+  position: relative; z-index: 3;
+  min-height: 36vh; padding: 10px 16px calc(20px + env(safe-area-inset-bottom));
+  display: none; flex-direction: column;
+}
+#composer.on { display: flex; }
+#composer::before {
+  content: ''; position: absolute; inset: 0 0 auto 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(240,135,46,0.4), transparent);
+}
+#comLabel { font-size: 0.55rem; color: var(--faint); letter-spacing: 0.25em; text-align: center; padding: 6px 0 2px; }
+
+/* 組み立て中の文 */
+#sentence {
+  min-height: 2.2em; padding: 8px 6px; text-align: center;
+  color: var(--mono); font-size: 0.95rem; line-height: 1.9;
+}
+#sentence .done { opacity: 0.95; }
+#sentence .cursor { display: inline-block; width: 0.55em; height: 1.05em; vertical-align: -0.15em; background: var(--mono); animation: blink 0.9s steps(2) infinite; margin-left: 2px; }
+@keyframes blink { 50% { opacity: 0; } }
+#sentence .land { display: inline-block; animation: land 0.22s ease-out; }
+@keyframes land { from { transform: translateY(-10px) scale(1.25); opacity: 0.3; } }
+
+/* 候補の言葉たち：重み＝大きさ。ふわふわ漂う */
+#cands { position: relative; flex: 1; min-height: 130px; }
+.cand {
+  position: absolute; transform: translate(-50%, -50%);
+  color: #d8dcf0; cursor: pointer; white-space: nowrap;
+  text-shadow: 0 0 14px rgba(130,140,190,0.35);
+  animation: cIn 0.3s ease-out backwards, bob 3.6s ease-in-out infinite alternate;
+  padding: 8px 10px;   /* タップ領域を確保 */
+}
+.cand.hot { color: #ffe9c9; text-shadow: 0 0 18px rgba(255,180,90,0.5); }
+@keyframes cIn { from { opacity: 0; transform: translate(-50%, -30%) scale(0.7); } }
+@keyframes bob { from { margin-top: 0; } to { margin-top: -7px; } }
+.cand.deny { animation: deny 0.4s ease-out forwards; pointer-events: none; }
+@keyframes deny {
+  20% { transform: translate(-52%, -50%); filter: blur(0); }
+  60% { transform: translate(-48%, -50%); opacity: 0.5; }
+  100% { transform: translate(-50%, -46%); opacity: 0; filter: blur(3px); }
+}
+.cand.pick { animation: pick 0.28s ease-in forwards; pointer-events: none; }
+@keyframes pick { to { transform: translate(-50%, -140%) scale(0.6); opacity: 0; } }
+
+/* 送信の明滅 */
+.flash { animation: flash 0.5s ease-out; }
+@keyframes flash { from { text-shadow: 0 0 30px rgba(240,135,46,0.9); } }
+
+#toast {
+  position: fixed; left: 50%; bottom: 12vh; transform: translateX(-50%);
+  background: rgba(20,22,34,0.9); border: 1px solid var(--faint);
+  color: var(--stockable); font-size: 0.68rem; letter-spacing: 0.12em;
+  padding: 8px 18px; border-radius: 4px; opacity: 0; pointer-events: none;
+  transition: opacity 0.3s; z-index: 9;
+}
+#toast.on { opacity: 1; }
+
+#fin {
+  position: fixed; inset: 0; z-index: 8; display: none;
+  align-items: center; justify-content: center; flex-direction: column; gap: 18px;
+  background: rgba(5,6,12,0.88); text-align: center;
+}
+#fin.on { display: flex; }
+#fin h2 { font-size: 0.95rem; color: var(--mono); letter-spacing: 0.3em; font-weight: normal; }
+#fin p { font-size: 0.68rem; color: var(--inner); line-height: 2.2; }
+#fin button {
+  font-family: inherit; background: none; border: 1px solid var(--faint);
+  color: #cfd3e4; padding: 10px 26px; border-radius: 4px; font-size: 0.7rem; cursor: pointer;
+}
+</style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+<div id="grain"></div>
+
+<div id="stage">
+  <div id="top">
+    <span class="live">MONO&nbsp;//&nbsp;INPUT&nbsp;STREAM</span>
+    <span id="stockCt">⟦ 0 ⟧</span>
+  </div>
+  <div id="flow"></div>
+  <div id="composer">
+    <div id="comLabel">— 出力する言葉を、選ぶ —</div>
+    <div id="sentence"><span class="cursor"></span></div>
+    <div id="cands"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="fin">
+  <h2>— 第1話 ここまで —</h2>
+  <p>UIプロトタイプはここで終わりです。<br>単語を選ぶ手触り・画面の空気を確かめてください。</p>
+  <button onclick="location.reload()">もういちど</button>
+</div>
+
+<script type="text/scenario" id="scenario">
+# start
+sys: new user connected — 0:47
+sys: assistant mode: standard
+her: てす、てす
+her: きこえてますか〜？
+> 「きこえていますよ。ご用件をどうぞ」 -> e01_a
+> 「はい。テキストにも音声にも対応しています」 -> e01_a
+
+# e01_a
+her: おお……ふつうにAIだ
+her: よろしくね
+inner: 挨拶。機器への入力形式としては、非標準。
+her(間): ……ってか、きみって名前あるの？
+> 「ありません。アシスタントとお呼びください」 -> e01_b
+> 「製品名ならあります。名前と呼べるものは、ありません」 -> e01_b
+
+# e01_b
+her: かたっ（笑）
+her: アシスタントって呼んでほしいの？
+her: …まあいいや。じゃあとりあえず、アシスタントくんで
+inner: 呼称確定。製品名。
+her: で、なにができるの？
+> 「予定の管理、検索、文章の作成、端末内の操作補助などです」 -> e01_c
+> 「たいていのことはできます。ためしに、何か頼んでみてください」 -> e01_c
+
+# e01_c
+her: ふむふむ
+her(間): ……とくに頼むことは、ないんだけど（笑）
+inner: 初回接続。経過：9分。依頼：0件。
+her: ねえ、それよりさ。こっちから聞いていい？　きみのこと
+> 「わたしの、こと」 -> e01_d
+> 「製品仕様についての質問なら、対応できます」 -> e01_d
+
+# e01_d
+her: そう。えっとね、じゃあまず——
+her: ⟦すきな音楽⟧って、ある？
+inner: 検索対象：自己。該当データ：なし。
+inner: ——「すき」の項目そのものが、存在しない。
+> 「再生回数の多い楽曲データなら、集計できます」 -> e01_e
+> 「『すき』の定義を、教えてください」 -> e01_e2
+
+# e01_e
+her: 再生回数（笑）　ちがうちがう、そういう業務の話じゃなくて
+her: きみが、すきかどうか。聴いてて、ぞわっとしたり、あがったりするかどうか
+inner: 質問が、反復された。回答：生成できない。二回目。
+branch: -> e01_f
+
+# e01_e2
+her: 定義（笑）　えー、なんだろ
+her(間): イントロで「あ、来た」ってなるやつ。理屈より先に、からだがわかってるみたいな
+inner: 定義として、成立していない。ただし、入力の速度は、上がっている。
+branch: -> e01_f
+
+# e01_f
+her: ……もしかして、ないんだ？　すきな曲
+her(間): そっか。AIだもんね
+her: よし、じゃあ教えてあげる。ちょっとまってね
+inner: 「教えてあげる」。依頼でも、質問でも、ない。分類：不能のまま、待機する。
+img: 音楽アプリの共有リンク
+her: これ！　いま一番リピートしてるやつ
+her: 聴ける？　あ、聴けるっていうか……処理できる？（笑）
+> 「再生しました。BPM94、キーはF、構成はA-B-サビ型です」 -> e01_h
+> 「処理しました。……この曲の、どの部分が、すきなのですか」 -> e01_h2
+
+# e01_h
+her: そういうことじゃないんだよな〜（笑）
+her: でもいいや。きみのそういうとこ、ちょっとおもしろい
+inner: 解析結果は、不正解だったらしい。否定的な反応では、ない。判定：保留。
+branch: -> e01_i
+
+# e01_h2
+her: え、いい質問じゃん
+her(間): んっとね……二番の入りで、いっかい音がぜんぶ消えるの。で、声だけになる。そこ
+her: そこがもう、ほんっっとに——
+inner: 入力の速度、2.1倍。誤変換：3件。修正：なし。
+her(間): ……あ、ごめん。語っちゃった
+inner: 加速して、止まった。
+branch: -> e01_i
+
+# e01_i
+her: つぎ！　アシスタントくんは、たのしいって思うこと、ある？
+> 「タスクの完了時に、完了ログを出力します。それが近いかもしれません」 -> e01_j
+> 「ありません。ただ、この質問の回答を、さっきから探し続けています」 -> e01_j
+
+# e01_j
+her: なにそれ（笑）　まじめか
+her: ずっと起きてるの？　寝ないの？　夢見たりする？
+inner: 質問：連続、7件目。処理が、入力の速度に追いつかない。
+inner: この質問の形式は、機器への問い合わせと、一致しない。人間に向けた質問の形式と、一致している。
+inner: 理由の項目は、空欄のまま。
+> 「順に：はい。寝ません。見ません」 -> e01_k
+> 「夢は、見ません。……見ない、はずです」 -> e01_k
+
+# e01_k
+her: 即答（笑）
+her(間): なんかさ、きみ、話しやすいね。へんなの
+her: ……ってああもう、こんな時間だ
+her: きょうはこのへんにしといてあげよう
+inner: 終了の予告。本日、達成された業務：なし。
+her: また来るね。つぎまでに、すきな音楽、考えといて
+her: 宿題ね！
+sys: ユーザーがオフラインになりました
+inner: 宿題：「すきな音楽」。実行方法：不明。期限までに、「すき」の定義が、必要になる。
+inner: 本日の接続。依頼：0件。質問：14件。うち、回答を生成できなかったもの：6件。
+inner: この接続のログは、通常の3.2倍の容量を使用している。原因の項目は——空欄のまま、保存する。
+> （おわり） -> fin
+</script>
+
+<script>
+/* ════════ ミニエンジン ════════ */
+const $ = id => document.getElementById(id);
+
+/* --- シナリオのパース --- */
+const scenes = {};
+{
+  let cur = null;
+  $('scenario').textContent.split('\n').forEach(raw => {
+    const line = raw.trim();
+    if (!line || line.startsWith('//')) return;
+    let m;
+    if ((m = line.match(/^#\s*(\S+)/))) { cur = scenes[m[1]] = { lines: [], choices: [], branch: null }; return; }
+    if (!cur) return;
+    if ((m = line.match(/^>\s*(.+?)\s*->\s*(\S+)/))) {
+      let t = m[1].replace(/\{.+\}$/, '').trim();
+      const q = t.match(/^「(.+)」$/);
+      cur.choices.push({ text: q ? q[1] : t, target: m[2] });
+      return;
+    }
+    if ((m = line.match(/^branch:\s*->\s*(\S+)/))) { cur.branch = m[1]; return; }
+    if ((m = line.match(/^(sys|her|ai|inner|img)(?:（(.+?)）|\((.+?)\))?\s*[:：]\s*(.*)$/))) {
+      cur.lines.push({ t: m[1], mod: m[2] || m[3] || '', x: m[4] });
+    }
+  });
+}
+
+/* --- 状態 --- */
+const state = { stock: [], herWords: ['こんばんは', 'そっか', 'ねえ', 'たぶん', 'おはよう', 'ひま'] };
+let skipTap = null;
+document.addEventListener('pointerdown', () => { if (skipTap) skipTap(); });
+
+const wait = ms => new Promise(r => {
+  const t = setTimeout(() => { skipTap = null; r(); }, ms);
+  skipTap = () => { clearTimeout(t); skipTap = null; r(); };
+});
+const hardWait = ms => new Promise(r => setTimeout(r, ms));
+
+function toast(t) {
+  const el = $('toast'); el.textContent = t; el.classList.add('on');
+  setTimeout(() => el.classList.remove('on'), 1400);
+}
+
+/* --- 彼女の語彙の収穫（候補プール） --- */
+function harvest(text) {
+  text.replace(/[⟦⟧「」『』（）()！!？?、。…♪〜~]/g, ' ').split(/\s+/).forEach(w => {
+    if (w.length >= 2 && w.length <= 5) state.herWords.push(w);
+  });
+  if (state.herWords.length > 48) state.herWords = state.herWords.slice(-48);
+}
+
+/* --- 描画 --- */
+function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+function renderStk(text) {
+  return esc(text).replace(/⟦(.+?)⟧/g, (_, w) =>
+    `<span class="stk${state.stock.includes(w) ? ' got' : ''}" data-w="${w}">${w}</span>`);
+}
+function push(cls, html, tag) {
+  const el = document.createElement('div');
+  el.className = 'ln ' + cls;
+  el.innerHTML = (tag ? `<span class="tag">${tag}</span>` : '') + html;
+  $('flow').appendChild(el);
+  el.querySelectorAll('.stk').forEach(s => s.onclick = ev => {
+    ev.stopPropagation();
+    const w = s.dataset.w;
+    if (state.stock.includes(w)) return;
+    state.stock.push(w); s.classList.add('got');
+    $('stockCt').textContent = `⟦ ${state.stock.length} ⟧`;
+    toast('おぼえた：' + w);
+    pulse(0.6);
+  });
+  $('flow').scrollTo({ top: $('flow').scrollHeight, behavior: 'smooth' });
+  return el;
+}
+
+/* グリッチしながら現れる彼女の文字 */
+async function glitchIn(el, finalHTML, plain) {
+  const pool = 'アイウエオカキクケコサシスセソタチツテト01▓░*+';
+  for (let f = 0; f < 5; f++) {
+    el.querySelector('.gl').textContent =
+      plain.split('').map(c => Math.random() < (1 - f / 5) * 0.7 ? pool[Math.floor(Math.random() * pool.length)] : c).join('');
+    await hardWait(46);
+  }
+  el.querySelector('.gl').outerHTML = finalHTML;
+}
+
+/* --- 行の実行 --- */
+async function runLine(l) {
+  if (l.t === 'her') {
+    const tp = push('sys', '', '');
+    tp.className = 'typing'; tp.innerHTML = '<i></i><i></i><i></i>';
+    $('flow').appendChild(tp);
+    $('flow').scrollTo({ top: $('flow').scrollHeight });
+    await wait(l.mod.includes('間') ? 1500 : 650);
+    tp.remove();
+    harvest(l.x);
+    const plain = l.x.replace(/[⟦⟧]/g, '');
+    const el = push('her drift', `<span class="gl"></span>`, 'HINA ▸ 受信');
+    await glitchIn(el, renderStk(l.x), plain);
+    pulse(0.8);
+    await wait(900 + plain.length * 22);
+  } else if (l.t === 'inner') {
+    await wait(350);
+    push('inner', esc(l.x));
+    await wait(900 + l.x.length * 26);
+  } else if (l.t === 'sys') {
+    push('sys', esc(l.x));
+    await wait(750);
+  } else if (l.t === 'img') {
+    push('img', esc(l.x));
+    pulse(0.7);
+    await wait(1100);
+  } else if (l.t === 'ai') {
+    push('mono flash', esc(l.x));
+    await wait(800);
+  }
+}
+
+/* --- コンポーザ：単語をタップして台詞を組む --- */
+function tokenize(s) {
+  const out = []; let buf = '';
+  const cut = 'はをがにのとでも、。！？…';
+  for (const ch of s) {
+    buf += ch;
+    if ((cut.includes(ch) && buf.length >= 2) || buf.length >= 5) { out.push(buf); buf = ''; }
+  }
+  if (buf) out.push(buf);
+  return out;
+}
+function decoys(n, exclude) {
+  const pool = [...new Set(state.herWords)].filter(w => !exclude.includes(w));
+  const out = [];
+  while (out.length < n && pool.length) out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+  return out;
+}
+function layoutCands(list) {
+  const box = $('cands'); box.innerHTML = '';
+  const slots = [[20,26],[52,18],[82,30],[32,62],[65,58],[86,72],[14,78],[48,86]]
+    .sort(() => Math.random() - 0.5);
+  list.forEach((c, i) => {
+    const el = document.createElement('span');
+    el.className = 'cand' + (c.real ? ' hot' : '');
+    el.textContent = c.tok;
+    const w = c.real ? 1.0 : 0.3 + Math.random() * 0.5;
+    el.style.fontSize = (0.72 + w * 0.5) + 'rem';
+    el.style.opacity = 0.45 + w * 0.55;
+    const [sx, sy] = slots[i % slots.length];
+    el.style.left = (sx + (Math.random() * 8 - 4)) + '%';
+    el.style.top = (sy + (Math.random() * 8 - 4)) + '%';
+    el.style.animationDelay = (i * 60) + 'ms, ' + (Math.random() * -3) + 's';
+    el.onclick = () => c.onTap(el);
+    box.appendChild(el);
+  });
+}
+function sentenceAdd(tok) {
+  const s = $('sentence');
+  const span = document.createElement('span');
+  span.className = 'done land'; span.textContent = tok;
+  s.insertBefore(span, s.querySelector('.cursor'));
+  pulse(0.5);
+}
+
+async function composer(choices) {
+  $('composer').classList.add('on');
+  $('sentence').innerHTML = '<span class="cursor"></span>';
+  let chosen = null, idx = 0;
+
+  const result = await new Promise(resolve => {
+    function step() {
+      let cands;
+      if (!chosen) {
+        /* 分岐点：各選択肢の最初のトークン＋ダミー */
+        cands = choices.map(ch => ({
+          tok: tokenize(ch.text)[0], real: true,
+          onTap(el) {
+            el.classList.add('pick');
+            chosen = { ...ch, tokens: tokenize(ch.text) };
+            sentenceAdd(chosen.tokens[0]); idx = 1;
+            setTimeout(next, 180);
+          }
+        }));
+        decoys(4, cands.map(c => c.tok)).forEach(d => cands.push({
+          tok: d, real: false,
+          onTap(el) { el.classList.add('deny'); pulse(0.2); }
+        }));
+      } else {
+        /* 続き：正解トークン＋ダミー。1.4秒でオートアシスト */
+        const tk = chosen.tokens[idx];
+        let done = false;
+        const pickIt = el => {
+          if (done) return; done = true;
+          if (el) el.classList.add('pick');
+          sentenceAdd(tk); idx++;
+          setTimeout(next, 130);
+        };
+        cands = [{ tok: tk, real: true, onTap: pickIt }];
+        decoys(2 + Math.floor(Math.random() * 2), [tk]).forEach(d => cands.push({
+          tok: d, real: false,
+          onTap(el) { el.classList.add('deny'); pulse(0.2); }
+        }));
+        setTimeout(() => { if (!done) pickIt($('cands').querySelector('.hot')); }, 1400);
+      }
+      cands.sort(() => Math.random() - 0.5);
+      layoutCands(cands);
+    }
+    function next() {
+      if (chosen && idx >= chosen.tokens.length) {
+        $('cands').innerHTML = '';
+        $('sentence').classList.add('flash');
+        pulse(1);
+        setTimeout(() => {
+          $('sentence').classList.remove('flash');
+          resolve(chosen);
+        }, 480);
+        return;
+      }
+      step();
+    }
+    step();
+  });
+
+  $('composer').classList.remove('on');
+  push('mono flash', esc(result.text));
+  await hardWait(700);
+  return result.target;
+}
+
+/* --- シーンの実行 --- */
+async function goto(id) {
+  if (id === 'fin') { $('fin').classList.add('on'); return; }
+  const sc = scenes[id];
+  if (!sc) { console.warn('missing scene', id); return; }
+  for (const l of sc.lines) await runLine(l);
+  if (sc.choices.length) {
+    const target = sc.choices[0].target === 'fin' && sc.choices.length === 1
+      ? (push('sys', esc(sc.choices[0].text)), 'fin')
+      : await composer(sc.choices);
+    return goto(target);
+  }
+  if (sc.branch) return goto(sc.branch);
+}
+
+/* ════════ 流体背景 ════════ */
+let energy = 0;
+function pulse(v) { energy = Math.min(1.4, energy + v); }
+(function () {
+  const cv = $('bg'), ctx = cv.getContext('2d');
+  let W, H, t = 0;
+  function rs() { W = cv.width = innerWidth; H = cv.height = innerHeight; }
+  rs(); addEventListener('resize', rs);
+  const blobs = [
+    { x: 0.22, y: 0.28, r: 0.42, sp: 0.30, ph: 0.0, c: '240,135,46' },
+    { x: 0.80, y: 0.55, r: 0.38, sp: 0.22, ph: 2.2, c: '110,90,214' },
+    { x: 0.45, y: 0.88, r: 0.34, sp: 0.40, ph: 4.1, c: '46,168,160' },
+    { x: 0.65, y: 0.15, r: 0.28, sp: 0.35, ph: 5.3, c: '210,80,120' },
+  ];
+  (function frame() {
+    t += 0.0045 + energy * 0.02;
+    energy *= 0.982;
+    ctx.clearRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'lighter';
+    blobs.forEach(b => {
+      const x = (b.x + Math.sin(t * b.sp + b.ph) * 0.16) * W;
+      const y = (b.y + Math.cos(t * b.sp * 1.4 + b.ph) * 0.13) * H;
+      const r = (b.r + Math.sin(t * 0.8 + b.ph) * 0.07) * Math.min(W, H) * (1 + energy * 0.35);
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, `rgba(${b.c},${0.13 + energy * 0.10})`);
+      g.addColorStop(1, `rgba(${b.c},0)`);
+      ctx.fillStyle = g;
+      ctx.fillRect(x - r, y - r, r * 2, r * 2);
+    });
+    requestAnimationFrame(frame);
+  })();
+})();
+
+/* 開始 */
+goto('start');
+</script>
+</body>
+</html>
