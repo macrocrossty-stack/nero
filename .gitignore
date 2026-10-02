@@ -1,0 +1,7 @@
+# 生成物（tools/build_release.py で再生成できるためコミットしない）
+/dist/
+
+# OS / エディタ
+.DS_Store
+Thumbs.db
+*.swp
