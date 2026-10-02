@@ -1,0 +1,1882 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ロボットこうじょう">
+<meta name="theme-color" content="#aee7ff">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="robot-icon-180.png">
+<link rel="icon" type="image/png" href="robot-icon-180.png">
+<title>ロボットこうじょう v2 - タイピングゲーム</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+
+  :root {
+    --bg-top: #aee7ff;
+    --bg-bottom: #e8f9ff;
+    --card: #ffffff;
+    --ink: #234;
+    --accent: #ff8c42;
+  }
+
+  html { height: 100%; overflow: hidden; overscroll-behavior: none; }
+
+  body {
+    position: fixed;
+    inset: 0;
+    height: 100dvh;
+    font-family: 'Hiragino Maru Gothic ProN', 'BIZ UDPGothic', 'Yu Gothic', sans-serif;
+    background: linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+    color: var(--ink);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    overscroll-behavior: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* ===== ヘッダー ===== */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: max(10px, env(safe-area-inset-top)) 14px 6px;
+    flex: 0 0 auto;
+  }
+  header h1 {
+    font-size: clamp(15px, 2.6vw, 26px);
+    color: #1a6fa8;
+    text-shadow: 0 2px 0 #fff;
+    white-space: nowrap;
+  }
+  .robot-count {
+    background: var(--card);
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: clamp(12px, 2vw, 18px);
+    font-weight: bold;
+    box-shadow: 0 3px 0 rgba(0,0,0,0.08);
+    white-space: nowrap;
+  }
+  .robot-count span { color: var(--accent); font-size: 1.3em; }
+  .hdr-btn {
+    font-size: clamp(14px, 2.2vw, 22px);
+    font-family: inherit;
+    font-weight: bold;
+    background: var(--card);
+    border: none;
+    border-radius: 999px;
+    padding: 6px 12px;
+    cursor: pointer;
+    box-shadow: 0 3px 0 rgba(0,0,0,0.08);
+    color: #1a6fa8;
+    white-space: nowrap;
+  }
+
+  /* ===== メイン ===== */
+  main {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3vw;
+    padding: 0 3vw;
+    min-height: 0;
+  }
+
+  .target-card {
+    background: var(--card);
+    border-radius: 28px;
+    padding: 1.5vh 3vw 2.5vh;
+    text-align: center;
+    box-shadow: 0 8px 0 rgba(26,111,168,0.15);
+    min-width: 24vw;
+  }
+  .target-label {
+    font-size: clamp(15px, 2.4vw, 24px);
+    color: #557;
+    margin-bottom: 0.5vh;
+  }
+  #targetChar {
+    font-size: clamp(80px, 15vw, 190px);
+    font-weight: bold;
+    line-height: 1.1;
+    color: var(--accent);
+    animation: charPulse 1.2s ease-in-out infinite;
+  }
+  @keyframes charPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+  }
+
+  .progress-lights {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 1vh;
+  }
+  .light {
+    width: clamp(13px, 2vw, 22px);
+    height: clamp(13px, 2vw, 22px);
+    border-radius: 50%;
+    background: #dde5ec;
+    transition: background 0.3s, transform 0.3s;
+  }
+  .light.on {
+    background: #ffd23f;
+    box-shadow: 0 0 10px #ffd23f;
+    transform: scale(1.2);
+  }
+
+  .stage {
+    position: relative;
+    width: clamp(200px, 30vw, 400px);
+    height: clamp(230px, 48vh, 460px);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  #robotSvg { width: 100%; height: 100%; overflow: visible; }
+
+  .part { opacity: 0; }
+  .part.shown {
+    opacity: 1;
+    animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform-origin: center;
+  }
+  @keyframes popIn {
+    0%   { opacity: 0; transform: translateY(-40px) scale(0.3); }
+    70%  { opacity: 1; transform: translateY(5px) scale(1.1); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .stage.dance #robotBody { animation: dance 0.5s ease-in-out 5; transform-origin: 50% 90%; }
+  @keyframes dance {
+    0%, 100% { transform: rotate(0) translateY(0); }
+    25% { transform: rotate(-6deg) translateY(-14px); }
+    75% { transform: rotate(6deg) translateY(-14px); }
+  }
+  .stage.wobble #robotBody { animation: wobble 0.35s ease-in-out; transform-origin: 50% 90%; }
+  @keyframes wobble {
+    0%, 100% { transform: rotate(0); }
+    30% { transform: rotate(-3deg); }
+    70% { transform: rotate(3deg); }
+  }
+
+  .antenna-light { animation: blinkLight 1s ease-in-out infinite; }
+  @keyframes blinkLight {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .praise {
+    position: absolute;
+    left: 50%;
+    top: 30%;
+    transform: translateX(-50%);
+    font-size: clamp(26px, 5vw, 56px);
+    font-weight: bold;
+    color: #ff5d8f;
+    text-shadow: 0 2px 0 #fff, 0 4px 8px rgba(0,0,0,0.15);
+    pointer-events: none;
+    animation: floatUp 1s ease-out forwards;
+    white-space: nowrap;
+    z-index: 3;
+  }
+  .praise.new-robot { color: #7c3aed; font-size: clamp(24px, 4.2vw, 46px); }
+  .praise.new-building { color: #059669; font-size: clamp(22px, 4vw, 42px); top: 45%; }
+  @keyframes floatUp {
+    0%   { opacity: 0; transform: translate(-50%, 20px) scale(0.5); }
+    30%  { opacity: 1; transform: translate(-50%, 0) scale(1.15); }
+    100% { opacity: 0; transform: translate(-50%, -60px) scale(1); }
+  }
+
+  /* ===== キーボードヒント ===== */
+  .kb {
+    flex: 0 0 auto;
+    padding: 1vh 2vw max(2vh, env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .kb-row { display: flex; gap: 6px; }
+  .key {
+    width: clamp(24px, 4.2vw, 52px);
+    height: clamp(24px, 4.2vw, 52px);
+    background: var(--card);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(12px, 2vw, 24px);
+    font-weight: bold;
+    color: #789;
+    box-shadow: 0 3px 0 rgba(0,0,0,0.1);
+    cursor: pointer;
+  }
+  .key.target {
+    background: #ffd23f;
+    color: #a33;
+    animation: keyGlow 0.8s ease-in-out infinite;
+  }
+  @keyframes keyGlow {
+    0%, 100% { box-shadow: 0 3px 0 rgba(0,0,0,0.1), 0 0 0 0 rgba(255,210,63,0.8); transform: scale(1); }
+    50% { box-shadow: 0 3px 0 rgba(0,0,0,0.1), 0 0 0 12px rgba(255,210,63,0); transform: scale(1.15); }
+  }
+  .key.pressed { background: #b8e986; transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.1); }
+
+  /* ===== スタート画面 ===== */
+  #startScreen {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(180deg, #1b2a4a, #2c4a7c);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3vh;
+    z-index: 10;
+    cursor: pointer;
+  }
+  #startScreen h2 {
+    color: #fff;
+    font-size: clamp(28px, 6vw, 64px);
+    text-shadow: 0 4px 0 rgba(0,0,0,0.3);
+  }
+  #startScreen p {
+    color: #ffd23f;
+    font-size: clamp(16px, 3vw, 32px);
+    text-align: center;
+    padding: 0 4vw;
+    animation: charPulse 1.2s ease-in-out infinite;
+  }
+  #startScreen .star {
+    position: absolute;
+    color: #fff;
+    animation: blinkLight 2s ease-in-out infinite;
+  }
+  #startRobot { width: clamp(130px, 20vw, 250px); }
+  /* どのビルドを見ているか確認するための小さな表示 */
+  #buildTag {
+    position: absolute;
+    right: 10px;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    color: rgba(255,255,255,0.45);
+    font-size: 12px;
+    letter-spacing: 0.05em;
+  }
+
+  /* ===== ロボットずかん ===== */
+  #galleryOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 40, 70, 0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+    padding: 4vh 4vw;
+  }
+  #galleryOverlay[hidden] { display: none; }
+  .gallery-panel {
+    background: var(--card);
+    border-radius: 24px;
+    width: min(900px, 100%);
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 12px 0 rgba(0,0,0,0.2);
+    overflow: hidden;
+  }
+  .gallery-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    background: #eaf6ff;
+  }
+  .gallery-head h3 { font-size: clamp(18px, 3vw, 26px); color: #1a6fa8; }
+  .close-btn {
+    font-size: clamp(20px, 3vw, 28px);
+    background: #ff5d8f;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 1.8em; height: 1.8em;
+    cursor: pointer;
+    line-height: 1;
+    flex: 0 0 auto;
+  }
+  .gallery-grid {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(clamp(70px, 12vw, 110px), 1fr));
+    gap: 8px;
+    padding: 16px;
+  }
+  .gallery-grid svg { width: 100%; height: auto; }
+  .gallery-empty {
+    padding: 30px;
+    text-align: center;
+    font-size: clamp(15px, 2.5vw, 22px);
+    color: #789;
+  }
+  .g-cell { position: relative; border-radius: 12px; cursor: pointer; }
+  .g-cell.sel {
+    outline: 4px solid #ffd23f;
+    background: #fff7dd;
+    animation: charPulse 0.8s ease-in-out infinite;
+  }
+  .fuse-hint {
+    padding: 0 20px 10px;
+    font-weight: bold;
+    color: #b45309;
+    font-size: clamp(13px, 2.2vw, 18px);
+  }
+
+  /* ===== がったい ===== */
+  #fusionOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    background: radial-gradient(circle at 50% 38%, #2c4a7c, #101b33 75%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2.5vh;
+    padding-bottom: 24vh;
+  }
+  #fusionOverlay[hidden] { display: none; }
+  .fusion-label {
+    color: #ffd23f;
+    font-size: clamp(18px, 3.5vw, 34px);
+    font-weight: bold;
+    text-shadow: 0 2px 0 rgba(0,0,0,0.4);
+    text-align: center;
+  }
+  .fusion-stage {
+    position: relative;
+    width: min(92vw, 720px);
+    height: 34vh;
+  }
+  .f-bot {
+    position: absolute;
+    top: 50%;
+    width: clamp(80px, 16vw, 160px);
+    transform: translateY(-50%);
+    transition: left 0.8s cubic-bezier(0.5, -0.2, 0.5, 1.2),
+                transform 0.8s cubic-bezier(0.5, -0.2, 0.5, 1.2),
+                opacity 0.4s;
+  }
+  .f-bot svg { width: 100%; height: auto; filter: drop-shadow(0 0 10px rgba(174,231,255,0.35)); }
+  .f-bot.charge svg { filter: drop-shadow(0 0 22px #ffd23f); }
+  .f-result {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -52%) scale(0);
+    width: clamp(150px, 28vw, 280px);
+  }
+  .f-result svg { width: 100%; height: auto; filter: drop-shadow(0 0 24px rgba(255,210,63,0.6)); }
+  .f-result.shown { animation: fusePop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+  @keyframes fusePop {
+    to { transform: translate(-50%, -52%) scale(1); }
+  }
+  .fusion-code { display: flex; gap: 10px; }
+  .f-ch {
+    width: clamp(38px, 7vw, 64px);
+    height: clamp(46px, 8vw, 76px);
+    border-radius: 10px;
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    font-weight: bold;
+    font-size: clamp(24px, 5vw, 44px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid rgba(255,255,255,0.25);
+  }
+  .f-ch.done { background: #2e9e5b; border-color: #7fd97c; }
+  .f-ch.cur { border-color: #ffd23f; animation: charPulse 0.8s ease-in-out infinite; }
+  .fusion-flash {
+    position: fixed;
+    inset: 0;
+    background: #fff;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 35;
+  }
+  .fusion-flash.go { animation: flashAnim 0.6s ease-out; }
+  @keyframes flashAnim {
+    0% { opacity: 0; }
+    20% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  .kb { position: relative; z-index: 40; }
+
+  /* ===== ロボットタウン ===== */
+  #townOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(180deg, #7ecbff 0%, #c9ecff 55%, #e8f9ff 100%);
+  }
+  #townOverlay[hidden] { display: none; }
+  .town-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: max(10px, env(safe-area-inset-top)) 16px 8px;
+  }
+  .town-head h3 {
+    font-size: clamp(17px, 3vw, 28px);
+    color: #14532d;
+    text-shadow: 0 2px 0 #fff;
+  }
+  #townHint {
+    background: rgba(255,255,255,0.85);
+    border-radius: 999px;
+    padding: 4px 14px;
+    font-size: clamp(12px, 2vw, 18px);
+    font-weight: bold;
+    color: #b45309;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #townScene {
+    position: relative;
+    flex: 1 1 auto;
+    overflow: hidden;
+  }
+  .town-sun {
+    position: absolute;
+    top: 4%; right: 6%;
+    font-size: clamp(30px, 5vw, 56px);
+  }
+  .town-cloud {
+    position: absolute;
+    font-size: clamp(24px, 4vw, 44px);
+    opacity: 0.9;
+    animation: cloudDrift 40s linear infinite;
+  }
+  @keyframes cloudDrift {
+    from { transform: translateX(-15vw); }
+    to   { transform: translateX(115vw); }
+  }
+  #townScene { touch-action: none; }
+  #townSvg {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    display: block;
+    transform-origin: 0 0;
+  }
+  .smoke { animation: smokeUp 3s ease-out infinite; opacity: 0; }
+  .smoke.s2 { animation-delay: 1.5s; }
+  @keyframes smokeUp {
+    0% { opacity: 0.7; transform: translateY(0) scale(0.6); }
+    100% { opacity: 0; transform: translateY(-26px) scale(1.4); }
+  }
+
+  .iso-robot { cursor: pointer; will-change: transform; }
+  .iso-bob { animation: walkBob 0.55s ease-in-out infinite; }
+  @keyframes walkBob {
+    0%, 100% { transform: translateY(0) rotate(-1.5deg); }
+    50% { transform: translateY(-3px) rotate(1.5deg); }
+  }
+  .iso-robot.jump .iso-bob { animation: walkerJump 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  @keyframes walkerJump {
+    0%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-30px) rotate(8deg); }
+  }
+  .town-empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(15px, 2.5vw, 24px);
+    font-weight: bold;
+    color: #14532d;
+    text-shadow: 0 2px 0 #fff;
+    text-align: center;
+    padding: 0 6vw;
+  }
+
+  .confetti {
+    position: fixed;
+    top: -20px;
+    border-radius: 3px;
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  /* ===== iPadたて向き・せまい画面 ===== */
+  @media (max-width: 820px), (orientation: portrait) {
+    main { flex-direction: column; gap: 1vh; }
+    .target-card { padding: 1vh 8vw 1.5vh; }
+    #targetChar { font-size: clamp(64px, 18vw, 120px); }
+    .stage { height: clamp(180px, 32vh, 320px); }
+    header h1 { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="startScreen">
+  <h2>🤖 ロボットこうじょう</h2>
+  <svg id="startRobot" viewBox="0 0 200 240"></svg>
+  <p>がめんタッチか どれかのキーを おしてスタート!</p>
+  <div id="buildTag">v33</div>
+</div>
+
+<header>
+  <h1>🤖 ロボットこうじょう</h1>
+  <div class="robot-count">つくった: <span id="count">0</span> たい</div>
+  <button class="hdr-btn" id="townBtn">🏙 まち</button>
+  <button class="hdr-btn" id="galleryBtn">📖 ずかん</button>
+  <button class="hdr-btn" id="muteBtn" title="おとの ON/OFF">🔊</button>
+</header>
+
+<main>
+  <div class="target-card">
+    <div class="target-label" id="targetLabel">この キーを おしてね!</div>
+    <div id="targetChar">A</div>
+    <div class="progress-lights" id="lights"></div>
+  </div>
+  <div class="stage" id="stage">
+    <svg id="robotSvg" viewBox="0 0 200 240"></svg>
+  </div>
+</main>
+
+<div class="kb" id="kb"></div>
+
+<div id="galleryOverlay" hidden>
+  <div class="gallery-panel">
+    <div class="gallery-head">
+      <h3>📖 ロボットずかん (<span id="galleryCount">0</span> たい)</h3>
+      <button class="hdr-btn" id="fuseBtn">⚡がったい</button>
+      <button class="hdr-btn" id="superFuseBtn" hidden>🌟ちょうがったい</button>
+      <button class="close-btn" id="closeGallery">✕</button>
+    </div>
+    <div class="fuse-hint" id="fuseHint" hidden></div>
+    <div class="gallery-grid" id="galleryGrid"></div>
+  </div>
+</div>
+
+<div id="fusionOverlay" hidden>
+  <div class="fusion-label" id="fusionLabel"></div>
+  <div class="fusion-stage" id="fusionStage"></div>
+  <div class="fusion-code" id="fusionCode"></div>
+</div>
+<div class="fusion-flash" id="fusionFlash"></div>
+
+<div id="townOverlay" hidden>
+  <div class="town-head">
+    <h3>🏙 ロボットタウン (じんこう <span id="townPop">0</span> たい)</h3>
+    <div id="townHint"></div>
+    <button class="close-btn" id="closeTown">✕</button>
+  </div>
+  <div id="townScene"></div>
+</div>
+
+<script>
+'use strict';
+
+/* ================= 設定 ================= */
+const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split('');
+const PARTS_PER_ROBOT = 5;
+const PRAISES = ['すごい!', 'やったね!', 'ピッタリ!', 'てんさい!', 'いいね!', 'その ちょうし!'];
+const CHAR_NAMES = {
+  A:'エー', B:'ビー', C:'シー', D:'ディー', E:'イー', F:'エフ', G:'ジー',
+  H:'エイチ', I:'アイ', J:'ジェー', K:'ケー', L:'エル', M:'エム', N:'エヌ',
+  O:'オー', P:'ピー', Q:'キュー', R:'アール', S:'エス', T:'ティー',
+  U:'ユー', V:'ブイ', W:'ダブリュー', X:'エックス', Y:'ワイ', Z:'ゼット',
+  0:'ゼロ', 1:'いち', 2:'に', 3:'さん', 4:'よん', 5:'ご',
+  6:'ろく', 7:'なな', 8:'はち', 9:'きゅう'
+};
+const KB_ROWS = [
+  ['1','2','3','4','5','6','7','8','9','0'],
+  ['Q','W','E','R','T','Y','U','I','O','P'],
+  ['A','S','D','F','G','H','J','K','L'],
+  ['Z','X','C','V','B','N','M']
+];
+const HUES = [0, 25, 50, 90, 140, 170, 200, 225, 260, 290, 320, 345];
+
+/* ================= 状態 ================= */
+let state = 'start';          // start | playing | celebrate
+let target = null;
+let partsDone = 0;
+let currentSpec = null;
+let robotCount = Number(localStorage.getItem('robotCount') || 0);
+let collection = [];
+try { collection = JSON.parse(localStorage.getItem('robotCollection2') || '[]'); } catch (e) {}
+let muted = localStorage.getItem('robotMuted') === '1';
+
+/* ================= サウンド ================= */
+let audioCtx = null;
+function ensureAudio() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+  }
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  // タッチ/キー操作のたびに、固まった読み上げエンジンを起こす
+  if ('speechSynthesis' in window) {
+    try {
+      if (speechSynthesis.paused) speechSynthesis.resume();
+      // 「しゃべりっぱなし」で固着していたら強制リセット (お祝いの長文でも5秒程度)
+      if (speechSynthesis.speaking && lastSpeakStart && Date.now() - lastSpeakStart > 15000) {
+        resetSpeech();
+      }
+    } catch (e) {}
+  }
+}
+function tone(freq, start, dur, type, vol) {
+  if (!audioCtx || muted) return;
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = type || 'square';
+  o.frequency.value = freq;
+  const t = audioCtx.currentTime + start;
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(vol || 0.15, t + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.connect(g).connect(audioCtx.destination);
+  o.start(t);
+  o.stop(t + dur + 0.05);
+}
+function soundPop()     { tone(520, 0, 0.12); tone(780, 0.08, 0.15); }
+function soundWrong()   { tone(180, 0, 0.2, 'sine', 0.1); }
+function soundBeep()    { tone(880 + Math.random() * 440, 0, 0.1, 'square', 0.12); tone(660, 0.1, 0.12, 'square', 0.1); }
+function soundFanfare() {
+  [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.15, 0.3, 'triangle', 0.2));
+  [523, 659, 784, 1047].forEach((f, i) => tone(f * 2, i * 0.15 + 0.05, 0.25, 'sine', 0.08));
+}
+
+/* --- 読み上げ (声の自然さ優先 + 最小限の詰まり対策) --- */
+let sayTimer = null, watchTimer = null;
+let speakFailures = 0;    // 「speakしたのに本当に無音」の連続回数
+let lastSpeakStart = 0;
+function resetSpeech() {
+  // 詰まったエンジンの復旧の儀式 (iOS/Safari)
+  try {
+    speechSynthesis.cancel();
+    speechSynthesis.pause();
+    speechSynthesis.resume();
+    speechSynthesis.cancel();
+  } catch (e) {}
+}
+
+function speakNow(text) {
+  const synth = speechSynthesis;
+  try {
+    if (synth.paused) synth.resume();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ja-JP';          // 声は端末の既定にまかせる (指定すると簡易音声になり機械的になる)
+    u.rate = 0.9;
+    u.pitch = 1.2;
+    let alive = false;
+    const ok = () => { alive = true; speakFailures = 0; };
+    u.onstart = () => { ok(); lastSpeakStart = Date.now(); };
+    u.onend = ok;              // onstartが来ない端末でも、鳴り終われば成功
+    say._current = u;          // 発話中のGCで無音になるiOSバグへの対策
+    synth.speak(u);
+
+    // ワッチドッグ: 「イベントも来ず、エンジンも完全に無反応」のときだけ失敗とみなす
+    clearTimeout(watchTimer);
+    watchTimer = setTimeout(() => {
+      if (muted || alive) return;
+      let idle = false;
+      try { idle = !synth.speaking && !synth.pending; } catch (e) {}
+      if (!idle) return;       // 音は出ているので成功あつかい (発話を邪魔しない)
+      speakFailures++;
+      if (speakFailures >= 3) { resetSpeech(); speakFailures = 0; }
+    }, 2500);
+  } catch (e) {}
+}
+
+function say(text) {
+  if (muted || !('speechSynthesis' in window)) return;
+  const synth = speechSynthesis;
+  let busy = false;
+  try { busy = synth.speaking || synth.pending; } catch (e) {}
+  clearTimeout(sayTimer);
+  if (!busy) {
+    speakNow(text);            // 何も鳴っていなければ即しゃべる (元どおりの反応の良さ)
+    return;
+  }
+  // 前の発話を止めた直後のspeakはiOSでキューが詰まるので、少しだけ待つ
+  try { synth.cancel(); } catch (e) {}
+  sayTimer = setTimeout(() => speakNow(text), 60);
+}
+
+/* 画面復帰時にpausedのまま固まる対策 */
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && 'speechSynthesis' in window) {
+    try { if (speechSynthesis.paused) speechSynthesis.resume(); } catch (e) {}
+  }
+});
+
+/* ================= ロボットの設計図 =================
+   あたま5 × からだ5 × 目3 × くち3 × アンテナ3 × いろ12 = 8100 パターン */
+function randomSpec() {
+  return {
+    h: HUES[Math.floor(Math.random() * HUES.length)],
+    body: Math.floor(Math.random() * 5),
+    head: Math.floor(Math.random() * 5),
+    eye: Math.floor(Math.random() * 3),
+    mouth: Math.floor(Math.random() * 3),
+    ant: Math.floor(Math.random() * 3)
+  };
+}
+function specKey(s) { return [s.h, s.h2 !== undefined ? s.h2 : '', s.body, s.head || 0, s.eye, s.mouth, s.ant, s.fusion || 0, s.lv || 0].join('-'); }
+
+/* --- がったいロボ専用: ユーザー制作SVG (hero-robots-three-types-rebuild) 描画 --- */
+const HERO_DEFS="<linearGradient id=\"rb-gold\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop stop-color=\"#ffe66a\"/><stop offset=\".52\" stop-color=\"#ffd13c\"/><stop offset=\"1\" stop-color=\"#ffbd25\"/></linearGradient><linearGradient id=\"rb-white\" x1=\"0\" y1=\"0\" x2=\".8\" y2=\"1\"><stop stop-color=\"#fff\"/><stop offset=\"1\" stop-color=\"#e8eef7\"/></linearGradient><linearGradient id=\"rb-eye\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop stop-color=\"#55d8ff\"/><stop offset=\".45\" stop-color=\"#16b5f6\"/><stop offset=\"1\" stop-color=\"#078bdd\"/></linearGradient>";
+const HERO_TPL={"base": " <path d=\"M72 339 L40 138 L116 218 L132 417 Z\" fill=\"url(#rb-gold)\"/> <path d=\"M388 339 L420 138 L344 218 L328 417 Z\" fill=\"url(#rb-gold)\"/> <g transform=\"rotate(7 126 309)\"> <path d=\"M82 314 L137 309 L139 430 L86 440 L70 383 Z\" fill=\"#26344d\"/> <path d=\"M69 402 Q72 389 87 386 L132 392 L126 500 Q125 513 112 517 L72 510 Q61 508 62 495 Z\" fill=\"url(#rb-white)\"/> <path d=\"M63 493 L127 502 L124 518 L66 510 Z\" fill=\"#26344d\"/> <path d=\"M73 512 Q88 506 103 512 Q117 520 117 535 Q118 551 106 561 Q93 570 78 565 Q63 560 60 546 Q56 530 66 520 Z\" fill=\"#26344d\"/> <path d=\"M105 527 Q118 524 123 534 Q127 545 119 552 Q113 558 105 555 Z\" fill=\"#26344d\"/> </g> <g transform=\"rotate(-7 334 309)\"> <path d=\"M378 314 L323 309 L321 430 L374 440 L390 383 Z\" fill=\"#26344d\"/> <path d=\"M391 402 Q388 389 373 386 L328 392 L334 500 Q335 513 348 517 L388 510 Q399 508 398 495 Z\" fill=\"url(#rb-white)\"/> <path d=\"M397 493 L333 502 L336 518 L394 510 Z\" fill=\"#26344d\"/> <path d=\"M387 512 Q372 506 357 512 Q343 520 343 535 Q342 551 354 561 Q367 570 382 565 Q397 560 400 546 Q404 530 394 520 Z\" fill=\"#26344d\"/> <path d=\"M355 527 Q342 524 337 534 Q333 545 341 552 Q347 558 355 555 Z\" fill=\"#26344d\"/> </g> <path d=\"M151 273 L309 273 L300 382 L270 504 L190 504 L160 382 Z\" fill=\"#26344d\"/> <path d=\"M174 493 L222 493 L209 621 L145 621 Z\" fill=\"#26344d\"/> <path d=\"M286 493 L238 493 L251 621 L315 621 Z\" fill=\"#26344d\"/> <rect x=\"146\" y=\"585\" width=\"67\" height=\"28\" rx=\"12\" fill=\"url(#rb-gold)\"/> <rect x=\"247\" y=\"585\" width=\"67\" height=\"28\" rx=\"12\" fill=\"url(#rb-gold)\"/> <path d=\"M191 211 L269 211 L274 287 L186 287 Z\" fill=\"#26344d\"/> <rect x=\"207\" y=\"429\" width=\"46\" height=\"31\" rx=\"9\" fill=\"url(#rb-gold)\"/> <path d=\"M213 467 L247 467 L243 506 L217 506 Z\" fill=\"url(#rb-gold)\"/> <path d=\"M154 451 L208 464 L195 520 L146 503 L132 479 Z\" fill=\"__C1__\"/> <path d=\"M306 451 L252 464 L265 520 L314 503 L328 479 Z\" fill=\"__C1__\"/>", "shoulders": "<path d=\"M11 188 L145 228 L137 362 Q136 372 126 373 L42 360 Q34 359 31 351 L15 300 Z\" fill=\"__C1__\"/> <path d=\"M449 188 L315 228 L323 362 Q324 372 334 373 L418 360 Q426 359 429 351 L445 300 Z\" fill=\"__C1__\"/> <path d=\"M40 273 L118 292 L114 319 L50 308 Z\" fill=\"url(#rb-gold)\"/> <path d=\"M420 273 L342 292 L346 319 L410 308 Z\" fill=\"url(#rb-gold)\"/>", "chest": "<path d=\"M109 267 L216 300 L226 331 L203 357 L142 342 L104 303 Z\" fill=\"url(#rb-gold)\"/> <path d=\"M351 267 L244 300 L234 331 L257 357 L318 342 L356 303 Z\" fill=\"url(#rb-gold)\"/> <path d=\"M119 279 L211 307 L216 320 L145 303 Z\" fill=\"#fff2a0\" opacity=\".42\"/> <path d=\"M341 279 L249 307 L244 320 L315 303 Z\" fill=\"#fff2a0\" opacity=\".42\"/> <circle cx=\"230\" cy=\"370\" r=\"43\" fill=\"#26344d\" stroke=\"#ffca31\" stroke-width=\"8\"/> <path d=\"M230 335 L240 357 L264 359 L246 375 L251 398 L230 386 L209 398 L214 375 L196 359 L220 357 Z\" fill=\"#ffd13b\"/>", "sabers": "<path d=\"M90 80 Q90 69 101 69 H120 Q131 69 131 80 L129 250 H92 Z\" fill=\"url(#rb-white)\"/> <path d=\"M91 100 H130 V123 H91 Z\" fill=\"#26344d\"/><path d=\"M91 123 H130 V146 H91 Z\" fill=\"url(#rb-gold)\"/> <path d=\"M370 80 Q370 69 359 69 H340 Q329 69 329 80 L331 250 H368 Z\" fill=\"url(#rb-white)\"/> <path d=\"M330 100 H369 V123 H330 Z\" fill=\"#26344d\"/><path d=\"M330 123 H369 V146 H330 Z\" fill=\"url(#rb-gold)\"/>", "legs": "<path d=\"M145 606 L213 606 L198 748 L91 748 Z\" fill=\"__C2__\"/> <path d=\"M247 606 L315 606 L369 748 L262 748 Z\" fill=\"__C2__\"/> <path d=\"M154 621 L204 621 L190 724 L112 724 Z\" fill=\"url(#rb-white)\"/> <path d=\"M256 621 L306 621 L348 724 L270 724 Z\" fill=\"url(#rb-white)\"/>", "heads": ["<path d=\"M184 145 Q230 119 276 145 L278 209 Q275 229 256 244 L204 244 Q185 229 182 209 Z\" fill=\"#26344d\"/> <path d=\"M184 149 L158 146 L128 135 L118 145 L142 159 L180 157 Z\" fill=\"__C1__\"/> <path d=\"M276 149 L302 146 L332 135 L342 145 L318 159 L280 157 Z\" fill=\"__C1__\"/> <path d=\"M181 163 L149 163 L157 200 Q160 210 174 215 L188 198 Z\" fill=\"url(#rb-white)\"/> <path d=\"M279 163 L311 163 L303 200 Q300 210 286 215 L272 198 Z\" fill=\"url(#rb-white)\"/> <path d=\"M180 147 Q230 120 280 147 L276 187 L257 198 L244 188 L230 196 L216 188 L203 198 L184 187 Z\" fill=\"__C1__\"/> <path d=\"M181 158 L161 169 L169 220 L190 206 L191 172 Z\" fill=\"__C1__\"/> <path d=\"M279 158 L299 169 L291 220 L270 206 L269 172 Z\" fill=\"__C1__\"/> <path d=\"M191 177 L230 188 L269 177 L266 211 Q264 222 253 230 L230 244 L207 230 Q196 222 194 211 Z\" fill=\"url(#rb-white)\"/> <path d=\"M194 186 L224 192 L219 201 L208 205 L196 199 Z\" fill=\"url(#rb-eye)\"/> <path d=\"M266 186 L236 192 L241 201 L252 205 L264 199 Z\" fill=\"url(#rb-eye)\"/> <path d=\"M227 212 L230 208 L233 212 L232 216 L228 216 Z\" fill=\"#d7dfe9\"/> <path d=\"M225 229 H235\" stroke=\"#c4ceda\" stroke-width=\"3\" stroke-linecap=\"round\"/> <path d=\"M230 151 L185 126 L164 72 L209 100 L230 61 L251 100 L296 72 L275 126 Z\" fill=\"url(#rb-gold)\"/> <path d=\"M230 82 L241 101 L236 121 L224 121 L219 101 Z\" fill=\"#f2293d\"/>", "<path d=\"M180 126 L196 101 L214 91 H246 L264 101 L280 126 L278 217 L258 239 L249 211 H211 L202 239 L182 217 Z\" fill=\"__C1__\"/> <path d=\"M181 145 L164 157 L169 218 L201 231 L197 190 Z\" fill=\"__C1__\"/> <path d=\"M279 145 L296 157 L291 218 L259 231 L263 190 Z\" fill=\"__C1__\"/> <path d=\"M190 160 L230 173 L270 160 L267 207 Q265 220 252 229 L230 242 L208 229 Q195 220 193 207 Z\" fill=\"url(#rb-white)\"/> <path d=\"M194 169 L224 176 L219 185 L208 190 L196 184 Z\" fill=\"url(#rb-eye)\"/> <path d=\"M266 169 L236 176 L241 185 L252 190 L264 184 Z\" fill=\"url(#rb-eye)\"/> <path d=\"M227 200 L230 196 L233 200 L232 204 L228 204 Z\" fill=\"#d7dfe9\"/> <path d=\"M225 217 H235\" stroke=\"#c4ceda\" stroke-width=\"3\" stroke-linecap=\"round\"/> <rect x=\"162\" y=\"158\" width=\"22\" height=\"45\" rx=\"7\" fill=\"url(#rb-gold)\"/> <rect x=\"276\" y=\"158\" width=\"22\" height=\"45\" rx=\"7\" fill=\"url(#rb-gold)\"/> <path d=\"M230 149 L183 118 L164 106 L162 49 L186 80 L201 89 L230 106 L259 89 L274 80 L298 49 L296 106 L277 118 Z\" fill=\"url(#rb-gold)\"/> <path d=\"M230 98 L241 116 L236 135 L224 135 L219 116 Z\" fill=\"#f2293d\"/>", "<path d=\"M180 126 L196 101 L214 90 H246 L264 101 L280 126 L278 215 L257 239 L249 210 H211 L203 239 L182 215 Z\" fill=\"__C1__\"/> <path d=\"M181 139 L157 153 L164 224 L201 234 L196 188 Z\" fill=\"__C1__\"/> <path d=\"M279 139 L303 153 L296 224 L259 234 L264 188 Z\" fill=\"__C1__\"/> <path d=\"M190 160 L230 173 L270 160 L267 207 Q265 220 252 229 L230 242 L208 229 Q195 220 193 207 Z\" fill=\"url(#rb-white)\"/> <path d=\"M194 169 L224 176 L219 185 L208 190 L196 184 Z\" fill=\"url(#rb-eye)\"/> <path d=\"M266 169 L236 176 L241 185 L252 190 L264 184 Z\" fill=\"url(#rb-eye)\"/> <path d=\"M227 200 L230 196 L233 200 L232 204 L228 204 Z\" fill=\"#d7dfe9\"/> <path d=\"M225 217 H235\" stroke=\"#c4ceda\" stroke-width=\"3\" stroke-linecap=\"round\"/> <path d=\"M125 19 L151 35 L164 62 L180 114 L169 197 L151 182 L143 106 Z\" fill=\"url(#rb-gold)\"/> <path d=\"M335 19 L309 35 L296 62 L280 114 L291 197 L309 182 L317 106 Z\" fill=\"url(#rb-gold)\"/> <path d=\"M151 35 L230 107 L309 35 L302 70 L230 132 L158 70 Z\" fill=\"url(#rb-gold)\"/> <path d=\"M230 76 L245 112 L230 143 L215 112 Z\" fill=\"url(#rb-gold)\"/> <path d=\"M230 97 L241 116 L236 136 L224 136 L219 116 Z\" fill=\"#f2293d\"/>"], "feet": ["<path d=\"M89 722 L202 722 L205 789 L157 807 L72 795 Z\" fill=\"url(#rb-white)\"/> <path d=\"M371 722 L258 722 L255 789 L303 807 L388 795 Z\" fill=\"url(#rb-white)\"/> <path d=\"M105 742 H172 L157 789 L88 785 Z\" fill=\"#26344d\"/><path d=\"M355 742 H288 L303 789 L372 785 Z\" fill=\"#26344d\"/> <path d=\"M72 795 L157 807 L205 789 L205 800 L157 817 L72 807 Z\" fill=\"#1f2b40\"/> <path d=\"M388 795 L303 807 L255 789 L255 800 L303 817 L388 807 Z\" fill=\"#1f2b40\"/>", "<path d=\"M89 720 L203 720 L208 791 L160 804 L70 795 Z\" fill=\"url(#rb-white)\"/> <path d=\"M371 720 L257 720 L252 791 L300 804 L390 795 Z\" fill=\"url(#rb-white)\"/> <path d=\"M90 724 H173 L158 798 H64 L68 758 Z\" fill=\"__C2__\"/> <path d=\"M370 724 H287 L302 798 H396 L392 758 Z\" fill=\"__C2__\"/> <path d=\"M64 798 L158 798 L208 791 L208 802 L160 813 L64 810 Z\" fill=\"#1f2b40\"/> <path d=\"M396 798 L302 798 L252 791 L252 802 L300 813 L396 810 Z\" fill=\"#1f2b40\"/>", "<path d=\"M89 720 L203 720 L208 791 L160 804 L70 795 Z\" fill=\"url(#rb-white)\"/> <path d=\"M371 720 L257 720 L252 791 L300 804 L390 795 Z\" fill=\"url(#rb-white)\"/> <path d=\"M92 739 H174 L158 798 H66 L69 758 Z\" fill=\"__C2__\"/> <path d=\"M368 739 H286 L302 798 H394 L391 758 Z\" fill=\"__C2__\"/> <path d=\"M66 798 L158 798 L208 791 L208 802 L160 813 L66 810 Z\" fill=\"#1f2b40\"/> <path d=\"M394 798 L302 798 L252 791 L252 802 L300 813 L394 810 Z\" fill=\"#1f2b40\"/>"], "dino": {"head": "<path d=\"M180 128 Q230 100 280 128 L278 172 L266 162 L230 174 L194 162 L182 172 Z\" fill=\"__C1__\"/> <path d=\"M181 145 L160 156 L166 218 L200 230 L196 186 Z\" fill=\"__C1__\"/> <path d=\"M279 145 L300 156 L294 218 L260 230 L264 186 Z\" fill=\"__C1__\"/> <path d=\"M190 160 L230 173 L270 160 L267 207 Q265 220 252 229 L230 242 L208 229 Q195 220 193 207 Z\" fill=\"url(#rb-white)\"/> <path d=\"M194 169 L224 176 L219 185 L208 190 L196 184 Z\" fill=\"url(#rb-eye)\"/> <path d=\"M266 169 L236 176 L241 185 L252 190 L264 184 Z\" fill=\"url(#rb-eye)\"/> <path d=\"M227 200 L230 196 L233 200 L232 204 L228 204 Z\" fill=\"#d7dfe9\"/> <path d=\"M225 217 H235\" stroke=\"#c4ceda\" stroke-width=\"3\" stroke-linecap=\"round\"/> <path d=\"M192 162 L199 176 L206 163 Z M208 164 L215 178 L222 165 Z M238 165 L245 178 L252 164 Z M254 163 L261 176 L268 162 Z\" fill=\"#fff\"/> <path d=\"M198 116 L212 66 L226 112 Z\" fill=\"url(#rb-gold)\"/> <path d=\"M221 108 L237 48 L253 104 Z\" fill=\"url(#rb-gold)\"/> <path d=\"M247 112 L263 70 L275 118 Z\" fill=\"url(#rb-gold)\"/> <path d=\"M180 150 L146 140 L172 176 Z\" fill=\"url(#rb-gold)\"/> <path d=\"M280 150 L314 140 L288 176 Z\" fill=\"url(#rb-gold)\"/> <path d=\"M230 116 L240 132 L230 146 L220 132 Z\" fill=\"#f2293d\"/>", "armor": "<path d=\"M28 236 L2 250 L32 266 Z M34 282 L8 298 L38 312 Z M40 326 L16 344 L46 354 Z\" fill=\"url(#rb-gold)\"/> <path d=\"M432 236 L458 250 L428 266 Z M426 282 L452 298 L422 312 Z M420 326 L444 344 L414 354 Z\" fill=\"url(#rb-gold)\"/> <path d=\"M100 782 L114 806 L128 783 Z M130 784 L144 808 L158 784 Z M160 784 L172 804 L184 783 Z\" fill=\"#fff\"/> <path d=\"M360 782 L346 806 L332 783 Z M330 784 L316 808 L302 784 Z M300 784 L288 804 L276 783 Z\" fill=\"#fff\"/>", "back": "<path d=\"M310 396 Q424 418 450 544 Q398 522 354 492 Q328 468 314 438 Z\" fill=\"__C1__\"/> <path d=\"M150 396 Q36 418 10 544 Q62 522 106 492 Q132 468 146 438 Z\" fill=\"__C1__\"/> <path d=\"M352 452 L382 428 L386 468 Z M386 474 L416 454 L418 494 Z\" fill=\"url(#rb-gold)\"/> <path d=\"M108 452 L78 428 L74 468 Z M74 474 L44 454 L42 494 Z\" fill=\"url(#rb-gold)\"/>"}, "car": {"head": "<path d=\"M180 126 Q230 98 280 126 L278 170 L266 161 L230 173 L194 161 L182 170 Z\" fill=\"__C1__\"/> <path d=\"M181 143 L160 154 L166 216 L200 228 L196 184 Z\" fill=\"__C1__\"/> <path d=\"M279 143 L300 154 L294 216 L260 228 L264 184 Z\" fill=\"__C1__\"/> <path d=\"M190 160 L230 173 L270 160 L267 207 Q265 220 252 229 L230 242 L208 229 Q195 220 193 207 Z\" fill=\"url(#rb-white)\"/> <path d=\"M194 169 L224 176 L219 185 L208 190 L196 184 Z\" fill=\"url(#rb-eye)\"/> <path d=\"M266 169 L236 176 L241 185 L252 190 L264 184 Z\" fill=\"url(#rb-eye)\"/> <path d=\"M227 200 L230 196 L233 200 L232 204 L228 204 Z\" fill=\"#d7dfe9\"/> <path d=\"M225 217 H235\" stroke=\"#c4ceda\" stroke-width=\"3\" stroke-linecap=\"round\"/> <path d=\"M170 90 L290 90 L280 110 L180 110 Z\" fill=\"url(#rb-gold)\"/> <path d=\"M222 102 L238 102 L242 126 L218 126 Z\" fill=\"url(#rb-gold)\"/> <path d=\"M222 104 L226 104 L224 126 Z\" fill=\"#fff\" opacity=\".0\"/> <path d=\"M212 112 L218 112 L214 130 L208 130 Z M242 112 L248 112 L252 130 L246 130 Z\" fill=\"#fff\" opacity=\".85\"/> <circle cx=\"192\" cy=\"140\" r=\"9\" fill=\"url(#rb-gold)\"/><circle cx=\"268\" cy=\"140\" r=\"9\" fill=\"url(#rb-gold)\"/> <path d=\"M230 114 L240 130 L230 144 L220 130 Z\" fill=\"#f2293d\"/>", "armor": "<circle cx=\"76\" cy=\"278\" r=\"36\" fill=\"#26344d\"/><circle cx=\"76\" cy=\"278\" r=\"17\" fill=\"#8da3b8\"/><circle cx=\"76\" cy=\"278\" r=\"6\" fill=\"#26344d\"/> <circle cx=\"384\" cy=\"278\" r=\"36\" fill=\"#26344d\"/><circle cx=\"384\" cy=\"278\" r=\"17\" fill=\"#8da3b8\"/><circle cx=\"384\" cy=\"278\" r=\"6\" fill=\"#26344d\"/> <path d=\"M86 756 L204 756 L206 774 L84 774 Z\" fill=\"url(#rb-white)\"/> <path d=\"M374 756 L256 756 L254 774 L376 774 Z\" fill=\"url(#rb-white)\"/> <circle cx=\"104\" cy=\"765\" r=\"6\" fill=\"url(#rb-gold)\"/><circle cx=\"186\" cy=\"765\" r=\"6\" fill=\"url(#rb-gold)\"/> <circle cx=\"274\" cy=\"765\" r=\"6\" fill=\"url(#rb-gold)\"/><circle cx=\"356\" cy=\"765\" r=\"6\" fill=\"url(#rb-gold)\"/>", "back": "<rect x=\"46\" y=\"330\" width=\"24\" height=\"130\" rx=\"11\" fill=\"url(#rb-white)\"/><rect x=\"46\" y=\"342\" width=\"24\" height=\"12\" fill=\"url(#rb-gold)\"/> <rect x=\"390\" y=\"330\" width=\"24\" height=\"130\" rx=\"11\" fill=\"url(#rb-white)\"/><rect x=\"390\" y=\"342\" width=\"24\" height=\"12\" fill=\"url(#rb-gold)\"/> <ellipse cx=\"58\" cy=\"330\" rx=\"12\" ry=\"6\" fill=\"#26344d\"/><ellipse cx=\"402\" cy=\"330\" rx=\"12\" ry=\"6\" fill=\"#26344d\"/>"}};
+
+let heroUid = 0;
+function heroRobotMarkup(spec) {
+  const uid = ++heroUid;
+  const h2v = spec.h2 !== undefined ? spec.h2 : spec.h;
+  const c1 = `rbc1-${uid}`, c2 = `rbc2-${uid}`;
+  const grad = (id, h) =>
+    `<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">` +
+    `<stop stop-color="hsl(${h},74%,56%)"/><stop offset="1" stop-color="hsl(${h},72%,42%)"/></linearGradient>`;
+  // 金・白・目のグラデーションもロボットごとに固有IDにする
+  // (同じIDが文書内に複数あると、元のロボットが消えた瞬間に他の顔や金色が
+  //  描画されなくなるため)
+  const gid = `rbg-${uid}`, wid = `rbw-${uid}`, eid = `rbe-${uid}`;
+  const defs = HERO_DEFS
+    .split('id="rb-gold"').join(`id="${gid}"`)
+    .split('id="rb-white"').join(`id="${wid}"`)
+    .split('id="rb-eye"').join(`id="${eid}"`);
+  const fix = (t) => t.split('__C1__').join(`url(#${c1})`).split('__C2__').join(`url(#${c2})`)
+    .split('url(#rb-gold)').join(`url(#${gid})`)
+    .split('url(#rb-white)').join(`url(#${wid})`)
+    .split('url(#rb-eye)').join(`url(#${eid})`);
+  const sup = spec.fusion === 2;
+  const motif = (spec.mouth || 0) % 3;   // 親のくち由来: 0=ヒーロー 1=きょうりゅう 2=くるま
+  const mo = motif === 1 ? HERO_TPL.dino : motif === 2 ? HERO_TPL.car : null;
+  const armorT = (spec.head || 0) % 3;   // 肩アーマーは独立枠 (親の頭由来): 0なし 1スパイク 2ホイール
+  const armor = armorT === 1 ? HERO_TPL.dino.armor : armorT === 2 ? HERO_TPL.car.armor : '';
+  const head = mo ? mo.head : HERO_TPL.heads[sup ? 2 : (spec.ant || 0) % 3];
+  const feet = HERO_TPL.feet[(spec.body || 0) % 3];
+  const gemT = (spec.eye || 0) % 3;
+
+  let s = `<g id="robotBody"><g class="part shown">`;
+  s += `<defs>${defs}${grad(c1, spec.h)}${grad(c2, h2v)}</defs>`;
+  s += `<g transform="translate(23.4,-13.2) scale(0.333,0.305)">`;
+  if (mo) s += fix(mo.back);
+  if (sup) s += fix(HERO_TPL.sabers);
+  s += fix(HERO_TPL.base) + fix(HERO_TPL.shoulders);
+  if (armor) s += fix(armor);
+  s += fix(head) + fix(HERO_TPL.chest);
+  s += `<path d="M68 416 L130 425 L128 448 L66 439 Z" fill="url(#${c2})"/>` +
+       `<path d="M392 416 L330 425 L332 448 L394 439 Z" fill="url(#${c2})"/>`;
+  s += fix(HERO_TPL.legs) + fix(feet);
+  /* メダルの星の個性 (目タイプ由来) */
+  if (gemT === 1) {
+    s += `<path d="M230 335 L240 357 L264 359 L246 375 L251 398 L230 386 L209 398 L214 375 L196 359 L220 357 Z" fill="#ff4d5e"/>`;
+  } else if (gemT === 2) {
+    s += `<path d="M230 335 L240 357 L264 359 L246 375 L251 398 L230 386 L209 398 L214 375 L196 359 L220 357 Z" fill="#3fc0ff"/>`;
+  }
+  s += `</g></g></g>`;
+  return s;
+}
+
+function robotSvgMarkup(spec, withAll) {
+  if (spec.fusion) return heroRobotMarkup(spec);
+  const h2v = spec.h2 !== undefined ? spec.h2 : spec.h;   // がったいロボは2色め
+  const body = `hsl(${spec.h}, 70%, 55%)`;
+  const dark = `hsl(${spec.h}, 70%, 38%)`;
+  const lite = `hsl(${(spec.h + 40) % 360}, 80%, 65%)`;
+  const body2 = `hsl(${h2v}, 70%, 55%)`;
+  const dark2 = `hsl(${h2v}, 70%, 38%)`;
+  const lite2 = `hsl(${(h2v + 40) % 360}, 80%, 65%)`;
+  const cls = withAll ? 'part shown' : 'part';
+  const headType = spec.head || 0;
+
+  /* --- からだ (5しゅるい) --- */
+  let torso;
+  let armL = 34, armR = 146;
+  if (spec.body === 0) {
+    torso = `<rect x="58" y="118" width="84" height="84" rx="16" fill="${body2}"/>
+             <rect x="74" y="136" width="52" height="34" rx="8" fill="${lite2}"/>
+             <circle cx="88" cy="184" r="7" fill="#ffd23f"/>
+             <circle cx="112" cy="184" r="7" fill="#ff5d8f"/>`;
+  } else if (spec.body === 1) {
+    torso = `<circle cx="100" cy="162" r="45" fill="${body2}"/>
+             <circle cx="100" cy="152" r="20" fill="${lite2}"/>
+             <circle cx="86" cy="188" r="6" fill="#ffd23f"/>
+             <circle cx="114" cy="188" r="6" fill="#ff5d8f"/>`;
+    armL = 36; armR = 144;
+  } else if (spec.body === 2) {
+    torso = `<rect x="68" y="112" width="64" height="92" rx="12" fill="${body2}"/>
+             <rect x="80" y="126" width="40" height="26" rx="6" fill="${lite2}"/>
+             <circle cx="100" cy="170" r="6" fill="#ffd23f"/>
+             <circle cx="100" cy="186" r="6" fill="#ff5d8f"/>`;
+    armL = 46; armR = 134;
+  } else if (spec.body === 3) {
+    torso = `<path d="M62 204 L62 148 A38 38 0 0 1 138 148 L138 204 Z" fill="${body2}"/>
+             <rect x="78" y="150" width="44" height="26" rx="6" fill="${lite2}"/>
+             <rect x="70" y="182" width="60" height="6" rx="3" fill="${dark2}"/>
+             <circle cx="88" cy="196" r="6" fill="#ffd23f"/>
+             <circle cx="112" cy="196" r="6" fill="#ff5d8f"/>`;
+    armL = 38; armR = 142;
+  } else {
+    torso = `<path d="M72 118 L128 118 L144 204 L56 204 Z" fill="${body2}"/>
+             <rect x="82" y="132" width="36" height="26" rx="6" fill="${lite2}"/>
+             <circle cx="88" cy="184" r="6" fill="#ffd23f"/>
+             <circle cx="112" cy="184" r="6" fill="#ff5d8f"/>`;
+    armL = 46; armR = 134;
+  }
+
+  /* --- あたま (5しゅるい) --- */
+  let headShape;
+  let eyeT = '', mouthT = '', antDy = 0, ownEyes = false;
+  if (headType === 0) {
+    headShape = `<rect x="60" y="28" width="80" height="66" rx="18" fill="${body}"/>`;
+  } else if (headType === 1) {
+    headShape = `<path d="M55 94 A45 45 0 0 1 145 94 Z" fill="${body}"/>
+                 <path d="M55 94 A45 45 0 0 1 66 65 L134 65 A45 45 0 0 1 145 94 Z" fill="${body}"/>
+                 <rect x="58" y="88" width="84" height="6" rx="3" fill="${dark}"/>`;
+    eyeT = 'translate(0,12)'; mouthT = 'translate(0,8)'; antDy = 21;
+  } else if (headType === 2) {
+    headShape = `<rect x="62" y="42" width="76" height="52" rx="12" fill="${body}"/>`;
+    const lensColors = ['#9ef', '#ffd23f', '#fff'];
+    headShape += `<circle cx="82" cy="60" r="14" fill="${dark}"/>
+                  <circle cx="118" cy="60" r="14" fill="${dark}"/>
+                  <circle cx="82" cy="60" r="8" fill="${lensColors[spec.eye]}"/>
+                  <circle cx="118" cy="60" r="8" fill="${lensColors[spec.eye]}"/>
+                  <circle cx="85" cy="57" r="2.5" fill="#fff"/>
+                  <circle cx="121" cy="57" r="2.5" fill="#fff"/>`;
+    ownEyes = true; mouthT = 'translate(0,10)'; antDy = 14;
+  } else if (headType === 3) {
+    headShape = `<rect x="66" y="26" width="68" height="68" rx="10" fill="${body}"/>
+                 <ellipse cx="100" cy="27" rx="34" ry="8" fill="${lite}"/>`;
+    eyeT = 'translate(0,2)'; mouthT = 'translate(0,2)'; antDy = -10;
+  } else {
+    headShape = `<ellipse cx="100" cy="76" rx="50" ry="20" fill="${body}"/>
+                 <circle cx="100" cy="56" r="18" fill="${lite}"/>
+                 <ellipse cx="100" cy="76" rx="50" ry="20" fill="none" stroke="${dark}" stroke-width="3"/>`;
+    eyeT = 'translate(44.9,25.4) scale(0.55)'; mouthT = 'translate(0,8)'; antDy = 10;
+  }
+
+  /* --- 目 (3しゅるい) --- */
+  let eyes = '';
+  if (!ownEyes) {
+    if (spec.eye === 0) {
+      eyes = `<circle cx="82" cy="52" r="9" fill="#fff"/><circle cx="118" cy="52" r="9" fill="#fff"/>
+              <circle cx="84" cy="54" r="4.5" fill="#234"/><circle cx="116" cy="54" r="4.5" fill="#234"/>`;
+    } else if (spec.eye === 1) {
+      eyes = `<rect x="72" y="45" width="18" height="14" rx="4" fill="#9ef"/><rect x="110" y="45" width="18" height="14" rx="4" fill="#9ef"/>`;
+    } else {
+      eyes = `<circle cx="82" cy="52" r="8" fill="#ffd23f"/><circle cx="118" cy="52" r="8" fill="#ffd23f"/>
+              <circle cx="82" cy="52" r="3" fill="#234"/><circle cx="118" cy="52" r="3" fill="#234"/>`;
+    }
+    eyes = `<g transform="${eyeT}">${eyes}</g>`;
+  }
+
+  /* --- くち (3しゅるい) --- */
+  let mouth;
+  if (spec.mouth === 0) {
+    mouth = `<rect x="82" y="72" width="36" height="10" rx="5" fill="#234"/>
+             <rect x="86" y="74" width="6" height="6" fill="${lite}"/>
+             <rect x="96" y="74" width="6" height="6" fill="${lite}"/>
+             <rect x="106" y="74" width="6" height="6" fill="${lite}"/>`;
+  } else if (spec.mouth === 1) {
+    mouth = `<path d="M84 72 Q100 86 116 72" stroke="#234" stroke-width="5" fill="none" stroke-linecap="round"/>`;
+  } else {
+    mouth = `<rect x="84" y="70" width="32" height="3.5" rx="1.5" fill="#234"/>
+             <rect x="84" y="76" width="32" height="3.5" rx="1.5" fill="#234"/>
+             <rect x="84" y="82" width="32" height="3.5" rx="1.5" fill="#234"/>`;
+  }
+  mouth = `<g transform="${mouthT}">${mouth}</g>`;
+
+  /* --- アンテナ (3しゅるい) --- */
+  let antenna;
+  if (spec.ant === 0) {
+    antenna = `<rect x="97" y="8" width="6" height="22" fill="${dark}"/>
+               <circle class="antenna-light" cx="100" cy="8" r="8" fill="#ff5d8f"/>`;
+  } else if (spec.ant === 1) {
+    antenna = `<rect x="74" y="12" width="5" height="18" fill="${dark}"/>
+               <rect x="121" y="12" width="5" height="18" fill="${dark}"/>
+               <circle class="antenna-light" cx="76" cy="12" r="6" fill="#ff5d8f"/>
+               <circle class="antenna-light" cx="123" cy="12" r="6" fill="#ffd23f"/>`;
+  } else {
+    antenna = `<rect x="97" y="14" width="6" height="16" fill="${dark}"/>
+               <path d="M82 16 Q100 -4 118 16 Z" fill="${lite}"/>
+               <circle class="antenna-light" cx="100" cy="10" r="4" fill="#ff5d8f"/>`;
+  }
+  antenna = `<g transform="translate(0,${antDy})">${antenna}</g>`;
+
+  return `
+  <g id="robotBody">
+    <g class="${cls}" data-part="0">
+      <rect x="72" y="196" width="20" height="30" rx="6" fill="${dark2}"/>
+      <rect x="108" y="196" width="20" height="30" rx="6" fill="${dark2}"/>
+      <rect x="62" y="222" width="36" height="14" rx="7" fill="${body2}"/>
+      <rect x="102" y="222" width="36" height="14" rx="7" fill="${body2}"/>
+    </g>
+    <g class="${cls}" data-part="1">${torso}</g>
+    <g class="${cls}" data-part="2">
+      <rect x="${armL}" y="126" width="20" height="52" rx="10" fill="${dark}"/>
+      <rect x="${armR}" y="126" width="20" height="52" rx="10" fill="${dark}"/>
+      <circle cx="${armL + 10}" cy="184" r="12" fill="${lite}"/>
+      <circle cx="${armR + 10}" cy="184" r="12" fill="${lite}"/>
+    </g>
+    <g class="${cls}" data-part="3">
+      <rect x="88" y="90" width="24" height="30" fill="${dark}"/>
+      ${headShape}
+      ${eyes}
+      ${mouth}
+    </g>
+    <g class="${cls}" data-part="4">${antenna}</g>
+  </g>`;
+}
+
+function miniRobotSvg(spec) {
+  const holder = document.createElement('div');
+  holder.innerHTML = `<svg viewBox="0 -16 200 256">${robotSvgMarkup(spec, true)}</svg>`;
+  const g = holder.querySelector('#robotBody');
+  if (g) g.removeAttribute('id');
+  return holder.firstElementChild;
+}
+
+function buildRobot() {
+  currentSpec = randomSpec();
+  document.getElementById('robotSvg').innerHTML = robotSvgMarkup(currentSpec, false);
+}
+
+/* ================= 画面パーツ ================= */
+function buildKeyboard() {
+  const kb = document.getElementById('kb');
+  KB_ROWS.forEach(row => {
+    const div = document.createElement('div');
+    div.className = 'kb-row';
+    row.forEach(ch => {
+      const k = document.createElement('div');
+      k.className = 'key';
+      k.dataset.key = ch;
+      k.textContent = ch;
+      k.addEventListener('pointerdown', () => handleInput(ch));
+      div.appendChild(k);
+    });
+    kb.appendChild(div);
+  });
+}
+
+function buildLights() {
+  const box = document.getElementById('lights');
+  box.innerHTML = '';
+  for (let i = 0; i < PARTS_PER_ROBOT; i++) {
+    const d = document.createElement('div');
+    d.className = 'light';
+    box.appendChild(d);
+  }
+}
+
+function updateLights() {
+  document.querySelectorAll('.light').forEach((d, i) => {
+    d.classList.toggle('on', i < partsDone);
+  });
+}
+
+function updateCount() {
+  document.getElementById('count').textContent = robotCount;
+}
+
+function showPraise(text, extraClass) {
+  const p = document.createElement('div');
+  p.className = 'praise' + (extraClass ? ' ' + extraClass : '');
+  p.textContent = text || PRAISES[Math.floor(Math.random() * PRAISES.length)];
+  document.getElementById('stage').appendChild(p);
+  setTimeout(() => p.remove(), 1200);
+}
+
+function confetti() {
+  for (let i = 0; i < 50; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    const size = 6 + Math.random() * 8;
+    c.style.width = size + 'px';
+    c.style.height = size * (0.6 + Math.random()) + 'px';
+    c.style.left = Math.random() * 100 + 'vw';
+    c.style.background = `hsl(${Math.floor(Math.random() * 360)}, 85%, 60%)`;
+    document.body.appendChild(c);
+    c.animate([
+      { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
+      { transform: `translateY(${window.innerHeight + 40}px) rotate(${360 + Math.random() * 720}deg)`, opacity: 0.8 }
+    ], {
+      duration: 1800 + Math.random() * 1500,
+      delay: Math.random() * 400,
+      easing: 'cubic-bezier(0.2, 0.6, 0.8, 1)'
+    }).onfinish = () => c.remove();
+  }
+}
+
+/* ================= ロボットずかん ================= */
+function setKbVisible(v) {
+  document.getElementById('kb').style.visibility = v ? '' : 'hidden';
+}
+
+function galleryOpen() { return !document.getElementById('galleryOverlay').hidden; }
+
+function showGallery() {
+  const grid = document.getElementById('galleryGrid');
+  grid.innerHTML = '';
+  document.getElementById('galleryCount').textContent = collection.length;
+  if (collection.length === 0) {
+    grid.innerHTML = '<div class="gallery-empty">まだ ロボットが いないよ。<br>キーを おして つくってみよう!</div>';
+  } else {
+    collection.forEach((spec, idx) => {
+      const cell = document.createElement('div');
+      cell.className = 'g-cell';
+      cell.dataset.idx = idx;
+      cell.appendChild(miniRobotSvg(spec));
+      cell.addEventListener('pointerdown', (e) => {
+        if (!selectMode) return;
+        e.stopPropagation();
+        const i = Number(cell.dataset.idx);
+        const p = selectedIdx.indexOf(i);
+        if (p >= 0) { selectedIdx.splice(p, 1); cell.classList.remove('sel'); }
+        else if (selectedIdx.length < selectMode) { selectedIdx.push(i); cell.classList.add('sel'); soundPop(); }
+        updateFuseHint();
+        if (selectedIdx.length === selectMode) startFusion(selectedIdx, selectMode === 5);
+      });
+      grid.appendChild(cell);
+    });
+  }
+  document.getElementById('superFuseBtn').hidden = gattaiCount < 10;
+  document.getElementById('galleryOverlay').hidden = false;
+  setKbVisible(false);
+}
+
+function hideGallery() {
+  document.getElementById('galleryOverlay').hidden = true;
+  selectMode = 0;
+  selectedIdx = [];
+  document.getElementById('fuseHint').hidden = true;
+  setKbVisible(true);
+}
+
+/* ================= ロボットタウン (クオータービュー) ================= */
+const ISO = 40;                                     // 1ユニットあたりのピクセル
+const TILES_MAX = 49;                               // 7x7 うずまき
+function tileCountFor(pop) { return pop <= 0 ? 0 : Math.min(TILES_MAX, 1 + Math.floor(pop / 3)); }
+
+function isoP(u, v, z) { return [(u - v) * ISO, (u + v) * ISO * 0.5 - z * ISO]; }
+function pg(pts, fill, cls) {
+  return `<polygon points="${pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')}" fill="${fill}"${cls ? ` class="${cls}"` : ''}/>`;
+}
+function shades(h, s, l) {
+  return {
+    top: `hsl(${h},${s}%,${Math.min(94, l + 12)}%)`,
+    left: `hsl(${h},${s}%,${l}%)`,
+    right: `hsl(${h},${s}%,${Math.max(8, l - 14)}%)`
+  };
+}
+function box(u, v, z0, w, d, h, c) {
+  return pg([isoP(u,v,z0+h), isoP(u+w,v,z0+h), isoP(u+w,v+d,z0+h), isoP(u,v+d,z0+h)], c.top)
+       + pg([isoP(u,v+d,z0+h), isoP(u+w,v+d,z0+h), isoP(u+w,v+d,z0), isoP(u,v+d,z0)], c.left)
+       + pg([isoP(u+w,v,z0+h), isoP(u+w,v+d,z0+h), isoP(u+w,v+d,z0), isoP(u+w,v,z0)], c.right);
+}
+function roofP(u, v, z0, w, d, h, c) {
+  const R1 = isoP(u, v + d/2, z0 + h), R2 = isoP(u + w, v + d/2, z0 + h);
+  const A = isoP(u,v,z0), B = isoP(u+w,v,z0), C = isoP(u+w,v+d,z0), D = isoP(u,v+d,z0);
+  return pg([A,B,R2,R1], c.top) + pg([D,C,R2,R1], c.left) + pg([B,C,R2], c.right);
+}
+function pyramid(u, v, z0, w, d, h, c) {
+  const apex = isoP(u + w/2, v + d/2, z0 + h);
+  return pg([isoP(u,v+d,z0), isoP(u+w,v+d,z0), apex], c.left)
+       + pg([isoP(u+w,v,z0), isoP(u+w,v+d,z0), apex], c.right);
+}
+function circleAt(u, v, z, r, fill, cls) {
+  const p = isoP(u, v, z);
+  return `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${r}" fill="${fill}"${cls ? ` class="${cls}"` : ''}/>`;
+}
+function ellipseAt(u, v, z, rx, ry, fill, extra) {
+  const p = isoP(u, v, z);
+  return `<ellipse cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" rx="${rx}" ry="${ry}" fill="${fill}"${extra || ''}/>`;
+}
+function frontQuad(u0, u1, vf, z0, z1, fill) {
+  return pg([isoP(u0,vf,z1), isoP(u1,vf,z1), isoP(u1,vf,z0), isoP(u0,vf,z0)], fill);
+}
+function isoTree(u, v, big) {
+  const s = big ? 1 : 0.75;
+  return box(u-0.06, v-0.06, 0, 0.12, 0.12, 0.5*s, shades(25, 50, 35))
+       + circleAt(u, v, 0.85*s, 13*s, '#4ca85b')
+       + circleAt(u-0.14, v+0.1, 0.6*s, 9*s, '#5cbf6b');
+}
+function spin(dur) {
+  return `<animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="${dur}s" repeatCount="indefinite"/>`;
+}
+
+/* --- たてもの 20しゅるい --- */
+const HOUSE_HUES = [12, 190, 45, 330, 105, 265];
+const B = {
+  factory(u, v) {
+    const top = isoP(u+1.5, v+0.82, 1.5);
+    return box(u+0.35, v+0.6, 0, 1.4, 1.0, 0.75, shades(210, 16, 62))
+      + frontQuad(u+0.55, u+0.85, v+1.6, 0.25, 0.55, '#ffe9a8')
+      + frontQuad(u+1.05, u+1.35, v+1.6, 0.25, 0.55, '#ffe9a8')
+      + box(u+1.38, v+0.7, 0.75, 0.24, 0.24, 0.75, shades(210, 16, 45))
+      + `<circle class="smoke" cx="${top[0]}" cy="${top[1]}" r="8" fill="#cfd8df"/>`
+      + `<circle class="smoke s2" cx="${top[0]}" cy="${top[1]}" r="8" fill="#cfd8df"/>`;
+  },
+  house(u, v, s) {
+    const hh = HOUSE_HUES[s % HOUSE_HUES.length];
+    return box(u+0.5, v+0.5, 0, 1.1, 1.1, 0.6, shades(40, 45, 82))
+      + roofP(u+0.4, v+0.4, 0.6, 1.3, 1.3, 0.5, shades(hh, 60, 50))
+      + frontQuad(u+0.85, u+1.15, v+1.6, 0, 0.42, '#8a5a33')
+      + frontQuad(u+0.58, u+0.78, v+1.6, 0.2, 0.42, '#c9ecff');
+  },
+  trees(u, v, s) {
+    return isoTree(u+0.7, v+0.8, true) + isoTree(u+1.35, v+1.25, false)
+      + (s % 2 ? isoTree(u+1.15, v+0.5, false) : circleAt(u+1.3, v+0.7, 0.06, 4, '#ff5d8f'));
+  },
+  shop(u, v, s) {
+    const hh = s % 2 ? 150 : 5;
+    return box(u+0.4, v+0.5, 0, 1.3, 1.1, 0.7, shades(38, 75, 86))
+      + box(u+0.35, v+1.55, 0.42, 1.4, 0.16, 0.12, shades(hh, 70, 55))
+      + frontQuad(u+0.85, u+1.2, v+1.6, 0, 0.4, '#8a5a33')
+      + frontQuad(u+0.5, u+0.78, v+1.6, 0.12, 0.38, '#c9ecff')
+      + box(u+0.6, v+0.55, 0.7, 0.9, 0.1, 0.22, shades(hh, 70, 60));
+  },
+  park(u, v) {
+    return ellipseAt(u+1.25, v+1.3, 0.02, 30, 15, '#7ecbff', ' stroke="#5aa8d8" stroke-width="2"')
+      + isoTree(u+0.6, v+0.7, true)
+      + circleAt(u+0.55, v+1.5, 0.05, 4, '#ff5d8f') + circleAt(u+0.75, v+1.6, 0.05, 4, '#ffd23f');
+  },
+  apartment(u, v, s) {
+    const hh = s % 2 ? 205 : 20;
+    let win = '';
+    for (let f = 0; f < 3; f++) for (let k = 0; k < 2; k++)
+      win += frontQuad(u+0.62+k*0.5, u+0.92+k*0.5, v+1.55, 0.3+f*0.55, 0.6+f*0.55, '#dff3ff');
+    return box(u+0.45, v+0.45, 0, 1.2, 1.1, 1.9, shades(hh, 28, 62)) + win
+      + box(u+0.4, v+0.4, 1.9, 1.3, 1.2, 0.09, shades(hh, 28, 48));
+  },
+  tower(u, v) {
+    const R = shades(5, 78, 55);
+    const p = isoP(u+1, v+1, 2.55);
+    return box(u+0.68, v+0.68, 0, 0.64, 0.64, 0.55, R)
+      + box(u+0.78, v+0.78, 0.55, 0.44, 0.44, 0.65, R)
+      + box(u+0.72, v+0.72, 1.2, 0.56, 0.56, 0.22, shades(0, 0, 92))
+      + box(u+0.86, v+0.86, 1.42, 0.28, 0.28, 0.75, R)
+      + pg([isoP(u+0.98, v+0.98, 2.17), isoP(u+1.02, v+1.02, 2.17), isoP(u+1, v+1, 2.55)], '#c33')
+      + `<circle class="antenna-light" cx="${p[0]}" cy="${p[1]}" r="4" fill="#ff5d8f"/>`;
+  },
+  conv(u, v) {
+    return box(u+0.45, v+0.55, 0, 1.25, 1.0, 0.58, shades(0, 0, 93))
+      + frontQuad(u+0.45, u+1.7, v+1.55, 0.44, 0.58, '#2e9e5b')
+      + pg([isoP(u+1.7,v+0.55,0.58), isoP(u+1.7,v+1.55,0.58), isoP(u+1.7,v+1.55,0.44), isoP(u+1.7,v+0.55,0.44)], '#22795a')
+      + frontQuad(u+0.95, u+1.3, v+1.55, 0, 0.4, '#8fd7f7')
+      + frontQuad(u+0.55, u+0.88, v+1.55, 0.08, 0.38, '#c9ecff');
+  },
+  castle(u, v) {
+    return box(u+0.45, v+0.45, 0, 1.3, 1.3, 0.45, shades(210, 10, 72))
+      + box(u+0.6, v+0.6, 0.45, 1.0, 1.0, 0.65, shades(45, 25, 93))
+      + roofP(u+0.52, v+0.52, 1.1, 1.16, 1.16, 0.4, shades(150, 40, 38))
+      + box(u+0.82, v+0.82, 1.5, 0.56, 0.56, 0.34, shades(45, 25, 93))
+      + roofP(u+0.76, v+0.76, 1.84, 0.68, 0.68, 0.3, shades(150, 40, 38))
+      + pg([isoP(u+1.1,v+1.1,2.14), isoP(u+1.1,v+1.1,2.5), isoP(u+1.28,v+1.1,2.42)], '#ffd23f');
+  },
+  fountain(u, v) {
+    return ellipseAt(u+1.2, v+1.2, 0.02, 32, 16, '#7ecbff', ' stroke="#8da3b8" stroke-width="4"')
+      + box(u+1.12, v+1.12, 0, 0.16, 0.16, 0.5, shades(210, 10, 75))
+      + circleAt(u+1.2, v+1.2, 0.75, 7, '#bfe8ff')
+      + circleAt(u+1.05, v+1.1, 0.55, 3, '#dff3ff') + circleAt(u+1.35, v+1.3, 0.55, 3, '#dff3ff');
+  },
+  school(u, v) {
+    const clock = isoP(u+1.05, v+1.6, 0.72);
+    return box(u+0.35, v+0.5, 0, 1.5, 1.1, 0.9, shades(28, 45, 80))
+      + box(u+0.3, v+0.45, 0.9, 1.6, 1.2, 0.08, shades(28, 45, 60))
+      + frontQuad(u+0.9, u+1.2, v+1.6, 0, 0.4, '#8a5a33')
+      + frontQuad(u+0.48, u+0.75, v+1.6, 0.42, 0.68, '#dff3ff')
+      + frontQuad(u+1.35, u+1.62, v+1.6, 0.42, 0.68, '#dff3ff')
+      + `<circle cx="${clock[0]}" cy="${clock[1]}" r="7" fill="#fff" stroke="#234" stroke-width="2"/>`
+      + `<line x1="${clock[0]}" y1="${clock[1]}" x2="${clock[0]}" y2="${clock[1]-5}" stroke="#234" stroke-width="1.5"/>`
+      + `<line x1="${clock[0]}" y1="${clock[1]}" x2="${clock[0]+3.5}" y2="${clock[1]}" stroke="#234" stroke-width="1.5"/>`;
+  },
+  windmill(u, v) {
+    const hub = isoP(u+1.05, v+1.42, 1.3);
+    const blade = `<rect x="-3" y="-30" width="6" height="30" rx="3" fill="#fff" stroke="#d9c9a8" stroke-width="1.5"/>`;
+    return box(u+0.7, v+0.7, 0, 0.72, 0.72, 1.15, shades(36, 42, 84))
+      + roofP(u+0.62, v+0.62, 1.15, 0.88, 0.88, 0.4, shades(5, 60, 50))
+      + frontQuad(u+0.92, u+1.18, v+1.42, 0, 0.35, '#8a5a33')
+      + `<g transform="translate(${hub[0]},${hub[1]})"><g>${spin(7)}`
+      + `<g>${blade}</g><g transform="rotate(90)">${blade}</g><g transform="rotate(180)">${blade}</g><g transform="rotate(270)">${blade}</g>`
+      + `</g><circle r="4" fill="#8a5a33"/></g>`;
+  },
+  hospital(u, v) {
+    return box(u+0.45, v+0.5, 0, 1.3, 1.1, 1.3, shades(0, 0, 94))
+      + box(u+0.4, v+0.45, 1.3, 1.4, 1.2, 0.08, shades(200, 25, 70))
+      + frontQuad(u+0.95, u+1.25, v+1.6, 0.65, 1.05, '#fff')
+      + frontQuad(u+1.02, u+1.18, v+1.6, 0.7, 1.0, '#ff5d5d')
+      + frontQuad(u+0.95, u+1.25, v+1.6, 0.8, 0.9, '#ff5d5d')
+      + frontQuad(u+0.55, u+0.85, v+1.6, 0.1, 0.42, '#c9ecff')
+      + frontQuad(u+0.95, u+1.25, v+1.6, 0, 0.42, '#8fd7f7');
+  },
+  mountain(u, v) {
+    return pyramid(u+0.25, v+0.25, 0, 1.5, 1.5, 1.6, shades(120, 22, 38))
+      + pyramid(u+0.7, v+0.7, 0.97, 0.6, 0.6, 0.63, shades(0, 0, 92))
+      + isoTree(u+0.35, v+1.65, false);
+  },
+  shrine(u, v) {
+    const R = shades(4, 75, 48);
+    return box(u+0.55, v+1.1, 0, 0.18, 0.18, 0.95, R)
+      + box(u+1.45, v+1.1, 0, 0.18, 0.18, 0.95, R)
+      + box(u+0.35, v+1.08, 0.95, 1.5, 0.22, 0.14, shades(4, 75, 38))
+      + box(u+0.5, v+1.1, 0.72, 1.18, 0.18, 0.1, R)
+      + isoTree(u+1.7, v+0.5, false);
+  },
+  ferris(u, v) {
+    const c = isoP(u+1, v+1.1, 1.15);
+    let wheel = `<circle r="36" fill="none" stroke="#e8734a" stroke-width="4"/>`;
+    for (let a = 0; a < 8; a++) {
+      const rad = a * Math.PI / 4;
+      const cabCols = ['#ffd23f', '#ff5d8f', '#7fd97c', '#9f7bff', '#7ecbff', '#ffb27d', '#ff5d5d', '#5cbf6b'];
+      wheel += `<line x1="0" y1="0" x2="${(Math.cos(rad)*36).toFixed(1)}" y2="${(Math.sin(rad)*36).toFixed(1)}" stroke="#e8734a" stroke-width="2.5"/>`;
+      wheel += `<circle cx="${(Math.cos(rad)*36).toFixed(1)}" cy="${(Math.sin(rad)*36).toFixed(1)}" r="6" fill="${cabCols[a]}"/>`;
+    }
+    return pg([isoP(u+0.75,v+1.3,0), isoP(u+1.02,v+1.12,1.15), isoP(u+1.25,v+1.3,0)], '#c96a3f')
+      + `<g transform="translate(${c[0]},${c[1]})"><g>${spin(14)}${wheel}</g><circle r="5" fill="#a8542f"/></g>`;
+  },
+  stadium(u, v) {
+    return ellipseAt(u+1.2, v+1.2, 0.3, 44, 22, 'hsl(210,15%,72%)')
+      + ellipseAt(u+1.2, v+1.2, 0.32, 34, 16, '#5cbf6b')
+      + ellipseAt(u+1.2, v+1.2, 0.33, 20, 9, '#86d97c')
+      + `<g>${circleAt(u+0.35, v+1.15, 0.75, 3, '#ff5d8f')}${circleAt(u+2.05, v+1.25, 0.75, 3, '#ffd23f')}</g>`;
+  },
+  skytree(u, v) {
+    const S = shades(200, 35, 82);
+    const p = isoP(u+1, v+1, 3.1);
+    return box(u+0.78, v+0.78, 0, 0.44, 0.44, 1.4, S)
+      + box(u+0.7, v+0.7, 1.4, 0.6, 0.6, 0.2, shades(200, 35, 65))
+      + box(u+0.84, v+0.84, 1.6, 0.32, 0.32, 0.8, S)
+      + box(u+0.8, v+0.8, 2.4, 0.4, 0.4, 0.16, shades(200, 35, 65))
+      + pg([isoP(u+0.97,v+0.97,2.56), isoP(u+1.03,v+1.03,2.56), isoP(u+1,v+1,3.1)], '#8da3b8')
+      + `<circle class="antenna-light" cx="${p[0]}" cy="${p[1]}" r="3.5" fill="#ff5d8f"/>`;
+  },
+  rocket(u, v) {
+    return box(u+0.55, v+0.55, 0, 0.95, 0.95, 0.14, shades(210, 12, 62))
+      + box(u+0.82, v+0.82, 0.14, 0.4, 0.4, 0.95, shades(0, 0, 91))
+      + pyramid(u+0.78, v+0.78, 1.09, 0.48, 0.48, 0.55, shades(0, 70, 58))
+      + pg([isoP(u+0.82,v+1.24,0.14), isoP(u+0.7,v+1.36,0.14), isoP(u+0.82,v+1.24,0.5)], 'hsl(0,70%,50%)')
+      + pg([isoP(u+1.24,v+0.82,0.14), isoP(u+1.36,v+0.7,0.14), isoP(u+1.24,v+0.82,0.5)], 'hsl(0,70%,42%)')
+      + frontQuad(u+0.93, u+1.11, v+1.22, 0.6, 0.78, '#aee7ff');
+  },
+  lake(u, v) {
+    return ellipseAt(u+1.2, v+1.2, 0.02, 40, 20, '#7ecbff', ' stroke="#5aa8d8" stroke-width="2"')
+      + ellipseAt(u+1.05, v+1.1, 0.03, 10, 5, '#a5dcff')
+      + isoTree(u+0.4, v+0.55, false);
+  }
+};
+
+/* マスに割り当てるたてものの順番 (それ以降はループ+色違い) */
+const TOWN_SEQ = [
+  ['factory', 0], ['house', 0], ['trees', 0], ['shop', 0], ['park', 0],
+  ['house', 1], ['apartment', 0], ['tower', 0], ['conv', 0], ['house', 2],
+  ['castle', 0], ['fountain', 0], ['trees', 1], ['school', 0], ['house', 3],
+  ['windmill', 0], ['hospital', 0], ['mountain', 0], ['shop', 1], ['shrine', 0],
+  ['ferris', 0], ['house', 4], ['stadium', 0], ['apartment', 1], ['skytree', 0],
+  ['park', 0], ['house', 5], ['rocket', 0], ['lake', 0], ['trees', 0]
+];
+function buildingForTile(k) {
+  if (k < TOWN_SEQ.length) return TOWN_SEQ[k];
+  const [name] = TOWN_SEQ[(k * 7 + 3) % TOWN_SEQ.length];
+  return [name, k];
+}
+
+/* うずまき状のマス座標 */
+function spiralCoords(n) {
+  const coords = [[0, 0]];
+  const dirs = [[1, 0], [0, 1], [-1, 0], [0, -1]];
+  let x = 0, y = 0, len = 1, dirIdx = 0;
+  while (coords.length < n) {
+    for (let rep = 0; rep < 2 && coords.length < n; rep++) {
+      const [dx, dy] = dirs[dirIdx % 4];
+      for (let i = 0; i < len && coords.length < n; i++) {
+        x += dx; y += dy;
+        coords.push([x, y]);
+      }
+      dirIdx++;
+    }
+    len++;
+  }
+  return coords;
+}
+
+let townAnim = null;
+let walkers = [];
+
+function townOpen() { return !document.getElementById('townOverlay').hidden; }
+
+function showTown() {
+  const scene = document.getElementById('townScene');
+  scene.innerHTML = '';
+  const pop = collection.length;
+  document.getElementById('townPop').textContent = pop;
+
+  // 街の広さは「今までに作った総数」基準 (がったいで人口が減っても街は縮まない)
+  const tiles = tileCountFor(Math.max(robotCount, pop));
+  const hint = document.getElementById('townHint');
+  if (tiles >= TILES_MAX) {
+    hint.textContent = 'まちは さいだいきゅう! 🎉';
+  } else {
+    hint.textContent = `あと ${tiles * 3 - Math.max(robotCount, pop)} たいで まちが ひろがる!`;
+  }
+
+  scene.insertAdjacentHTML('beforeend', '<div class="town-sun">☀️</div>');
+  [[8, 6, 0], [40, 3, -14], [70, 10, -26]].forEach(([l, t, d]) => {
+    scene.insertAdjacentHTML('beforeend',
+      `<div class="town-cloud" style="left:${l}%;top:${t}%;animation-delay:${d}s">☁️</div>`);
+  });
+
+  walkers = [];
+  if (pop === 0) {
+    scene.insertAdjacentHTML('beforeend',
+      '<div class="town-empty">まだ だれも いないよ。<br>ロボットを つくって まちに よぼう!</div>');
+    document.getElementById('townOverlay').hidden = false;
+    return;
+  }
+
+  /* --- マスとたてもの --- */
+  const TSP = 2.06;                        // マスの間隔 (すきま付き)
+  const coords = spiralCoords(tiles);
+  const grounds = [];
+  const entities = [];
+  const grass = { top: '#7fd97c', left: '#8a5a33', right: '#6e4426' };
+
+  coords.forEach(([gx, gy], k) => {
+    const u = gx * TSP, v = gy * TSP;
+    grounds.push({ depth: u + v, svg:
+      box(u, v, -0.34, 2, 2, 0.34, grass)
+      + pg([isoP(u,v,0), isoP(u+2,v,0), isoP(u+2,v+2,0), isoP(u,v+2,0)], k % 2 ? '#86d97c' : '#7fd97c') });
+    const [name, seed] = buildingForTile(k);
+    entities.push({ depth: u + v + 2, svg: B[name](u, v, seed) });
+  });
+
+  /* --- じゅうみんロボット --- */
+  const residents = collection.slice(-30);
+  const robotMeta = [];
+  residents.forEach((spec, i) => {
+    const [gx, gy] = coords[i % tiles];
+    const tu = gx * TSP, tv = gy * TSP;
+    const ru = tu + 0.35 + Math.random() * 1.3;
+    const rv = tv + 1.42 + Math.random() * 0.42;   // タイル手前の帯 (建物のうしろに隠れない)
+    const inner = robotSvgMarkup(spec, true).replace('id="robotBody"', '');
+    const mult = spec.fusion ? Math.min(6, 1.5 * Math.pow(1.4, lvOf(spec))) : 1;
+    const idx = robotMeta.length;
+    robotMeta.push({ tu, ru, rv, dir: Math.random() > 0.5 ? 1 : -1,
+      speed: 0.12 + Math.random() * 0.2, pauseUntil: 0,
+      nextThink: performance.now() + 1000 + Math.random() * 3000 });
+    entities.push({ depth: tu + tv + 2.4 + (rv - tv) / 10, svg:
+      `<g class="iso-robot" data-ridx="${idx}"><g class="iso-bob" style="animation-delay:${(Math.random()*0.5).toFixed(2)}s">`
+      + `<g transform="scale(${(0.16 * mult).toFixed(3)}) translate(-100,-236)">${inner}</g></g></g>` });
+  });
+
+  grounds.sort((a, b) => a.depth - b.depth);
+  entities.sort((a, b) => a.depth - b.depth);
+
+  /* --- viewBoxをまちの大きさに合わせる --- */
+  let minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+  coords.forEach(([gx, gy]) => {
+    const u = gx * TSP, v = gy * TSP;
+    [isoP(u,v,0), isoP(u+2,v,0), isoP(u+2,v+2,0), isoP(u,v+2,0)].forEach(p => {
+      minX = Math.min(minX, p[0]); maxX = Math.max(maxX, p[0]);
+      minY = Math.min(minY, p[1]); maxY = Math.max(maxY, p[1]);
+    });
+  });
+  const pad = 40, top = 3.2 * ISO;
+  const vb = `${(minX - pad).toFixed(0)} ${(minY - top).toFixed(0)} ${(maxX - minX + pad * 2).toFixed(0)} ${(maxY - minY + top + pad + 20).toFixed(0)}`;
+
+  scene.insertAdjacentHTML('beforeend',
+    `<svg id="townSvg" viewBox="${vb}" preserveAspectRatio="xMidYMid meet">`
+    + `<g>${grounds.map(g => g.svg).join('')}</g>`
+    + `<g>${entities.map(e => e.svg).join('')}</g></svg>`);
+
+  /* ロボットのタップと徘徊 */
+  const gEls = scene.querySelectorAll('.iso-robot');
+  gEls.forEach(g => {
+    const meta = robotMeta[Number(g.dataset.ridx)];
+    meta.el = g;
+    const set = () => {
+      const p = isoP(meta.ru, meta.rv, 0);
+      g.setAttribute('transform', `translate(${p[0].toFixed(1)} ${p[1].toFixed(1)}) scale(${meta.dir},1)`);
+    };
+    meta.apply = set;
+    set();
+    g.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      ensureAudio();
+      soundBeep();
+      g.classList.remove('jump');
+      void g.getBBox();
+      g.classList.add('jump');
+    });
+  });
+  walkers = robotMeta;
+
+  document.getElementById('townOverlay').hidden = false;
+  setKbVisible(false);
+  townView = { x: 0, y: 0, k: 1 };
+  applyTownView();
+  let last = performance.now();
+  const step = (now) => {
+    if (!townOpen()) { townAnim = null; return; }
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    walkers.forEach(wk => {
+      if (!wk.el) return;
+      if (now >= wk.nextThink) {
+        wk.nextThink = now + 1500 + Math.random() * 4000;
+        if (Math.random() < 0.4) wk.pauseUntil = now + 800 + Math.random() * 2000;
+        else { wk.dir = Math.random() > 0.5 ? 1 : -1; wk.speed = 0.12 + Math.random() * 0.2; }
+      }
+      if (now < wk.pauseUntil) { wk.apply(); return; }
+      wk.ru += wk.speed * dt * wk.dir;
+      if (wk.ru < wk.tu + 0.3) { wk.ru = wk.tu + 0.3; wk.dir = 1; }
+      if (wk.ru > wk.tu + 1.7) { wk.ru = wk.tu + 1.7; wk.dir = -1; }
+      wk.apply();
+    });
+    townAnim = requestAnimationFrame(step);
+  };
+  if (townAnim) cancelAnimationFrame(townAnim);
+  townAnim = requestAnimationFrame(step);
+}
+
+function hideTown() {
+  document.getElementById('townOverlay').hidden = true;
+  if (townAnim) { cancelAnimationFrame(townAnim); townAnim = null; }
+  walkers = [];
+  setKbVisible(true);
+}
+
+/* --- まちのパン/ズーム --- */
+let townView = { x: 0, y: 0, k: 1 };
+function applyTownView() {
+  const svg = document.getElementById('townSvg');
+  if (svg) svg.style.transform = `translate(${townView.x}px, ${townView.y}px) scale(${townView.k})`;
+}
+function townZoomAt(mx, my, factor) {
+  const nk = Math.min(4, Math.max(0.5, townView.k * factor));
+  const f = nk / townView.k;
+  townView.x = mx - (mx - townView.x) * f;
+  townView.y = my - (my - townView.y) * f;
+  townView.k = nk;
+  applyTownView();
+}
+(function initTownGestures() {
+  const scene = document.getElementById('townScene');
+  const ptrs = new Map();
+  scene.addEventListener('pointerdown', (e) => {
+    if (scene.setPointerCapture) { try { scene.setPointerCapture(e.pointerId); } catch (err) {} }
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  });
+  scene.addEventListener('pointermove', (e) => {
+    if (!ptrs.has(e.pointerId)) return;
+    const p = ptrs.get(e.pointerId);
+    if (ptrs.size === 1) {
+      townView.x += e.clientX - p.x;
+      townView.y += e.clientY - p.y;
+      applyTownView();
+    } else if (ptrs.size === 2) {
+      const other = [...ptrs.entries()].find(([id]) => id !== e.pointerId)[1];
+      const d0 = Math.hypot(p.x - other.x, p.y - other.y);
+      const d1 = Math.hypot(e.clientX - other.x, e.clientY - other.y);
+      if (d0 > 4) {
+        const r = scene.getBoundingClientRect();
+        townZoomAt((e.clientX + other.x) / 2 - r.left, (e.clientY + other.y) / 2 - r.top, d1 / d0);
+      }
+    }
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  });
+  const end = (e) => ptrs.delete(e.pointerId);
+  scene.addEventListener('pointerup', end);
+  scene.addEventListener('pointercancel', end);
+  scene.addEventListener('wheel', (e) => {
+    if (!townOpen()) return;
+    e.preventDefault();
+    const r = scene.getBoundingClientRect();
+    townZoomAt(e.clientX - r.left, e.clientY - r.top, e.deltaY < 0 ? 1.15 : 1 / 1.15);
+  }, { passive: false });
+})();
+
+/* ================= がったい ================= */
+let gattaiCount = Number(localStorage.getItem('gattaiCount') || 0);
+let selectMode = 0;          // 0=通常 / 2=がったい選択中 / 5=ちょうがったい選択中
+let selectedIdx = [];
+let fusion = null;           // {parents, code, pos, super, resolved}
+
+function fusionOpen() { return !document.getElementById('fusionOverlay').hidden; }
+
+function beginSelect(n) {
+  ensureAudio();
+  const hint = document.getElementById('fuseHint');
+  hint.hidden = false;
+  if (collection.length < n) {
+    hint.textContent = `ロボットが ${n}たい いないと ${n === 5 ? 'ちょう' : ''}がったい できないよ!`;
+    selectMode = 0;
+    return;
+  }
+  selectMode = n;
+  selectedIdx = [];
+  document.querySelectorAll('.g-cell.sel').forEach(c => c.classList.remove('sel'));
+  updateFuseHint();
+  say(`がったいする ロボットを ${n}たい えらんでね`);
+}
+
+function updateFuseHint() {
+  if (!selectMode) return;
+  document.getElementById('fuseHint').textContent =
+    `${selectMode === 5 ? '🌟ちょうがったい' : '⚡がったい'}する ロボットを ${selectMode}たい タッチ! (いま ${selectedIdx.length}たい)`;
+}
+
+function lvOf(s) {
+  if (!s.fusion) return 0;
+  if (s.lv !== undefined) return s.lv;
+  return s.fusion === 2 ? 1 : 0;   // 旧データ互換
+}
+
+function makeFusionSpec(parents, isSuper) {
+  const a = parents[0], b = parents[1] || parents[0];
+  const plv = Math.max(...parents.map(lvOf));
+  const hasSuper = parents.some(p => p.fusion === 2);
+  return {
+    h: a.h,
+    h2: b.h,
+    head: a.head || 0,
+    body: b.body,
+    eye: b.eye,
+    mouth: a.mouth,
+    ant: a.ant,
+    fusion: (isSuper || hasSuper) ? 2 : 1,          // 超合体の装備・見た目は引き継ぐ
+    lv: isSuper ? plv + 1 : plv                     // 通常合体では縮まない/超合体で+1
+  };
+}
+
+function startFusion(indices, isSuper) {
+  selectMode = 0;
+  const parents = indices.map(i => collection[i]);
+  hideGallery();
+  const code = [];
+  for (let i = 0; i < 5; i++) code.push(CHARS[Math.floor(Math.random() * CHARS.length)]);
+  fusion = { parents, code, pos: 0, super: isSuper, resolved: false };
+
+  const stage = document.getElementById('fusionStage');
+  stage.innerHTML = '';
+  parents.forEach((sp, i) => {
+    const d = document.createElement('div');
+    d.className = 'f-bot';
+    const n = parents.length;
+    d.style.left = (n === 2 ? (i === 0 ? 6 : 74) : 2 + i * 19.5) + '%';
+    d.appendChild(miniRobotSvg(sp));
+    stage.appendChild(d);
+  });
+
+  document.getElementById('fusionLabel').textContent =
+    isSuper ? '🌟ちょうがったいコードを うちこめ!' : '⚡がったいコードを うちこめ!';
+  renderFusionCode();
+  document.getElementById('fusionOverlay').hidden = false;
+  document.querySelectorAll('.key').forEach(k => k.classList.toggle('target', k.dataset.key === code[0]));
+  say(isSuper ? 'ちょうがったいコードを うちこめ!' : 'がったいコードを うちこめ!');
+}
+
+function renderFusionCode() {
+  const el = document.getElementById('fusionCode');
+  el.innerHTML = '';
+  fusion.code.forEach((c, i) => {
+    const d = document.createElement('div');
+    d.className = 'f-ch' + (i < fusion.pos ? ' done' : i === fusion.pos ? ' cur' : '');
+    d.textContent = c;
+    el.appendChild(d);
+  });
+}
+
+function fusionInput(ch) {
+  if (!fusion || fusion.resolved) return;
+  if (ch === fusion.code[fusion.pos]) {
+    fusion.pos++;
+    soundPop();
+    renderFusionCode();
+    document.querySelectorAll('.f-bot').forEach(b => {
+      b.classList.remove('charge');
+      void b.offsetWidth;
+      b.classList.add('charge');
+    });
+    if (fusion.pos >= fusion.code.length) {
+      finishFusion();
+    } else {
+      const next = fusion.code[fusion.pos];
+      document.querySelectorAll('.key').forEach(k => k.classList.toggle('target', k.dataset.key === next));
+      say(CHAR_NAMES[next] || next);
+    }
+  } else {
+    soundWrong();
+  }
+}
+
+function finishFusion() {
+  fusion.resolved = true;
+  document.querySelectorAll('.key').forEach(k => k.classList.remove('target'));
+  document.getElementById('fusionLabel').textContent = 'がったい かいし!!';
+
+  document.querySelectorAll('.f-bot').forEach(b => {
+    b.style.left = '50%';
+    b.style.transform = 'translate(-50%, -50%) scale(0.25) rotate(720deg)';
+    setTimeout(() => { b.style.opacity = '0'; }, 620);
+  });
+  const flash = document.getElementById('fusionFlash');
+  setTimeout(() => {
+    flash.classList.remove('go');
+    void flash.offsetWidth;
+    flash.classList.add('go');
+  }, 650);
+
+  setTimeout(() => {
+    const spec = makeFusionSpec(fusion.parents, fusion.super);
+    const parentSet = new Set(fusion.parents);
+    collection = collection.filter(s => !parentSet.has(s));
+    collection.push(spec);
+    localStorage.setItem('robotCollection2', JSON.stringify(collection));
+    gattaiCount++;
+    localStorage.setItem('gattaiCount', String(gattaiCount));
+
+    const stage = document.getElementById('fusionStage');
+    stage.innerHTML = '';
+    const res = document.createElement('div');
+    res.className = 'f-result';
+    const resScale = Math.min(1.6, 1 + lvOf(spec) * 0.15);
+    if (resScale > 1) res.style.width = `clamp(${150 * resScale}px, ${28 * resScale}vw, ${280 * resScale}px)`;
+    res.appendChild(miniRobotSvg(spec));
+    stage.appendChild(res);
+    void res.offsetWidth;
+    res.classList.add('shown');
+    document.getElementById('fusionCode').innerHTML = '';
+    document.getElementById('fusionLabel').textContent =
+      fusion.super ? '🌟ちょうがったい せいこう!!' : '⚡がったい せいこう!!';
+    soundFanfare();
+    confetti();
+    say(fusion.super ? 'ちょうがったい! かっこいい!' : 'がったーい! かっこいい!');
+    if (!fusion.super && gattaiCount === 10) {
+      setTimeout(() => say('ちょうがったいが つかえるように なったよ!'), 3000);
+    }
+  }, 900);
+
+  setTimeout(() => {
+    document.getElementById('fusionOverlay').hidden = true;
+    fusion = null;
+    // メインゲームのキーボードハイライトを復元
+    document.querySelectorAll('.key').forEach(k => {
+      k.classList.toggle('target', state === 'playing' && k.dataset.key === target);
+    });
+  }, 4500);
+}
+
+/* ================= ゲーム進行 ================= */
+function nextTarget() {
+  let next;
+  do { next = CHARS[Math.floor(Math.random() * CHARS.length)]; } while (next === target);
+  target = next;
+  document.getElementById('targetChar').textContent = target;
+  document.querySelectorAll('.key').forEach(k => {
+    k.classList.toggle('target', k.dataset.key === target);
+  });
+  say(CHAR_NAMES[target] || target);
+}
+
+function newRobot() {
+  partsDone = 0;
+  buildRobot();
+  updateLights();
+  document.getElementById('targetLabel').textContent = 'この キーを おしてね!';
+  state = 'playing';
+  nextTarget();
+}
+
+function flashKey(ch, cls) {
+  const k = document.querySelector(`.key[data-key="${ch}"]`);
+  if (!k) return;
+  k.classList.add(cls);
+  setTimeout(() => k.classList.remove(cls), 250);
+}
+
+function handleInput(ch) {
+  ensureAudio();
+  if (fusionOpen()) { fusionInput(ch); return; }
+  if (galleryOpen()) { if (!selectMode) hideGallery(); return; }
+  if (townOpen()) return;
+  if (state === 'start') { startGame(); return; }
+  if (state !== 'playing') return;
+  if (!CHARS.includes(ch)) return;
+
+  if (ch === target) {
+    flashKey(ch, 'pressed');
+    const part = document.querySelector(`#robotSvg .part[data-part="${partsDone}"]`);
+    if (part) part.classList.add('shown');
+    partsDone++;
+    updateLights();
+    soundPop();
+    showPraise();
+
+    if (partsDone >= PARTS_PER_ROBOT) {
+      completeRobot();
+    } else {
+      nextTarget();
+    }
+  } else {
+    flashKey(ch, 'pressed');
+    soundWrong();
+    const stage = document.getElementById('stage');
+    stage.classList.remove('wobble');
+    void stage.offsetWidth;
+    stage.classList.add('wobble');
+  }
+}
+
+function completeRobot() {
+  state = 'celebrate';
+  robotCount++;
+  localStorage.setItem('robotCount', String(robotCount));
+  updateCount();
+
+  const isNew = !collection.some(s => specKey(s) === specKey(currentSpec));
+  const prevTiles = tileCountFor(robotCount - 1);
+  collection.push(currentSpec);
+  if (collection.length > 500) collection = collection.slice(-500);
+  localStorage.setItem('robotCollection2', JSON.stringify(collection));
+  const gotBuilding = tileCountFor(robotCount) > prevTiles;
+
+  document.getElementById('targetChar').textContent = '🎉';
+  document.getElementById('targetLabel').textContent = 'ロボット かんせい!';
+  document.querySelectorAll('.key').forEach(k => k.classList.remove('target'));
+
+  const stage = document.getElementById('stage');
+  stage.classList.add('dance');
+  soundFanfare();
+  confetti();
+  if (gotBuilding) {
+    showPraise('🏗 まちが ひろがったよ!', 'new-building');
+    say('ロボット かんせい! まちが ひろがったよ!');
+  } else if (isNew) {
+    showPraise('✨あたらしい ロボット!✨', 'new-robot');
+    say('あたらしい ロボット かんせい! すごい!');
+  } else {
+    say('ロボット かんせい! すごい!');
+  }
+
+  setTimeout(() => {
+    stage.classList.remove('dance');
+    newRobot();
+  }, 3200);
+}
+
+function startGame() {
+  document.getElementById('startScreen').style.display = 'none';
+  setKbVisible(true);
+  state = 'playing';
+  newRobot();
+}
+
+/* ================= 入力イベント ================= */
+document.addEventListener('keydown', (e) => {
+  if (e.repeat || e.ctrlKey || e.altKey || e.metaKey) return;
+  ensureAudio();
+  if (fusionOpen()) {
+    e.preventDefault();
+    const ch = e.key.length === 1 ? e.key.toUpperCase() : null;
+    if (ch && CHARS.includes(ch)) fusionInput(ch);
+    return;
+  }
+  if (galleryOpen()) { e.preventDefault(); hideGallery(); return; }
+  if (townOpen()) { e.preventDefault(); hideTown(); return; }
+  if (state === 'start') { e.preventDefault(); startGame(); return; }
+  const ch = e.key.length === 1 ? e.key.toUpperCase() : null;
+  if (ch && CHARS.includes(ch)) {
+    e.preventDefault();
+    handleInput(ch);
+  }
+});
+
+document.getElementById('startScreen').addEventListener('pointerdown', () => {
+  ensureAudio();
+  startGame();
+});
+
+document.getElementById('muteBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  muted = !muted;
+  localStorage.setItem('robotMuted', muted ? '1' : '0');
+  document.getElementById('muteBtn').textContent = muted ? '🔇' : '🔊';
+  if (muted && 'speechSynthesis' in window) speechSynthesis.cancel();
+});
+
+document.getElementById('galleryBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  ensureAudio();
+  hideTown();
+  showGallery();
+});
+document.getElementById('closeGallery').addEventListener('click', hideGallery);
+document.getElementById('fuseBtn').addEventListener('click', (e) => { e.stopPropagation(); beginSelect(2); });
+document.getElementById('superFuseBtn').addEventListener('click', (e) => { e.stopPropagation(); beginSelect(5); });
+document.getElementById('galleryOverlay').addEventListener('pointerdown', (e) => {
+  if (e.target.id === 'galleryOverlay') hideGallery();
+});
+
+document.getElementById('townBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  ensureAudio();
+  hideGallery();
+  showTown();
+});
+document.getElementById('closeTown').addEventListener('click', hideTown);
+
+/* iPadのピンチズーム・ダブルタップズームを止める */
+document.addEventListener('gesturestart', (e) => e.preventDefault());
+document.addEventListener('dblclick', (e) => e.preventDefault());
+
+/* ================= 初期化 ================= */
+function addStars() {
+  const screen = document.getElementById('startScreen');
+  for (let i = 0; i < 25; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.textContent = Math.random() > 0.5 ? '✦' : '⭐';
+    s.style.left = Math.random() * 100 + 'vw';
+    s.style.top = Math.random() * 100 + 'vh';
+    s.style.fontSize = 8 + Math.random() * 16 + 'px';
+    s.style.animationDelay = Math.random() * 2 + 's';
+    screen.appendChild(s);
+  }
+}
+
+buildKeyboard();
+buildLights();
+updateCount();
+setKbVisible(false);   // スタート画面では隠す
+document.getElementById('muteBtn').textContent = muted ? '🔇' : '🔊';
+document.getElementById('startRobot').appendChild(
+  miniRobotSvg({ h: 200, body: 0, head: 0, eye: 0, mouth: 0, ant: 0 }).firstElementChild || document.createElementNS('http://www.w3.org/2000/svg','g')
+);
+addStars();
+</script>
+</body>
+</html>
